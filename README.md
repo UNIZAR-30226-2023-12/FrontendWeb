@@ -1,2 +1,2 @@
 # FrontendWeb
-This repository has de code of the webpage
+This repository has de code of the webpage.
