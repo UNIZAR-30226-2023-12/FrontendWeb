@@ -12,6 +12,7 @@
         <input type="submit" value="Buscar">
     </form>
     <!-- Parámetro para poner reproducción de música en caso de haber dejado la canción pausada -->
+    <button style="display: <%= hayAudioPausado() ? "block" : "none" %>">Mi botón</button>
 	<!-- Section-->
 	<section class="py-3">
 	    <div class="container px-4 px-lg-3 mt-3">
