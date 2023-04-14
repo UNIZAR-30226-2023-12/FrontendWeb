@@ -24,4 +24,8 @@ const manejarClickBoton = (mensaje) => {
   mostrarToast(`Me has pulsado: ${mensaje}`);
 };
 
+function fav(){
+  toast.info("Boton de Inicio")
+}
+
 
