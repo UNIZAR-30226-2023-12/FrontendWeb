@@ -9,3 +9,19 @@ Agregar las bibliotecas necesarias para hacer usao de las plantillas creadas-->
   4:Selecciona "Server Runtime" en la lista y clic en "Next".
   5:Selecciona el servidor de aplicaciones que estás utilizando y haz clic en "Finish".
   6:Marcar la clase HttpServlet.
+  
+  
+## Código que puede ser útil para React
+
+const mostrarToast = (mensaje) => {
+  setMensajeToast(mensaje);
+  setTimeout(() => {
+    setMensajeToast('');
+  }, 3000); // el toast se ocultará después de 3 segundos
+};
+
+const manejarClickBoton = (mensaje) => {
+  mostrarToast(`Me has pulsado: ${mensaje}`);
+};
+
+
