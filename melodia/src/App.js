@@ -20,7 +20,7 @@ class BarraNavegacion extends React.Component{
                       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                           <li class="nav-item"><a class="nav-link active" aria-current="page" onClick={principal}>Inicio</a></li>
                           <li class="nav-item"><a class="nav-link" onClick={inicioSesion}>Iniciar Sesión</a></li>
-                          <li class="nav-item"><a class="nav-link" href="signin.html">Registrarse</a></li>
+                          <li class="nav-item"><a class="nav-link" onClick={registrarse}>Registrarse</a></li>
                       </ul>
                   </div>
               </div>
@@ -110,6 +110,49 @@ class FormularioInicio extends React.Component{
   }
 }
 
+class FormularioRegistro extends React.Component {
+  render(){
+    return(
+      <>
+        <script src="./check.js"></script>
+        <header class="bg-blue_7th py-5">
+              <div class="container px-5">
+                  <div class="row gx-5 justify-content-center">
+                      <div class="col-lg-6">
+                          <div class="text-center my-5">
+                              <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}}>Registrarse</h1>
+                                  <form id="contactForm" style={{"margin": "auto", "max-width": "20rem", "width" : "100%", "align-self" : "center"}} onSubmit={comprobar_entrada}action="Prueba">
+                                      <div class="form-floating mb-3">
+                                          <input class="form-control" id="email" type="text" placeholder="ejemplo@gmail.com"/>
+                                          <label for="email">Correo electrónico</label>
+                                      </div>
+                                      <div class="form-floating mb-3">
+                                          <input class="form-control" id="name" type="text" placeholder="nickname"/>
+                                          <label for="name">Usuario</label>
+                                      </div>
+                                      <div class="form-floating mb-3">
+                                          <input class="form-control" id="passwd" type="password" placeholder="Introduzca contraseña"/>
+                                          <label for="passwd">Contraseña</label>
+                                      </div>
+                                      <div class="form-floating mb-3">
+                                          <input class="form-control" id="repasswd" type="password" placeholder="Repita la contraseña"/>
+                                          <label for="repasswd">Repita Contraseña</label>
+                                      </div>
+                                      <button class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" id="submitButton" type="submit">Registrarse</button>
+                                      <p class="fw-normal fst-italic text-warning fs-5" id="error_input"></p>
+                                  </form>
+                              <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </header>
+        </>
+    )
+  }
+}
+
 class Footer extends React.Component{
   render(){
     return (
@@ -150,11 +193,59 @@ function Inicio() {
   );
 }
 
+function comprobar_entrada(e){
+  /* Sean los campos del formulario rellenado */
+  let email = (document.getElementById("email")).value
+  let usuario = (document.getElementById("name")).value
+  let contra = (document.getElementById("passwd")).value
+  let recontra = (document.getElementById("repasswd")).value
+
+
+
+  /* Sea la caja donde pondremos el texto de error */
+  let textBox = document.getElementById("error_input")
+
+  if (email === "" || usuario === "" || contra === "" || recontra === ""){
+      textBox.innerHTML = 'Para registrarse debe rellenar todos los campos'
+      e.preventDefault();
+      return false;
+  }
+  else if(contra !== recontra){
+      textBox.innerHTML = 'Las contraseñas introducidas no coinciden'
+      e.preventDefault();  
+      return false;
+  }
+
+  enviar_peticion_registro(email, usuario, contra);
+  e.preventDefault();
+  return true
+}
+
+function enviar_peticion_registro(email, usuario, passwd){
+  fetch("http://192.168.56.1:8081/SetUser/", {
+    method : "POST",
+    body : JSON.stringify({"idUsr" : 0, "email" : email, "contrasenya" : passwd, "tipoUsuario" : "normalUser", "alias" : usuario})
+  }).then(res => res.json())
+  .catch(error => console.error('Error:', error))
+  .then(response => console.log('Success:', response));
+}
+
 function Login(){
   return (
     <div className="menu">
       <BarraNavegacion/>
       <FormularioInicio/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  );
+}
+
+function Signin(){
+  return(
+    <div className="menu">
+      <BarraNavegacion/>
+      <FormularioRegistro/>
       <Footer/>
       <ToastContainer/>
     </div>
@@ -175,6 +266,10 @@ function principal(){
 
 function inicioSesion(){
   root.render(<Login/>, document.getElementById('root'))
+}
+
+function registrarse(){
+  root.render(<Signin/>, document.getElementById('root'))
 }
 
 export default App;
