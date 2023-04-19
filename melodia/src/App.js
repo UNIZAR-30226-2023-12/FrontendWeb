@@ -313,17 +313,15 @@ function enviar_peticion_inicio(e){
     mode : "no-cors",
     body : JSON.stringify({"email" : email, "contrasenya" : contra})
   }).then(function(response){
+
     console.log(response)
-    if(response.ok){
-      response.json().then(function(data){
-        idUsuario = data.idUsr;
-        toast(idUsuario);
-      }).catch(function(error){
-        console.error('Error al analizar la respuesta JSON:', error);
-      })
-    }else{
-      toast("Hubo un error HTML")
-    }
+    response.json().then(function(data){
+      idUsuario = data.idUsr;
+      toast(idUsuario);
+    }).catch(function(error){
+      console.error('Error al analizar la respuesta JSON:', error);
+    })
+    
   }).catch(error => toast(error.message))
 }
 
