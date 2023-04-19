@@ -10,6 +10,8 @@ import { createRoot } from 'react-dom/client';
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
 
+let idUsuario;
+
 class BarraNavegacion extends React.Component{
   render(){
     return (
@@ -105,9 +107,9 @@ class FormularioInicio extends React.Component{
                     <div class="col-lg-6">
                         <div class="text-center my-5">
                             <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1 rem"}}>Iniciar Sesión</h1>
-                                <form id="contactForm" style={{"margin" : "auto", "max-width" : "20rem", "width" : "100%", "align-self": "center"}} onSubmit={menuPrincipal}>
+                                <form id="contactForm" style={{"margin" : "auto", "max-width" : "20rem", "width" : "100%", "align-self": "center"}} onSubmit={enviar_peticion_inicio}>
                                     <div class="form-floating mb-3">
-                                        <input class="form-control" id="name" type="text" placeholder="Introduce tu correo electronico"/>
+                                        <input class="form-control" id="email" type="text" placeholder="Introduce tu correo electronico"/>
                                         <label for="name">Email</label>
                                     </div>
                                     <div class="form-floating mb-3">
@@ -263,8 +265,6 @@ function comprobar_entrada_registro(e){
   let contra = (document.getElementById("passwd")).value
   let recontra = (document.getElementById("repasswd")).value
 
-
-
   /* Sea la caja donde pondremos el texto de error */
   let textBox = document.getElementById("error_input")
 
@@ -293,13 +293,38 @@ function enviar_peticion_registro(email, usuario, passwd){
   .then(response => console.log('Success:', response));
 }
 
-function enviar_peticion_inicio(email, passwd){
-  fetch("http://192.168.56.1:8081/ValidateUser/", {
+function enviar_peticion_inicio(e){
+
+  //e.preventDefault();
+
+  let email = (document.getElementById("email")).value
+  let contra = (document.getElementById("passwd")).value
+  
+  let textBox = document.getElementById("error_input")
+
+  if (email === "" || contra === ""){
+      textBox.innerHTML = 'Complete todos los campos para iniciar sesión'
+      e.preventDefault();
+      return false;
+  }
+
+  fetch("http://192.168.56.1:8081/ValidateUserEmail/", {
     method : "POST",
-    body : JSON.stringify({"email" : email, "contrasenya" : passwd})
-  }).then(res => res.json())
-  .catch(error => console.error('Error:', error))
-  .then(response => console.log('Success:', response));
+    mode : "no-cors",
+    body : JSON.stringify({"email" : email, "contrasenya" : contra})
+  }).then(function(response){
+    console.log(response)
+    if(response.ok){
+      response.json().then(function(data){
+        idUsuario = data.idUsr;
+        toast(idUsuario);
+      }).catch(function(error){
+        console.error('Error al analizar la respuesta JSON:', error);
+      })
+    }else{
+      toast("Hubo un error HTML")
+    }
+  }).catch(error => toast(error.message))
 }
 
 function ultimo_punto_de_escucha(){
