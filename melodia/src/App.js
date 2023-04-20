@@ -12,6 +12,12 @@ const root = createRoot(domNode);
 
 let idUsuario;
 
+function active(elem, num){
+  if(elem === num){
+    return 'nav-link active'
+  }
+  return 'nav-link'
+}
 class BarraNavegacion extends React.Component{
   render(){
     return (
@@ -21,9 +27,9 @@ class BarraNavegacion extends React.Component{
                   <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
                   <div class="collapse navbar-collapse" id="navbarSupportedContent">
                       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                          <li class="nav-item"><a class="nav-link active" aria-current="page" onClick={principal}>Inicio</a></li>
-                          <li class="nav-item"><a class="nav-link" onClick={inicioSesion}>Iniciar Sesión</a></li>
-                          <li class="nav-item"><a class="nav-link" onClick={registrarse}>Registrarse</a></li>
+                          <li class="nav-item"><a id="nav" class={active('1', this.props.active)} aria-current="page" onClick={principal}>Inicio</a></li>
+                          <li class="nav-item"><a id="nav" class={active('2', this.props.active)} onClick={inicioSesion}>Iniciar Sesión</a></li>
+                          <li class="nav-item"><a id="nav" class={active('3', this.props.active)} onClick={registrarse}>Registrarse</a></li>
                       </ul>
                   </div>
               </div>
@@ -41,11 +47,11 @@ class BarraNavegacionApp extends React.Component{
                   <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
                   <div class="collapse navbar-collapse" id="navbarSupportedContent">
                       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                          <li class="nav-item"><a class="nav-link active" aria-current="page">Notificaciones  &#128276;</a></li>
-                          <li class="nav-item"><a class="nav-link">Perfil &#128578;	</a></li>
-                          <li class="nav-item"><a class="nav-link">Top Diario &#129351; </a></li>
+                          <li class="nav-item"><a id='nav' class="nav-link active" aria-current="page">Notificaciones  &#128276;</a></li>
+                          <li class="nav-item"><a id='nav' class="nav-link">Perfil &#128578;	</a></li>
+                          <li class="nav-item"><a id='nav' class="nav-link">Top Diario &#129351; </a></li>
                           <li><p>&emsp;&emsp;&emsp;&emsp;</p></li>
-                          <li class="nav-item"><a class="nav-link" onClick={inicioSesion}>Cerrar Sesión &#128682;</a></li>
+                          <li class="nav-item"><a id='nav' class="nav-link" onClick={inicioSesion}>Cerrar Sesión &#128682;</a></li>
                       </ul>
                   </div>
               </div>
@@ -238,7 +244,7 @@ function toast_comenzar(){
 function Inicio() {
   return (
     <div className="menu">
-      <BarraNavegacion/>
+      <BarraNavegacion active='1'/>
       <Cabecera/>
       <section class="bg-light py-5 border-bottom">
         <div class="container px-5 my-5">
@@ -356,7 +362,7 @@ function ultimo_punto_de_escucha(){
 function Login(){
   return (
     <div className="menu">
-      <BarraNavegacion/>
+      <BarraNavegacion active='2'/>
       <FormularioInicio/>
       <Footer/>
       <ToastContainer/>
@@ -367,7 +373,7 @@ function Login(){
 function Signin(){
   return(
     <div className="menu">
-      <BarraNavegacion/>
+      <BarraNavegacion active='3'/>
       <FormularioRegistro/>
       <Footer/>
       <ToastContainer/>
@@ -390,6 +396,7 @@ function App() {
 
   return (
     <Inicio/>
+    
   );
 
 }
