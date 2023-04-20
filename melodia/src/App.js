@@ -118,6 +118,7 @@ class FormularioInicio extends React.Component{
                                     </div>
                                     <button class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" id="submitButton" type="submit" >Iniciar Sesión</button>
                                 </form>
+                                <p class="fw-normal fst-italic text-warning fs-5" id="error_input"></p>
                             <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
                             </div>
                         </div>
@@ -288,14 +289,23 @@ function enviar_peticion_registro(email, usuario, passwd){
   fetch("http://192.168.56.1:8081/SetUser/", {
     method : "POST",
     body : JSON.stringify({"idUsr" : 0, "email" : email, "contrasenya" : passwd, "tipoUsuario" : "normalUser", "alias" : usuario})
-  }).then(res => res.json())
-  .catch(error => console.error('Error:', error))
-  .then(response => console.log('Success:', response));
+  }).then(function(response){
+    console.log(response)
+    if(response.ok){
+      response.json().then(function(data){
+        idUsuario = data.idUsr;
+        return menuPrincipal();
+      }).catch(function(error){
+        console.error('Error al analizar la respuesta JSON:', error);
+      })
+    }
+  })
+  .catch(error => toast(error.message))
 }
 
 function enviar_peticion_inicio(e){
 
-  //e.preventDefault();
+  e.preventDefault();
 
   let email = (document.getElementById("email")).value
   let contra = (document.getElementById("passwd")).value
@@ -303,25 +313,24 @@ function enviar_peticion_inicio(e){
   let textBox = document.getElementById("error_input")
 
   if (email === "" || contra === ""){
-      textBox.innerHTML = 'Complete todos los campos para iniciar sesión'
-      e.preventDefault();
+      textBox.innerHTML = 'Complete todos los campos<br> para iniciar sesión'
       return false;
   }
 
   fetch("http://192.168.56.1:8081/ValidateUserEmail/", {
     method : "POST",
-    mode : "no-cors",
     body : JSON.stringify({"email" : email, "contrasenya" : contra})
   }).then(function(response){
-
-    console.log(response)
-    response.json().then(function(data){
-      idUsuario = data.idUsr;
-      toast(idUsuario);
-    }).catch(function(error){
-      console.error('Error al analizar la respuesta JSON:', error);
-    })
-    
+    if(response.ok){
+      response.json().then(function(data){
+        idUsuario = data.idUsr;
+        return menuPrincipal();
+      }).catch(function(error){
+        console.error('Error al analizar la respuesta JSON:', error);
+      })
+    }else{
+      textBox.innerHTML = 'El usuario o la contraseña<br> son incorrectos'
+    }
   }).catch(error => toast(error.message))
 }
 
