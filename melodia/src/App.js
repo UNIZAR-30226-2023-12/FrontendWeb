@@ -23,7 +23,8 @@ class BarraNavegacion extends React.Component{
     return (
       <nav class="navbar navbar-expand-lg navbar-dark bg-blue_4th" style={{position : 'fixed', width : '100%'}}>
               <div class="container px-5">
-                  <a class="navbar-brand" href="#!">Melodia</a>
+                  <img class="navbar-brand" src="assets/favicon.ico" style={{"width" : "3rem", "height" : "auto"}}></img>
+                  <a class="navbar-brand" href="#!"onClick={menuPrincipal}>Melodia</a>
                   <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
                   <div class="collapse navbar-collapse" id="navbarSupportedContent">
                       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
@@ -43,12 +44,13 @@ class BarraNavegacionApp extends React.Component{
     return (
       <nav class="navbar navbar-expand-lg navbar-dark bg-blue_4th">
               <div class="container px-5">
-                  <a class="navbar-brand" href="#!">Melodia</a>
+                  <img class="navbar-brand" src="assets/favicon.ico" style={{"width" : "3rem", "height" : "auto"}}></img>
+                  <a class="navbar-brand" href="#!" onClick={menuPrincipal}>Melodia</a>
                   <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
                   <div class="collapse navbar-collapse" id="navbarSupportedContent">
                       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                           <li class="nav-item"><a id='nav' class="nav-link active" aria-current="page">Notificaciones  &#128276;</a></li>
-                          <li class="nav-item"><a id='nav' class="nav-link">Perfil &#128578;	</a></li>
+                          <li class="nav-item"><a id='nav' class="nav-link"  onClick={perfil}>Perfil &#128578;	</a></li>
                           <li class="nav-item"><a id='nav' class="nav-link">Top Diario &#129351; </a></li>
                           <li><p>&emsp;&emsp;&emsp;&emsp;</p></li>
                           <li class="nav-item"><a id='nav' class="nav-link" onClick={inicioSesion}>Cerrar Sesión &#128682;</a></li>
@@ -71,7 +73,7 @@ class Cabecera extends React.Component{
                               <h1 class="display-5 fw-bolder text-white mb-2">Melodia, una nueva forma de escuchar</h1>
                               <p class="lead text-white-50 mb-4">Descubre, Comparte y Disfruta de música, podcasts y mucho más</p>
                               <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!" onClick={toast_comenzar}>Comenzar</a>
+                                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!"onClick={registrarse}>Comenzar</a>
                                   <a class="btn btn-outline-light btn-lg px-4" href="#!">Más información</a>
                               </div>
                           </div>
@@ -140,9 +142,8 @@ class FormularioRegistro extends React.Component {
   render(){
     return(
       <>
-        <script src="./check.js"></script>
-        <header class="bg-blue_7th py-5">
-              <div class="container px-5">
+        <header class="bg-blue_7th py-5" >
+              <div class="container px-5" style={{"margin-top" : "3rem"}}>
                   <div class="row gx-5 justify-content-center">
                       <div class="col-lg-6">
                           <div class="text-center my-5">
@@ -187,6 +188,8 @@ class Button extends React.Component{
 
 const ButtonGroup = styled.div`
   display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
   justify-content: center;
 `
 // Usage
@@ -203,24 +206,56 @@ class MenuPrincipal extends React.Component{
   render(){
     return(
       <>
-        <div class="form-floating mb-3">
-          <input class="form-control" id="busqueda" type="text" placeholder="Cancion X"/>
-          <label for="busqueda">Buscar  &#128269;</label>
-        </div>
-        {ultimo_punto_de_escucha()}
-        <p></p>
-        <ButtonGroup>
-          <Button id="" text="Mis Carpetas"/>
-          <Button id="" text="Mis Listas"/>
-        </ButtonGroup>
-        <p></p>
-        <ButtonGroup>
-          <Button id="" text="Favoritos"/>
-          <Button id="" text="Random"/>
-          <Button id="" text="Social"/>
-        </ButtonGroup>
-        <p></p>
+        <div style={{"display" : "flex"}}>
+          <div style={{"width":"15rem", "margin-left" : "1rem"}}>
+            {ultimo_punto_de_escucha()}
+            <p><br/></p>
+            <ButtonGroup>
+              <Button id="" text="Mis Carpetas"/>
+              <p></p>
+              <Button id="" text="Mis Listas"/>
+            </ButtonGroup>
+            <p><br/></p>
+            <ButtonGroup>
+              <Button id="" text="Favoritos"/>
+              <p></p>
+              <Button id="" text="Random"/>
+              <p></p>
+              <Button id="" text="Social"/>
+            </ButtonGroup>
+            <p><br/></p>
+          </div>
+          <div class="bg-blue_3th" style={{"width" : "100%", "heigth" : "100%"}}>
+            <div class="form-floating mb-3">
+              <input class="form-control" id="busqueda" type="text" placeholder="Cancion X"/>
+              <label for="busqueda">Buscar  &#128269;</label>
+            </div>
+          </div>
+        </div> 
       </>
+    )
+  }
+}
+
+class PerfilUsuario extends React.Component{
+  render(){
+    return (
+      <header class="bg-blue_7th py-5">
+              <div class="container px-5">
+                  <div class="row gx-5 justify-content-center">
+                      <div class="col-lg-6">
+                          <div class="text-center my-5">
+                              <h1 class="display-5 fw-bolder text-white mb-4">Tu perfil</h1>
+                              <p class="lead text-white-50 mb-2">Nombre Usuario</p>
+                              <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!">Comenzar</a>
+                                  <a class="btn btn-outline-light btn-lg px-4" href="#!">Más información</a>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+        </header>
     )
   }
 }
@@ -229,7 +264,7 @@ class Footer extends React.Component{
   render(){
     return (
         <>
-          <footer style={{position: 'fixed', width : '100%', bottom: 0}} class="py-5 bg-blue_4th">
+          <footer style={{position: 'fixed', display : 'flex', "flex-direction" : "column", "justify-content" : "center" , width : '100%', height : '2rem' , bottom: 0}} class="py-5 bg-blue_4th">
               <div class="container px-5"><p class="m-0 text-center text-white">Copyright &copy; Mussa Enterprise&#xae; 2023</p></div>
           </footer>
         </>
@@ -237,11 +272,8 @@ class Footer extends React.Component{
   }
 }
 
-function toast_comenzar(){
-  toast("Tonto el que lo lea jijiji")
-}
-
-function Inicio() {
+function Inicio() 
+{
   return (
     <div className="menu">
       <BarraNavegacion active='1'/>
@@ -276,12 +308,12 @@ function comprobar_entrada_registro(e){
   let textBox = document.getElementById("error_input")
 
   if (email === "" || usuario === "" || contra === "" || recontra === ""){
-      textBox.innerHTML = 'Para registrarse debe rellenar todos los campos'
+      toast.warning("Para registrarse debe rellenar todos los campos")
       e.preventDefault();
       return false;
   }
   else if(contra !== recontra){
-      textBox.innerHTML = 'Las contraseñas introducidas no coinciden'
+    toast.error("Las contraseñas introducidas no coinciden") 
       e.preventDefault();  
       return false;
   }
@@ -319,7 +351,8 @@ function enviar_peticion_inicio(e){
   let textBox = document.getElementById("error_input")
 
   if (email === "" || contra === ""){
-      textBox.innerHTML = 'Complete todos los campos<br> para iniciar sesión'
+      toast.warning("Complete todos los campos para iniciar sesión");
+      
       return false;
   }
 
@@ -335,7 +368,7 @@ function enviar_peticion_inicio(e){
         console.error('Error al analizar la respuesta JSON:', error);
       })
     }else{
-      textBox.innerHTML = 'El usuario o la contraseña<br> son incorrectos'
+      toast.error("El usuario o la contraseña son incorrectos")
     }
   }).catch(error => toast(error.message))
 }
@@ -381,6 +414,17 @@ function Signin(){
   );
 }
 
+function Profile(){
+  return(
+    <div className="menu">
+      <BarraNavegacionApp/>
+      <PerfilUsuario/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
 function Menu(){
   return(
     <div className="menu">
@@ -411,6 +455,10 @@ function inicioSesion(){
 
 function registrarse(){
   root.render(<Signin/>, document.getElementById('root'))
+}
+
+function perfil(){
+  root.render(<Profile/>, document.getElementById('root'))
 }
 
 function menuPrincipal(){
