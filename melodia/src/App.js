@@ -289,6 +289,11 @@ class PerfilUsuario extends React.Component{
                 <h1 class="tuPerfil text-tuPerfil-50 mb-3">Tu perfil</h1>
                 <p class="display-5 fw-bolder text-white mb-4 ">Juanito</p>
                 <div class="d-grid gap-3 d-sm-flex justify-content-sm-center"/>
+                <div class="row justify-content-center align-items-center"/>
+                <div class="row justify-content-center align-items-center">
+                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!">Ser artista</a>
+                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!">Subir canción</a>
+                </div>
               </div>
             </div>
           </div>
