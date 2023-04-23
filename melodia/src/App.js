@@ -144,8 +144,8 @@ class FormularioRegistro extends React.Component {
   render(){
     return(
       <>
-        <header class="bg-blue_7th py-5" >
-              <div class="container px-5" style={{"margin-top" : "3rem"}}>
+        <header class="bg-blue_7th main" style={{"align-self" : "center"}}>
+              <div class="container px-5">
                   <div class="row gx-5 justify-content-center">
                       <div class="col-lg-6">
                           <div class="text-center my-5">
@@ -214,7 +214,7 @@ const AudioPlayer = () => {
 class MenuPrincipal extends React.Component{
   render(){
     return(
-      <>
+      <div class="main">
         <div style={{"display" : "flex"}}>
           <div style={{"width":"15rem", "margin-left" : "1rem"}}>
             {ultimo_punto_de_escucha()}
@@ -241,7 +241,7 @@ class MenuPrincipal extends React.Component{
             </div>
           </div>
         </div> 
-      </>
+      </div>
     )
   }
 }
@@ -345,13 +345,14 @@ class ListasReproduccion extends React.Component{
   }
 }
 
-class ListaReproduccion extends React.Component{
+class ListaReproduccionContenido extends React.Component{
 
   constructor(props) {
     super(props);
-    this.state = {listas: ""};
+    this.state = {listas: "", nombreLista: ""};
   }
 
+  // hay que comprobar cómo furula esto
   // componentDidMount() {
   //   fetch(ipBackend + "SetLista/", {
   //     method : "POST",
@@ -369,8 +370,7 @@ class ListaReproduccion extends React.Component{
   //   }).catch(error => toast(error.message))
   // }
 
-  // Cristina: importante el botón de crear nueva tiene que llamar a la api para crear otra lista de reproducción y sacar a la pantalla
-  // específica de esa nueva lista de reproducción para que añada canciones
+  // Cristina: importante el botón de añadir canciones tiene que llamar a la api para meter otra canción y volver a recargar esta página
   render(){
     return (
       <>
@@ -379,8 +379,8 @@ class ListaReproduccion extends React.Component{
             <div class="row gx-5 justify-content-center">
               <div class="col-lg-6">
                 <div class="text-center my-5">
-                  <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}}>Mis listas de reproducción</h1>
-                  <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Crear nueva lista"/>
+                  <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}}>{this.state.nombreLista}</h1>
+                  <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Añadir canciones"/>
                 </div>
               </div>
             </div>
@@ -555,9 +555,11 @@ function Login(){
 
 function Signin(){
   return(
-    <div className="menu">
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacion active='3'/>
-      <FormularioRegistro/>
+      <div style={{ "display" : "flex", "flex": 1 }}>
+        <FormularioRegistro/>
+      </div>
       <Footer/>
       <ToastContainer/>
     </div>
@@ -566,7 +568,7 @@ function Signin(){
 
 function Profile(){
   return(
-    <div className="menu">
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
       <PerfilUsuario/>
       <Footer/>
@@ -577,7 +579,7 @@ function Profile(){
 
 function PlayLists(){
   return(
-    <div className="menu">
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
       <ListasReproduccion/>
       <Footer/>
@@ -586,11 +588,11 @@ function PlayLists(){
   )
 }
 
-function PlayList(){
+function PlayListContenido(){
   return(
-    <div className="menu">
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
-      <ListaReproduccion/>
+      <ListaReproduccionContenido/>
       <Footer/>
       <ToastContainer/>
     </div>
@@ -599,7 +601,7 @@ function PlayList(){
 
 function Menu(){
   return(
-    <div className="menu">
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
       <MenuPrincipal/>
       <Footer/>
@@ -644,7 +646,7 @@ function misListasDeReproduccion(){
 }
 
 function nuevaListaDeReproduccion(){
-  root.render(<PlayList/>)
+  root.render(<PlayListContenido/>)
 }
 
 export default App;
