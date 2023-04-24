@@ -80,6 +80,12 @@
   }
 }
 
+html{
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   margin: 0;
   font-family: var(--bs-body-font-family);
@@ -91,6 +97,12 @@ body {
   background-color: var(--bs-body-bg);
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  height: 100%;
+  padding: 0;
+}
+
+.main{
+  flex:1;
 }
 
 hr {
@@ -493,6 +505,11 @@ progress {
 
 .lead {
   font-size: 1.25rem;
+  font-weight: 300;
+}
+
+.tuPerfil {
+  font-size: 2rem;
   font-weight: 300;
 }
 
@@ -7859,6 +7876,11 @@ textarea.form-control-lg {
 .text-white-50 {
   --bs-text-opacity: 1;
   color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.text-tuPerfil-50 {
+  --bs-text-opacity: 1;
+  color: rgba(255,255,255, 0.9) !important;
 }
 
 .text-reset {

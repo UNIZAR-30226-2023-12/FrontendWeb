@@ -9,6 +9,8 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
+const ipBackend = "http://192.168.56.1:8081/";
+const passwd = "";
 
 let idUsuario;
 
@@ -21,10 +23,10 @@ function active(elem, num){
 class BarraNavegacion extends React.Component{
   render(){
     return (
-      <nav class="navbar navbar-expand-lg navbar-dark bg-blue_4th" style={{position : 'fixed', width : '100%'}}>
+      <nav class="navbar navbar-expand-lg navbar-dark bg-blue_4th">
               <div class="container px-5">
-                  <img class="navbar-brand" src="assets/favicon.ico" style={{"width" : "3rem", "height" : "auto"}}></img>
-                  <a class="navbar-brand" href="#!"onClick={menuPrincipal}>Melodia</a>
+                  <img class="navbar-brand" id="nav" src="assets/favicon.ico" style={{"width" : "3rem", "height" : "auto"}} onClick={principal}></img>
+                  <a class="navbar-brand" id="nav" href="#!"onClick={principal}>Melodia</a>
                   <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
                   <div class="collapse navbar-collapse" id="navbarSupportedContent">
                       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
@@ -44,7 +46,7 @@ class BarraNavegacionApp extends React.Component{
     return (
       <nav class="navbar navbar-expand-lg navbar-dark bg-blue_4th">
               <div class="container px-5">
-                  <img class="navbar-brand" src="assets/favicon.ico" style={{"width" : "3rem", "height" : "auto"}}></img>
+                  <img class="navbar-brand" id="nav" src="assets/favicon.ico" style={{"width" : "3rem", "height" : "auto"}} onClick={menuPrincipal}></img>
                   <a class="navbar-brand" href="#!" onClick={menuPrincipal}>Melodia</a>
                   <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
                   <div class="collapse navbar-collapse" id="navbarSupportedContent">
@@ -73,8 +75,8 @@ class Cabecera extends React.Component{
                               <h1 class="display-5 fw-bolder text-white mb-2">Melodia, una nueva forma de escuchar</h1>
                               <p class="lead text-white-50 mb-4">Descubre, Comparte y Disfruta de música, podcasts y mucho más</p>
                               <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!"onClick={registrarse}>Comenzar</a>
-                                  <a class="btn btn-outline-light btn-lg px-4" href="#!">Más información</a>
+                                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!" onClick={registrarse}>Comenzar</a>
+                                  <a class="btn btn-outline-light btn-lg px-4" href="#!" onClick={menuPrincipal}>Más información</a>
                               </div>
                           </div>
                       </div>
@@ -109,8 +111,8 @@ class ImagenInfo extends React.Component{
 class FormularioInicio extends React.Component{
   render(){
     return(
-        <header class="bg-blue_7th py-5">
-            <div class="container px-5" style={{"margin-top" : "8%"}}>
+        <header class="bg-blue_7th py-5 main" style={{"align-self" : "center"}}>
+            <div class="container">
                 <div class="row gx-5 justify-content-center">
                     <div class="col-lg-6">
                         <div class="text-center my-5">
@@ -142,8 +144,8 @@ class FormularioRegistro extends React.Component {
   render(){
     return(
       <>
-        <header class="bg-blue_7th py-5" >
-              <div class="container px-5" style={{"margin-top" : "3rem"}}>
+        <header class="bg-blue_7th main" style={{"align-self" : "center"}}>
+              <div class="container px-5">
                   <div class="row gx-5 justify-content-center">
                       <div class="col-lg-6">
                           <div class="text-center my-5">
@@ -182,7 +184,13 @@ class FormularioRegistro extends React.Component {
 
 class Button extends React.Component{
   render(){
-    return (<button class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" id={this.props.id} style={this.props.style}>{this.props.text}</button>)
+    return (<a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!" id={this.props.id} style={this.props.style}>{this.props.text}</a>)
+  }
+}
+
+class ButtonOnClick extends React.Component{
+  render(){
+    return (<a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!" onClick={this.props.onClick} id={this.props.id} style={this.props.style}>{this.props.text}</a>)
   }
 }
 
@@ -202,10 +210,11 @@ const AudioPlayer = () => {
   );
 };
 
+// <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!" onClick={misListasDeReproduccion}>Mis Listas</a>
 class MenuPrincipal extends React.Component{
   render(){
     return(
-      <>
+      <div class="main">
         <div style={{"display" : "flex"}}>
           <div style={{"width":"15rem", "margin-left" : "1rem"}}>
             {ultimo_punto_de_escucha()}
@@ -213,7 +222,7 @@ class MenuPrincipal extends React.Component{
             <ButtonGroup>
               <Button id="" text="Mis Carpetas"/>
               <p></p>
-              <Button id="" text="Mis Listas"/>
+              <ButtonOnClick onClick={misListasDeReproduccion} id="" text="Mis Listas"/>
             </ButtonGroup>
             <p><br/></p>
             <ButtonGroup>
@@ -232,39 +241,171 @@ class MenuPrincipal extends React.Component{
             </div>
           </div>
         </div> 
-      </>
+      </div>
     )
   }
 }
 
 class PerfilUsuario extends React.Component{
+  constructor(props) {
+    super(props);
+    this.state = {name: ""};
+  }
+
+  componentDidMount() {
+   fetch(ipBackend + "getNameUsr/",{
+      method : "POST",
+      body : JSON.stringify({"idUsr" : idUsuario})
+    }).then(res => res.json())
+     .then(
+       (result) => {
+         this.setState({
+           name: result.name
+           });
+         },
+         (error) => {
+           console.log(error);
+         }
+       )
+   }
+  
+  /*{this.state.name} poner donde dice juanito cuando la funcion de recuperar nombre este en el backend*/
   render(){
     return (
       <header class="bg-blue_7th py-5">
-              <div class="container px-5">
-                  <div class="row gx-5 justify-content-center">
-                      <div class="col-lg-6">
-                          <div class="text-center my-5">
-                              <h1 class="display-5 fw-bolder text-white mb-4">Tu perfil</h1>
-                              <p class="lead text-white-50 mb-2">Nombre Usuario</p>
-                              <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!">Comenzar</a>
-                                  <a class="btn btn-outline-light btn-lg px-4" href="#!">Más información</a>
-                              </div>
-                          </div>
-                      </div>
-                  </div>
+        <div class="container">
+          <div class="row justify-content-center align-items-center">
+            <div class="col-md-4">
+              <div class="card-body p-5">
+                <div class="list-unstyled mb-4">
+                  <li class="mb-2">
+                    <img src="assets/boy_listening_music.jpg" width="100%" style={{"border-radius" : "50%"}}/>
+                  </li>
+                </div>
               </div>
-        </header>
+            </div>
+            <div class="col-md-4 mb-4 mb-md-0">
+              <div class="text-center">
+                <h1 class="tuPerfil text-tuPerfil-50 mb-3">Tu perfil</h1>
+                <p class="display-5 fw-bolder text-white mb-4 ">Juanito</p>
+                <div class="d-grid gap-3 d-sm-flex justify-content-sm-center"/>
+                <div class="row justify-content-center align-items-center"/>
+                <div class="row justify-content-center align-items-center">
+                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!">Ser artista</a>
+                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!">Subir canción</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
     )
   }
 }
 
+class ListasReproduccion extends React.Component{
+
+  constructor(props) {
+    super(props);
+    this.state = {listas: ""};
+  }
+
+  // componentDidMount() {
+  //   fetch(ipBackend + "GetListasUsr/", {
+  //     method : "POST",
+  //     body : JSON.stringify({"idUsr" : idUsuario, "contrasenya" : passwd})
+  //   }).then(function(response){
+  //     if(response.ok){
+  //       response.json().then(function(data){
+  //         this.state.listas = data.listas;
+  //       }).catch(function(error){
+  //         console.error('Error al analizar la respuesta JSON:', error);
+  //       })
+  //     }else{
+  //       toast.error("El usuario o la contraseña son incorrectos")
+  //     }
+  //   }).catch(error => toast(error.message))
+  // }
+
+  // Cristina: importante el botón de crear nueva tiene que llamar a la api para crear otra lista de reproducción y sacar a la pantalla
+  // específica de esa nueva lista de reproducción para que añada canciones
+  render(){
+    return (
+      <>
+        <header class="bg-blue_7th py-5" >
+          <div class="container px-5" style={{"margin-top" : "3rem"}}>
+            <div class="row gx-5 justify-content-center">
+              <div class="col-lg-6">
+                <div class="text-center my-5">
+                  <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}}>Mis listas de reproducción</h1>
+                  <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Crear nueva lista"/>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+        <mostrar_listas_reproduccion playlists={this.state.listas} />
+      </>
+    )
+  }
+}
+
+class ListaReproduccionContenido extends React.Component{
+
+  constructor(props) {
+    super(props);
+    this.state = {listas: "", nombreLista: ""};
+  }
+
+  // hay que comprobar cómo furula esto
+  // componentDidMount() {
+  //   fetch(ipBackend + "SetLista/", {
+  //     method : "POST",
+  //     body : JSON.stringify({"idUsr" : idUsuario, "contrasenya" : passwd})
+  //   }).then(function(response){
+  //     if(response.ok){
+  //       response.json().then(function(data){
+  //         this.state.listas = data.listas;
+  //       }).catch(function(error){
+  //         console.error('Error al analizar la respuesta JSON:', error);
+  //       })
+  //     }else{
+  //       toast.error("El usuario o la contraseña son incorrectos")
+  //     }
+  //   }).catch(error => toast(error.message))
+  // }
+
+  // Cristina: importante el botón de añadir canciones tiene que llamar a la api para meter otra canción y volver a recargar esta página
+  render(){
+    return (
+      <>
+        <header class="bg-blue_7th py-5" >
+          <div class="container px-5" style={{"margin-top" : "3rem"}}>
+            <div class="row gx-5 justify-content-center">
+              <div class="col-lg-6">
+                <div class="text-center my-5">
+                  <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}}>{this.state.nombreLista}</h1>
+                  <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Añadir canciones"/>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+        <mostrar_listas_reproduccion playlists={this.state.listas} />
+      </>
+    )
+  }
+}
+
+
+/** 
+ * Clase que genera el footer básico de Mussa Enterprise
+*/
 class Footer extends React.Component{
   render(){
     return (
         <>
-          <footer style={{position: 'fixed', display : 'flex', "flex-direction" : "column", "justify-content" : "center" , width : '100%', height : '2rem' , bottom: 0}} class="py-5 bg-blue_4th">
+          <footer style={{display : 'flex', "flex-direction" : "column", "justify-content" : "center" , width : '100%', height : '2rem' }} class="py-5 bg-blue_4th">
               <div class="container px-5"><p class="m-0 text-center text-white">Copyright &copy; Mussa Enterprise&#xae; 2023</p></div>
           </footer>
         </>
@@ -272,8 +413,10 @@ class Footer extends React.Component{
   }
 }
 
-function Inicio() 
-{
+/*
+* Función que muestra la página inicial de la web de Melodia
+*/
+function Inicio() {
   return (
     <div className="menu">
       <BarraNavegacion active='1'/>
@@ -324,7 +467,7 @@ function comprobar_entrada_registro(e){
 }
 
 function enviar_peticion_registro(email, usuario, passwd){
-  fetch("http://192.168.56.1:8081/SetUser/", {
+  fetch(ipBackend + "SetUser/", {
     method : "POST",
     body : JSON.stringify({"idUsr" : 0, "email" : email, "contrasenya" : passwd, "tipoUsuario" : "normalUser", "alias" : usuario})
   }).then(function(response){
@@ -338,7 +481,7 @@ function enviar_peticion_registro(email, usuario, passwd){
       })
     }
   })
-  .catch(error => toast(error.message))
+  .catch(error => toast.error(error.message))
 }
 
 function enviar_peticion_inicio(e){
@@ -356,7 +499,7 @@ function enviar_peticion_inicio(e){
       return false;
   }
 
-  fetch("http://192.168.56.1:8081/ValidateUserEmail/", {
+  fetch(ipBackend + "ValidateUserEmail/", {
     method : "POST",
     body : JSON.stringify({"email" : email, "contrasenya" : contra})
   }).then(function(response){
@@ -370,7 +513,7 @@ function enviar_peticion_inicio(e){
     }else{
       toast.error("El usuario o la contraseña son incorrectos")
     }
-  }).catch(error => toast(error.message))
+  }).catch(error => toast.error(error.message))
 }
 
 function ultimo_punto_de_escucha(){
@@ -383,20 +526,32 @@ function ultimo_punto_de_escucha(){
   )
 }
 
-/*function listarListaReproduccion(idUsuario, ){
-  fetch("http://192.168.56.1:8081/GetListasUsr/", {
-    method : "POST",
-    body : JSON.stringify({"idUsr" : 0, "email" : email, "contrasenya" : passwd, "tipoUsuario" : "normalUser", "alias" : usuario})
-  }).then(res => res.json())
-  .catch(error => console.error('Error:', error))
-  .then(response => console.log('Success:', response));
-}*/
+function mostrar_listas_reproduccion(props) {
+  const playlists = props.playlists;
+
+  const playlistItems = playlists.map((playlist) => (
+    <div key={playlist.link}>
+      <h3>{playlist.name}</h3>
+      <p>{playlist.description}</p>
+      <a href={playlist.link}>Ver playlist</a>
+    </div>
+  ));
+
+  return (
+    <div>
+      <h2>Listas de reproducción:</h2>
+      {playlistItems}
+    </div>
+  );
+}
 
 function Login(){
   return (
-    <div className="menu">
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacion active='2'/>
-      <FormularioInicio/>
+      <div style={{ "display" : "flex", "flex": 1 }}>
+        <FormularioInicio/>
+      </div>
       <Footer/>
       <ToastContainer/>
     </div>
@@ -405,9 +560,11 @@ function Login(){
 
 function Signin(){
   return(
-    <div className="menu">
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacion active='3'/>
-      <FormularioRegistro/>
+      <div style={{ "display" : "flex", "flex": 1 }}>
+        <FormularioRegistro/>
+      </div>
       <Footer/>
       <ToastContainer/>
     </div>
@@ -416,7 +573,7 @@ function Signin(){
 
 function Profile(){
   return(
-    <div className="menu">
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
       <PerfilUsuario/>
       <Footer/>
@@ -425,9 +582,31 @@ function Profile(){
   )
 }
 
+function PlayLists(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <ListasReproduccion/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
+function PlayListContenido(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <ListaReproduccionContenido/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
 function Menu(){
   return(
-    <div className="menu">
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
       <MenuPrincipal/>
       <Footer/>
@@ -445,24 +624,34 @@ function App() {
 
 }
 
+// Funciones iniciales para cargar el código de la nueva vista de la web
+
 function principal(){
-  root.render(<Inicio/>, document.getElementById('root'))
+  root.render(<Inicio/>)
 }
 
 function inicioSesion(){
-  root.render(<Login/>, document.getElementById('root'))
+  root.render(<Login/>)
 }
 
 function registrarse(){
-  root.render(<Signin/>, document.getElementById('root'))
+  root.render(<Signin/>)
 }
 
 function perfil(){
-  root.render(<Profile/>, document.getElementById('root'))
+  root.render(<Profile/>)
 }
 
 function menuPrincipal(){
-  root.render(<Menu/>, document.getElementById('root'))
+  root.render(<Menu/>)
+}
+
+function misListasDeReproduccion(){
+  root.render(<PlayLists/>)
+}
+
+function nuevaListaDeReproduccion(){
+  root.render(<PlayListContenido/>)
 }
 
 export default App;
