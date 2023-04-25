@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import styled from "styled-components"
+import AudioPlayer from 'react-h5-audio-player';
+import 'react-h5-audio-player/lib/styles.css';
 
 import { createRoot } from 'react-dom/client';
 
@@ -202,6 +204,7 @@ const ButtonGroup = styled.div`
 `
 // Usage
 
+/*
 const AudioPlayer = () => {
   return (
     <div className="audio-player">
@@ -209,38 +212,46 @@ const AudioPlayer = () => {
     </div>
   );
 };
+*/
 
 // <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!" onClick={misListasDeReproduccion}>Mis Listas</a>
 class MenuPrincipal extends React.Component{
   render(){
     return(
-      <div class="main">
-        <div style={{"display" : "flex"}}>
-          <div style={{"width":"15rem", "margin-left" : "1rem"}}>
-            {ultimo_punto_de_escucha()}
-            <p><br/></p>
-            <ButtonGroup>
-              <Button id="" text="Mis Carpetas"/>
-              <p></p>
-              <ButtonOnClick onClick={misListasDeReproduccion} id="" text="Mis Listas"/>
-            </ButtonGroup>
-            <p><br/></p>
-            <ButtonGroup>
-              <Button id="" text="Favoritos"/>
-              <p></p>
-              <Button id="" text="Random"/>
-              <p></p>
-              <Button id="" text="Social"/>
-            </ButtonGroup>
-            <p><br/></p>
-          </div>
-          <div class="bg-blue_3th" style={{"width" : "100%", "heigth" : "100%"}}>
+      <div class="main" style={{"display" : "flex"}}>
+        <div style={{"display" : "flex", "flex-direction" : "column", "justify-content" : "center" , "width":"15rem", "margin-left" : "0.5rem"}}>
+          {ultimo_punto_de_escucha()}
+          <p><br/></p>
+          <ButtonGroup>
+            <Button id="" text="Mis Carpetas"/>
+            <p></p>
+            <ButtonOnClick onClick={misListasDeReproduccion} id="" text="Mis Listas"/>
+          </ButtonGroup>
+          <p><br/></p>
+          <ButtonGroup>
+            <Button id="" text="Favoritos"/>
+            <p></p>
+            <Button id="" text="Random"/>
+            <p></p>
+            <Button id="" text="Social"/>
+          </ButtonGroup>
+          <p><br/></p>
+        </div>
+        <div style={{"display" : "flex", "flex-direction" : "column", "flex" : "1"}}>
+          <div class="bg-blue_3th main" style={{"width" : "100%", "heigth" : "100%", "flex": 1 }}>
             <div class="form-floating mb-3">
               <input class="form-control" id="busqueda" type="text" placeholder="Cancion X"/>
               <label for="busqueda">Buscar  &#128269;</label>
             </div>
           </div>
-        </div> 
+          <div style={{"width" : "100%"}}>
+            <AudioPlayer
+              autoPlay
+              src="ost/test_sound.mp3"
+              onPlay={e => console.log("onPlay")}
+            />
+          </div>
+        </div>
       </div>
     )
   }
@@ -272,7 +283,7 @@ class PerfilUsuario extends React.Component{
   /*{this.state.name} poner donde dice juanito cuando la funcion de recuperar nombre este en el backend*/
   render(){
     return (
-      <header class="bg-blue_7th py-5">
+      <header class="bg-blue_7th py-5" style={{"display":"flex", "flex-direction":"column", "justify-content":"center","flex" : 1}}>
         <div class="container">
           <div class="row justify-content-center align-items-center">
             <div class="col-md-4">

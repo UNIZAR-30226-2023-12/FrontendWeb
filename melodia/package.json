@@ -10,6 +10,7 @@
     "react": "^18.2.0",
     "react-bootstrap": "^2.7.3",
     "react-dom": "^18.2.0",
+    "react-h5-audio-player": "^3.8.6",
     "react-scripts": "5.0.1",
     "react-toastify": "^9.1.2",
     "styled-components": "^5.3.9",
