@@ -11,10 +11,10 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-const ipBackend = "http://192.168.56.1:8081/";
-const passwd = "";
-
-let idUsuario;
+const ipBackend = "http://127.0.0.1:8081/";
+window.password = "example";
+window.idUsuario = "example";
+window.listasReproduccion = "example";
 
 function active(elem, num){
   if(elem === num){
@@ -214,7 +214,6 @@ const AudioPlayer = () => {
 };
 */
 
-// <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!" onClick={misListasDeReproduccion}>Mis Listas</a>
 class MenuPrincipal extends React.Component{
   render(){
     return(
@@ -266,7 +265,7 @@ class PerfilUsuario extends React.Component{
   componentDidMount() {
    fetch(ipBackend + "getNameUsr/",{
       method : "POST",
-      body : JSON.stringify({"idUsr" : idUsuario})
+      body : JSON.stringify({"idUsr" : window.idUsuario})
     }).then(res => res.json())
      .then(
        (result) => {
@@ -300,6 +299,11 @@ class PerfilUsuario extends React.Component{
                 <h1 class="tuPerfil text-tuPerfil-50 mb-3">Tu perfil</h1>
                 <p class="display-5 fw-bolder text-white mb-4 ">Juanito</p>
                 <div class="d-grid gap-3 d-sm-flex justify-content-sm-center"/>
+                <div class="row justify-content-center align-items-center"/>
+                <div class="row justify-content-center align-items-center">
+                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!">Ser artista</a>
+                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!">Subir canción</a>
+                </div>
               </div>
             </div>
           </div>
@@ -313,28 +317,25 @@ class ListasReproduccion extends React.Component{
 
   constructor(props) {
     super(props);
-    this.state = {listas: ""};
   }
 
-  // componentDidMount() {
-  //   fetch(ipBackend + "GetListasUsr/", {
-  //     method : "POST",
-  //     body : JSON.stringify({"idUsr" : idUsuario, "contrasenya" : passwd})
-  //   }).then(function(response){
-  //     if(response.ok){
-  //       response.json().then(function(data){
-  //         this.state.listas = data.listas;
-  //       }).catch(function(error){
-  //         console.error('Error al analizar la respuesta JSON:', error);
-  //       })
-  //     }else{
-  //       toast.error("El usuario o la contraseña son incorrectos")
-  //     }
-  //   }).catch(error => toast(error.message))
-  // }
+  componentDidMount() {
+    fetch(ipBackend + "GetListasUsr/", {
+      method : "POST",
+      body : JSON.stringify({"email" : window.idUsuario, "contrasenya" : window.passwd})
+    }).then(function(response){
+      if(response.ok){
+        response.json().then(function(data){
+          window.listasReproduccion = data.listas;
+        }).catch(function(error){
+          console.error('Error al analizar la respuesta JSON:', error);
+        })
+      }else{
+        toast.error("El usuario o la contraseña son incorrectos")
+      }
+    }).catch(error => toast(error.message))
+  }
 
-  // Cristina: importante el botón de crear nueva tiene que llamar a la api para crear otra lista de reproducción y sacar a la pantalla
-  // específica de esa nueva lista de reproducción para que añada canciones
   render(){
     return (
       <>
@@ -345,6 +346,99 @@ class ListasReproduccion extends React.Component{
                 <div class="text-center my-5">
                   <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}}>Mis listas de reproducción</h1>
                   <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Crear nueva lista"/>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+        <mostrar_listas_reproduccion playlists={window.listasReproduccion} />
+      </>
+    )
+  }
+}
+
+class NuevaListaReproduccionContenido extends React.Component{
+
+  constructor(props) {
+    super(props);
+    this.state = {listas: "", nombreLista: ""};
+  }
+
+  componentDidMount() {
+    fetch(ipBackend + "SetLista/", {
+      method : "POST",
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd})
+    }).then(function(response){
+      if(response.ok){
+        response.json().then(function(data){
+          
+        }).catch(function(error){
+          console.error('Error al analizar la respuesta JSON:', error);
+        })
+      }else{
+        toast.error("El usuario o la contraseña son incorrectos")
+      }
+    }).catch(error => toast(error.message))
+  }
+
+  // Cristina: importante el botón de añadir canciones tiene que llamar a la api para meter otra canción y volver a recargar esta página
+  render(){
+    return (
+      <>
+        <header class="bg-blue_7th py-5" >
+          <div class="container px-5" style={{"margin-top" : "3rem"}}>
+            <div class="row gx-5 justify-content-center">
+              <div class="col-lg-6">
+                <div class="text-center my-5">
+                  <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}}>Nueva lista de reproducción</h1>
+                  <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+        <mostrar_listas_reproduccion playlists={this.state.listas} />
+      </>
+    )
+  }
+}
+
+class AnyadirCancionListaReproduccion extends React.Component{
+
+  constructor(props) {
+    super(props);
+    this.state = {listas: "", nombreLista: ""};
+  }
+
+  // HAY QUE CAMBIAR LA FUNCION PORQUE AHORA MISMO NO HAY NADA QUE DEVUELVA LO QUE NECESITO: METER UNA BÚSQUEDA
+  componentDidMount() {
+    fetch(ipBackend + "GetSongs/", {
+      method : "GET",
+      //body : JSON.stringify({"listaIDs" : idUsuario, "calidadAlta" : passwd})
+    }).then(function(response){
+      if(response.ok){
+        response.json().then(function(data){
+          this.state.listas = data.listas;
+        }).catch(function(error){
+          console.error('Error al analizar la respuesta JSON:', error);
+        })
+      }else{
+        toast.error("El usuario o la contraseña son incorrectos")
+      }
+    }).catch(error => toast(error.message))
+  }
+
+
+  render(){
+    return (
+      <>
+        <header class="bg-blue_7th py-5" >
+          <div class="container px-5" style={{"margin-top" : "3rem"}}>
+            <div class="row gx-5 justify-content-center">
+              <div class="col-lg-6">
+                <div class="text-center my-5">
+                  <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}}>Añadir canciones a la lista de reproducción</h1>
+                  <ButtonOnClick onClick={meterCancionesEnListaRep} id="" text="Añadir canciones"/>
                 </div>
               </div>
             </div>
@@ -402,6 +496,7 @@ class ListaReproduccionContenido extends React.Component{
     )
   }
 }
+
 
 
 /** 
@@ -472,15 +567,16 @@ function comprobar_entrada_registro(e){
   return true
 }
 
-function enviar_peticion_registro(email, usuario, passwd){
+function enviar_peticion_registro(email, usuario, contra){
   fetch(ipBackend + "SetUser/", {
     method : "POST",
-    body : JSON.stringify({"idUsr" : 0, "email" : email, "contrasenya" : passwd, "tipoUsuario" : "normalUser", "alias" : usuario})
+    body : JSON.stringify({"idUsr" : 0, "email" : email, "contrasenya" : contra, "tipoUsuario" : "normalUser", "alias" : usuario})
   }).then(function(response){
     console.log(response)
     if(response.ok){
       response.json().then(function(data){
-        idUsuario = data.idUsr;
+        window.idUsuario = email;
+        window.passwd = contra
         return menuPrincipal();
       }).catch(function(error){
         console.error('Error al analizar la respuesta JSON:', error);
@@ -511,7 +607,8 @@ function enviar_peticion_inicio(e){
   }).then(function(response){
     if(response.ok){
       response.json().then(function(data){
-        idUsuario = data.idUsr;
+        window.idUsuario = email;
+        window.passwd = contra
         return menuPrincipal();
       }).catch(function(error){
         console.error('Error al analizar la respuesta JSON:', error);
@@ -549,6 +646,12 @@ function mostrar_listas_reproduccion(props) {
       {playlistItems}
     </div>
   );
+}
+
+function meterCancionesEnListaRep(){
+  // meter las canciones que me pasen en la lista de reproduccion con un SetMultipleSongsLista
+  // volver a renderizar el contenido de la lista de reproduccion
+  return nuevaListaDeReproduccion;
 }
 
 function Login(){
@@ -603,7 +706,18 @@ function PlayListContenido(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
-      <ListaReproduccionContenido/>
+      <NuevaListaReproduccionContenido/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
+function AnyadirCancionLista(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <AnyadirCancionListaReproduccion/>
       <Footer/>
       <ToastContainer/>
     </div>
@@ -657,6 +771,10 @@ function misListasDeReproduccion(){
 }
 
 function nuevaListaDeReproduccion(){
+  root.render(<PlayListContenido/>)
+}
+
+function anyadirCancionListaRep(){
   root.render(<PlayListContenido/>)
 }
 
