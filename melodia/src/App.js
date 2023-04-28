@@ -313,6 +313,38 @@ class PerfilUsuario extends React.Component{
   }
 }
 
+function FormularioArtista() {
+  const [text, setText] = useState('');
+
+  const handleChange = (event) => {
+    if (event.target.value.length <= 5000) {
+      setText(event.target.value);
+    }
+  };
+
+  return (
+    <div class="col-md-4 mb-4 mb-md-0">
+      <div class="text-center">
+        <h1 class="tuPerfil text-tuPerfil-50 mb-3">Solicitud para ascender a artista</h1>
+        <p class="display-5 fw-bolder text-white mb-4 ">Escribe a continuación tu trayectoria musical</p>
+        <p class="display-5 fw-light text-white mb-4">Cuentanos los datos más relevantes de tu historia en la música, mayores éxitos, motivos para obtener tu ascenso</p>
+        <div class="d-grid gap-3 d-sm-flex justify-content-sm-center"/>
+        <div class="row justify-content-center align-items-center"/>
+        <div>
+          <textarea
+            value={text}
+            onChange={handleChange}
+            maxLength={5000}
+          />
+          <p>{text.length}/5000 caracteres</p>
+        </div>
+        <p class="display-5 fw-bolder text-white mb-4 ">Sube una demo musical, una canción o un fragmento de podcast originales</p>
+        <input type="file" accept=".wav,.mp3" />
+      </div>
+    </div>
+  );
+}
+
 class ListasReproduccion extends React.Component{
 
   constructor(props) {
@@ -691,6 +723,17 @@ function Profile(){
   )
 }
 
+function becomeArtist(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <FormularioArtista/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
 function PlayLists(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
@@ -760,6 +803,10 @@ function registrarse(){
 
 function perfil(){
   root.render(<Profile/>)
+}
+
+function serArtista(){
+  root.render(<becomeArtist/>)
 }
 
 function menuPrincipal(){
