@@ -1,17 +1,19 @@
 
 import './Style.css';
-import React, { useState } from 'react';
+import React, { StrictMode, useState } from 'react';
+import Select from 'react-select';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import styled from "styled-components"
-import AudioPlayer from 'react-h5-audio-player';
+import H5AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
+import * as Tone from 'tone'
 
 import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-const ipBackend = "http://127.0.0.1:8081/";
+const ipBackend = "http://192.168.56.1:8081/";
 window.password = "example";
 window.idUsuario = "example";
 window.listasReproduccion = "example";
@@ -202,17 +204,76 @@ const ButtonGroup = styled.div`
   flex-wrap: wrap;
   justify-content: center;
 `
-// Usage
 
-/*
-const AudioPlayer = () => {
-  return (
-    <div className="audio-player">
-      <div className="inner">Audio player content</div>
-    </div>
-  );
+function randomIntFromInterval(min, max) { // min and max included 
+  return Math.floor(Math.random() * (max - min + 1) + min)
+}
+class Reproductor extends React.Component{
+
+  constructor(props){
+    super(props)
+    this.audioRef = React.createRef();
+
+    this.state = {'audioSrc' : '', 'volumeGain' : ''}
+
+    let x = randomIntFromInterval(0, 2);
+    switch (x){
+      case 0:
+        this.state.audioSrc = 'ost/Down_Queens_Boulevard.mp3';
+        break
+      case 1:
+        this.state.audioSrc = 'ost/Fellas_From_the_South.mp3';
+        break
+      default:
+        this.state.audioSrc = 'ost/Gangsters_Delight.mp3';
+    }
+
+    this.state.volumeGain = {'bass' : 2, 'treble' : 4};
+  }
+
+  componentDidMount() {
+    console.log(this.audioRef); // check the value of this.audioRef
+    console.log(this.audioRef.audio); // check the value of this.audioRef.audio
+    console.log(this.audioRef.audio.current);
+    Tone.start();
+  }
+
+  applyEq = () => {
+    const audioElement = this.audioRef.audio.current;
+    audioElement.addEventListener('canplay', () => {
+    const audioSource = Tone.context.createMediaElementSource(audioElement);
+    const eq = new Tone.EQ3({
+      low: -12,
+      mid: -12,
+      high: -12,
+      lowFrequency: 200,
+      highFrequency: 2000,
+      gain: 0
+    });
+    audioSource.connect(eq);
+    eq.toDestination();
+  });
+  };
+
+  render(){
+
+    return (
+        <div style={{"display" : "flex"}}>
+          <H5AudioPlayer
+            id='reproductor'
+            ref={(element) => { this.audioRef = element; }}
+            src={this.state.audioSrc}
+            autoPlay={true}
+            showFilledVolume={true}
+            showSkipControls={true}
+            onPlaying={this.applyEq}
+          />
+        </div>
+    );
+  }
+  
 };
-*/
+
 
 class MenuPrincipal extends React.Component{
   render(){
@@ -244,11 +305,7 @@ class MenuPrincipal extends React.Component{
             </div>
           </div>
           <div style={{"width" : "100%"}}>
-            <AudioPlayer
-              autoPlay
-              src="ost/test_sound.mp3"
-              onPlay={e => console.log("onPlay")}
-            />
+            <Reproductor/>
           </div>
         </div>
       </div>
