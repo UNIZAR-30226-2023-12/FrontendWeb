@@ -1,13 +1,11 @@
 
 import './Style.css';
 import React, { StrictMode, useState } from 'react';
-import Select from 'react-select';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import styled from "styled-components"
 import H5AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
-import * as Tone from 'tone'
 
 import { createRoot } from 'react-dom/client';
 
@@ -212,11 +210,10 @@ class Reproductor extends React.Component{
 
   constructor(props){
     super(props)
-    this.audioRef = React.createRef();
 
-    this.state = {'audioSrc' : '', 'volumeGain' : ''}
+    this.state = {'audioSrc' : '', 'volumeGain' : {bass : 6, treble : 0.1}}
 
-    let x = randomIntFromInterval(0, 2);
+    let x = 2;
     switch (x){
       case 0:
         this.state.audioSrc = 'ost/Down_Queens_Boulevard.mp3';
@@ -227,33 +224,7 @@ class Reproductor extends React.Component{
       default:
         this.state.audioSrc = 'ost/Gangsters_Delight.mp3';
     }
-
-    this.state.volumeGain = {'bass' : 2, 'treble' : 4};
   }
-
-  componentDidMount() {
-    console.log(this.audioRef); // check the value of this.audioRef
-    console.log(this.audioRef.audio); // check the value of this.audioRef.audio
-    console.log(this.audioRef.audio.current);
-    Tone.start();
-  }
-
-  applyEq = () => {
-    const audioElement = this.audioRef.audio.current;
-    audioElement.addEventListener('canplay', () => {
-    const audioSource = Tone.context.createMediaElementSource(audioElement);
-    const eq = new Tone.EQ3({
-      low: -12,
-      mid: -12,
-      high: -12,
-      lowFrequency: 200,
-      highFrequency: 2000,
-      gain: 0
-    });
-    audioSource.connect(eq);
-    eq.toDestination();
-  });
-  };
 
   render(){
 
@@ -261,12 +232,11 @@ class Reproductor extends React.Component{
         <div style={{"display" : "flex"}}>
           <H5AudioPlayer
             id='reproductor'
-            ref={(element) => { this.audioRef = element; }}
             src={this.state.audioSrc}
-            autoPlay={true}
+            autoPlay={false}
             showFilledVolume={true}
             showSkipControls={true}
-            onPlaying={this.applyEq}
+            volumeGain={this.state.volumeGain}
           />
         </div>
     );
@@ -359,7 +329,9 @@ class PerfilUsuario extends React.Component{
                 <div class="row justify-content-center align-items-center"/>
                 <div class="row justify-content-center align-items-center">
                   <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!">Ser artista</a>
-                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!">Subir canción</a>
+                </div>
+                <div class="row justify-content-center align-items-center">
+                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!"> onClick={misListasDeReproduccion} Subir canción</a>
                 </div>
               </div>
             </div>
