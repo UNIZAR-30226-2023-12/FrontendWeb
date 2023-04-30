@@ -211,7 +211,20 @@ class Reproductor extends React.Component{
   constructor(props){
     super(props)
 
-    this.state = {'audioSrc' : '', 'volumeGain' : {bass : 6, treble : 0.1}}
+    this.state = {'audioSrc' : '', 
+    'volumeGain' : {bass : 1.5, treble : 0.5},
+      equalizer: [
+        { freq: 32, type: 'lowshelf', gain: 9 },
+        { freq: 64, type: 'peaking', gain: 9 },
+        { freq: 125, type: 'peaking', gain:9 },
+        { freq: 250, type: 'peaking', gain: 9 },
+        { freq: 500, type: 'peaking', gain: -9 },
+        { freq: 1000, type: 'peaking', gain: -9},
+        { freq: 2000, type: 'peaking', gain: -9 },
+        { freq: 4000, type: 'peaking', gain: -9 },
+        { freq: 8000, type: 'peaking', gain: -9 },
+        { freq: 16000, type: 'highshelf', gain: -9 },
+      ]}
 
     let x = 2;
     switch (x){
@@ -236,6 +249,7 @@ class Reproductor extends React.Component{
             autoPlay={false}
             showFilledVolume={true}
             showSkipControls={true}
+            equalizer={[0, 0, -9, -9, 0, 0, 0, 0, 0, 0]}
             volumeGain={this.state.volumeGain}
           />
         </div>
