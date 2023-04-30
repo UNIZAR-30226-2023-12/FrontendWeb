@@ -249,7 +249,7 @@ class Reproductor extends React.Component{
             autoPlay={false}
             showFilledVolume={true}
             showSkipControls={true}
-            equalizer={[0, 0, -9, -9, 0, 0, 0, 0, 0, 0]}
+            equalizer={this.state.equalizer}
             volumeGain={this.state.volumeGain}
           />
         </div>
