@@ -240,7 +240,22 @@ class Repeat_Button extends React.Component{
     return(<MdRepeat class="rhap_repeat-button rhap_button-clear" onClick={this.switch_state} onChange={this.props.onChange}/>)
   }
 }
+
 class ShuffleButtonNoTransition extends React.Component{
+
+  render(){
+    return(<MdOutlineShuffle class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
+  }
+}
+
+class UpArrowNoTransition extends React.Component{
+
+  render(){
+    return(<MdOutlineShuffle class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
+  }
+}
+
+class DownArrowNoTransition extends React.Component{
 
   render(){
     return(<MdOutlineShuffle class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
@@ -646,7 +661,7 @@ class NuevaListaReproduccionContenido extends React.Component{
                 </div>
                 <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
                   <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
-                  <Shuffle_Button class="rhap_repeat-button rhap_button-clear" onClick={reproduccionAleatoria}/>
+                  <ShuffleButtonNoTransition class="rhap_repeat-button rhap_button-clear" onClick={reproduccionAleatoria}/>
                 </div>
               </div>
             </div>
