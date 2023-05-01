@@ -2312,7 +2312,7 @@ progress {
   opacity: 1;
 }
 .form-control:-ms-input-placeholder {
-  color: #6c757d;
+  color: #ffffff;
   opacity: 1;
 }
 .form-control::placeholder {
@@ -2850,10 +2850,10 @@ textarea.form-control-lg {
   font-size: 1rem;
   font-weight: 400;
   line-height: 1.5;
-  color: #212529;
+  color: #ffffff;
   text-align: center;
-  white-space: nowrap;
-  background-color: #e9ecef;
+  white-space: 1rem;
+  background-color: var(--bs-body-bg);
   border: 1px solid #ced4da;
   border-radius: 0.25rem;
 }
@@ -11432,6 +11432,57 @@ textarea.form-control-lg {
     transform: rotate(360deg);
   }
 }
+
+input[type="file"]::placeholder {
+  color: white;
+}
+
+input[type="file"]::-webkit-file-upload-button::before {
+  content: "lfweofhwoefhñwef";
+  color: white;
+}
+
+input[type="file"]::-webkit-file-upload-button::after {
+  content: "No hay archivos seleccionados";
+  color: white;
+}
+
+input[type="file"]::-webkit-file-upload-button {
+  background-color: var(--bs-blue);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+input[type="file"]::-webkit-file-upload-button:hover {
+  background-color: var(--bs-blue);
+}
+
+.FormularioArtista {
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.titulo-formArtista {
+  font-size: 40px;
+  color: white;
+}
+
+.subtitulo-formArtista {
+  font-size: 22px;
+  color: white;
+}
+
+.cuerpo-formArtista {
+  font-size: 20px;
+  color: white;
+}
+
+
 
 /*
 toast.success('Cancion añadida a favoritos', {

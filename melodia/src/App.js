@@ -6,6 +6,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import styled from "styled-components"
 import H5AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
+import { BsSliders2Vertical } from 'react-icons/bs';
+import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat} from 'react-icons/md'
+import * as DjangoAPI from './Django_API';
 
 import { createRoot } from 'react-dom/client';
 
@@ -15,6 +18,7 @@ const ipBackend = "http://192.168.56.1:8081/";
 window.password = "example";
 window.idUsuario = "example";
 window.listasReproduccion = "example";
+window.nombreNuevaListaReproduccion = "Nueva lista de reproducción";
 
 function active(elem, num){
   if(elem === num){
@@ -196,12 +200,74 @@ class ButtonOnClick extends React.Component{
   }
 }
 
+class ButtonCommit extends React.Component{
+  render(){
+    return (<a class="btn btn-primary_blue_4th" href="#!" onClick={this.props.onClick} id={this.props.id} style={{fontSize: '16px'}}>{this.props.text}</a>)
+  }
+}
+
+class ButtonType extends React.Component{
+  render(){
+    return (<button class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!" type={this.props.type} id={this.props.id} style={this.props.style}>{this.props.text}</button>)
+  }
+}
+
 const ButtonGroup = styled.div`
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
   justify-content: center;
 `
+
+class Repeat_Button extends React.Component{
+  constructor(props){
+    super(props)
+
+    this.state = {"loop" : false};
+  }
+
+  switch_state = () => {
+    this.setState(prevState => ({
+      loop: !prevState.loop
+    }));
+  }
+
+  render(){
+    if(this.state.loop){
+      return(<MdRepeatOn class="rhap_repeat-button rhap_button-clear" onClick={this.switch_state} onChange={this.props.onChange}/>)
+    }
+
+    return(<MdRepeat class="rhap_repeat-button rhap_button-clear" onClick={this.switch_state} onChange={this.props.onChange}/>)
+  }
+}
+class ShuffleButtonNoTransition extends React.Component{
+
+  render(){
+    return(<MdOutlineShuffle class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
+  }
+}
+
+class Shuffle_Button extends React.Component{
+  constructor(props){
+    super(props)
+
+    this.state = {"shuffle" : false};
+  }
+
+  switch_state = () => {
+    this.setState(prevState => ({
+      shuffle: !prevState.shuffle
+    }));
+  }
+
+  render(){
+    if(this.state.shuffle){
+      return(<MdShuffleOn class="rhap_repeat-button rhap_button-clear" onClick={this.switch_state}/>)
+    }
+
+    return(<MdOutlineShuffle class="rhap_repeat-button rhap_button-clear" onClick={this.switch_state}/>)
+  }
+}
 
 function randomIntFromInterval(min, max) { // min and max included 
   return Math.floor(Math.random() * (max - min + 1) + min)
@@ -224,7 +290,8 @@ class Reproductor extends React.Component{
         { freq: 4000, type: 'peaking', gain: -9 },
         { freq: 8000, type: 'peaking', gain: -9 },
         { freq: 16000, type: 'highshelf', gain: -9 },
-      ]}
+      ],
+    'loop' : 0}
 
     let x = 2;
     switch (x){
@@ -236,6 +303,17 @@ class Reproductor extends React.Component{
         break
       default:
         this.state.audioSrc = 'ost/Gangsters_Delight.mp3';
+    }
+  }
+
+  enable_loop = () =>{
+    //console.log(DjangoAPI.prueba());
+    if(this.state.loop === 0){
+      console.log("Reproduccion en bucle habilitada")
+      this.state.loop = 1;
+    }else{
+      console.log("Reproduccion en bucle deshabilitada")
+      this.state.loop = 0;
     }
   }
 
@@ -251,11 +329,20 @@ class Reproductor extends React.Component{
             showSkipControls={true}
             equalizer={this.state.equalizer}
             volumeGain={this.state.volumeGain}
+            customAdditionalControls={[
+              <BsSliders2Vertical class="rhap_repeat-button rhap_button-clear" onClick={this.enable_loop}/>,
+            ]}
+            customControlsSection={[
+              RHAP_UI["ADDITIONAL_CONTROLS"],
+              <Repeat_Button/>,
+              RHAP_UI["MAIN_CONTROLS"],
+              <Shuffle_Button/>,
+              RHAP_UI["VOLUME_CONTROLS"]
+            ]}
           />
         </div>
     );
   }
-  
 };
 
 
@@ -297,40 +384,78 @@ class MenuPrincipal extends React.Component{
   }
 }
 
-class PerfilUsuario extends React.Component{
+class PerfilUsuario extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {name: ""};
+    this.state = {
+      name: "",
+      esArtista: false,
+    };
   }
 
   componentDidMount() {
-   fetch(ipBackend + "getNameUsr/",{
-      method : "POST",
-      body : JSON.stringify({"idUsr" : window.idUsuario})
-    }).then(res => res.json())
-     .then(
-       (result) => {
-         this.setState({
-           name: result.name
-           });
-         },
-         (error) => {
-           console.log(error);
-         }
-       )
-   }
-  
-  /*{this.state.name} poner donde dice juanito cuando la funcion de recuperar nombre este en el backend*/
-  render(){
+    this.mostrarBotones();
+    this.obtenerNombre();
+  }
+
+  obtenerNombre() {
+    fetch(ipBackend + "GetUser/", {
+      method: "POST",
+      body: JSON.stringify({ idUsr: window.idUsuario }),
+    })
+      .then((res) => res.json())
+      .then(
+        (result) => {
+          this.setState({
+            name: result.name,
+          });
+        },
+        (error) => {
+          console.log(error);
+        }
+      );
+  }
+
+  mostrarBotones() {
+    fetch(ipBackend + "GetUser/", {
+      method: "POST",
+      body: JSON.stringify({ idUsr: window.idUsuario, passwd: window.password }),
+    })
+      .then((res) => res.json())
+      .then(
+        (result) => {
+          this.setState({
+            esArtista: true/*result.esArtista*/,
+          });
+        },
+        (error) => {
+          console.log(error);
+        }
+      );
+  }
+
+  render() {
     return (
-      <header class="bg-blue_7th py-5" style={{"display":"flex", "flex-direction":"column", "justify-content":"center","flex" : 1}}>
+      <header
+        class="bg-blue_7th py-5"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          flex: 1,
+        }}
+      >
         <div class="container">
           <div class="row justify-content-center align-items-center">
             <div class="col-md-4">
               <div class="card-body p-5">
                 <div class="list-unstyled mb-4">
                   <li class="mb-2">
-                    <img src="assets/boy_listening_music.jpg" width="100%" style={{"border-radius" : "50%"}}/>
+                    <img
+                      src="assets/boy_listening_music.jpg"
+                      width="100%"
+                      style={{ borderRadius: "50%" }}
+                    />
                   </li>
                 </div>
               </div>
@@ -338,21 +463,35 @@ class PerfilUsuario extends React.Component{
             <div class="col-md-4 mb-4 mb-md-0">
               <div class="text-center">
                 <h1 class="tuPerfil text-tuPerfil-50 mb-3">Tu perfil</h1>
-                <p class="display-5 fw-bolder text-white mb-4 ">Juanito</p>
-                <div class="d-grid gap-3 d-sm-flex justify-content-sm-center"/>
-                <div class="row justify-content-center align-items-center"/>
+                <p class="display-5 fw-bolder text-white mb-4 ">
+                  {/*{this.state.name}*/}
+                  Juan
+                </p>
+                <div class="d-grid gap-3 d-sm-flex justify-content-sm-center" />
                 <div class="row justify-content-center align-items-center">
-                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!">Ser artista</a>
-                </div>
-                <div class="row justify-content-center align-items-center">
-                  <a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!"> onClick={misListasDeReproduccion} Subir canción</a>
+                  {this.state.esArtista == false && (
+                    <ButtonOnClick
+                      onClick={serArtista}
+                      id=""
+                      text="Conviértete en artista"
+                    />
+                  )}
+                  {this.state.esArtista == true && (
+                    <a
+                      class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3"
+                      href="#!"
+                    >
+                      {" "}
+                      Subir canción
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
       </header>
-    )
+    );
   }
 }
 
@@ -366,26 +505,41 @@ function FormularioArtista() {
   };
 
   return (
-    <div class="col-md-4 mb-4 mb-md-0">
-      <div class="text-center">
-        <h1 class="tuPerfil text-tuPerfil-50 mb-3">Solicitud para ascender a artista</h1>
-        <p class="display-5 fw-bolder text-white mb-4 ">Escribe a continuación tu trayectoria musical</p>
-        <p class="display-5 fw-light text-white mb-4">Cuentanos los datos más relevantes de tu historia en la música, mayores éxitos, motivos para obtener tu ascenso</p>
-        <div class="d-grid gap-3 d-sm-flex justify-content-sm-center"/>
-        <div class="row justify-content-center align-items-center"/>
-        <div>
-          <textarea
-            value={text}
-            onChange={handleChange}
-            maxLength={5000}
-          />
-          <p>{text.length}/5000 caracteres</p>
-        </div>
-        <p class="display-5 fw-bolder text-white mb-4 ">Sube una demo musical, una canción o un fragmento de podcast originales</p>
-        <input type="file" accept=".wav,.mp3" />
+    <div className="container-fluid --bs-body-bg h-100 d-flex align-items-center main">
+      <div className="col-md-3 --bs-blue-bg"></div>
+      <div className="col-md-6 --bs-blue-bg d-flex justify-content-center">
+        <div className="text-center">
+          <p className="titulo-formArtista titulo-formArtista-lg mb-3 text-white">Solicitud para ascender a artista</p>
+          <p className="subtitulo-formArtista fw-bolder subtitulo-formArtista subtitulo-formArtista-md mb-4 text-white">Escribe a continuación tu trayectoria musical</p>
+          <p className="cuerpo-formArtist fw-light cuerpo-formArtist cuerpo-formArtist-md mb-4 text-white">Cuentanos los datos más relevantes de tu historia en la música</p>
+          <div>
+            <textarea
+              value={text}
+              onChange={handleChange}
+              maxLength={5000}
+              cols={85}
+              rows={7}
+              style={{ height: '100px' }}
+            />
+            <p><span style={{color: 'white', width: ''}}>{text.length}/5000 caracteres</span></p>
+          </div>
+          <div className="text-center">
+            <p className="subtitulo-formArtista fw-bolder subtitulo-formArtista subtitulo-formArtista-md mb-4 text-white">
+              Sube una demo musical, una canción o un fragmento de podcast originales
+            </p>
+            <div className="d-flex justify-content-center mb-4">
+              <input class="subcuerpo-formArtista fw-normal text-white" type="file" accept=".wav,.mp3" />
+            </div>
+            <ButtonCommit onClick={enviar_peticion_artista} id="" text="Enviar solicitud"/>
+          </div>
+      </div>
       </div>
     </div>
   );
+}
+
+function enviarAscenso(){
+  //para que no se queje el react
 }
 
 class ListasReproduccion extends React.Component{
@@ -411,6 +565,7 @@ class ListasReproduccion extends React.Component{
     }).catch(error => toast(error.message))
   }
 
+  // <PlaylistSortSelector onChange={handleSortChangeFolders} /> servira para las carpetas
   render(){
     return (
       <>
@@ -431,6 +586,26 @@ class ListasReproduccion extends React.Component{
     )
   }
 }
+
+const handleSortChangeFolders = (value) => {
+  //setSortKey(value);
+};
+
+const PlaylistSortSelector = ({ onChange }) => {
+  const handleSortChangeFolders = (event) => {
+    const value = event.target.value;
+    onChange(value);
+  };
+
+  return (
+    <select onChange={handleSortChangeFolders}>
+      <option value="tematica">Temática</option>
+      <option value="titulo">Título</option>
+      <option value="artista">Artista</option>
+      <option value="idioma">Idioma</option>
+    </select>
+  );
+};
 
 class NuevaListaReproduccionContenido extends React.Component{
 
@@ -454,9 +629,9 @@ class NuevaListaReproduccionContenido extends React.Component{
         toast.error("El usuario o la contraseña son incorrectos")
       }
     }).catch(error => toast(error.message))
+    console.log("Cris: nombre recargado:", window.nombreNuevaListaReproduccion);
   }
 
-  // Cristina: importante el botón de añadir canciones tiene que llamar a la api para meter otra canción y volver a recargar esta página
   render(){
     return (
       <>
@@ -465,8 +640,13 @@ class NuevaListaReproduccionContenido extends React.Component{
             <div class="row gx-5 justify-content-center">
               <div class="col-lg-6">
                 <div class="text-center my-5">
-                  <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}}>Nueva lista de reproducción</h1>
+                  <FormularioRenombre
+                    nombre={window.nombreNuevaListaReproduccion}
+                  />
+                </div>
+                <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
                   <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
+                  <Shuffle_Button class="rhap_repeat-button rhap_button-clear" onClick={reproduccionAleatoria}/>
                 </div>
               </div>
             </div>
@@ -476,7 +656,45 @@ class NuevaListaReproduccionContenido extends React.Component{
       </>
     )
   }
+
 }
+
+function FormularioRenombre({ nombre }) {
+  const [nombreEditando, setNombreEditando] = useState(false);
+  const [nuevoNombre, setNuevoNombre] = useState(nombre);
+
+  function handleNombreCambiado(e) {
+    e.preventDefault();
+    window.nombreNuevaListaReproduccion = nuevoNombre;
+    setNombreEditando(false);
+    // Cris TODO llevar el cambio al backend
+    return (
+      root.render(<PlayListContenido/>)
+    )
+  }
+
+  return (
+    <div>
+      {nombreEditando ? (
+        <form onSubmit={handleNombreCambiado}>
+          <input
+            class="display-6 fw-normal text-black mb-2 justify-content-center"
+            style={{"padding-bottom" : "1rem"}}
+            type="text"
+            value={nuevoNombre}
+            onChange={(e) => setNuevoNombre(e.target.value)}
+          />
+          <ButtonType style={{"padding-bottom" : "1rem"}} type="submit" id="" text="Cambiar el nombre"/>
+        </form>
+      ) : (
+        <div>
+          <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}} onClick={() => setNombreEditando(true)}>{nombre}</h1>
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 class AnyadirCancionListaReproduccion extends React.Component{
 
@@ -512,9 +730,12 @@ class AnyadirCancionListaReproduccion extends React.Component{
             <div class="row gx-5 justify-content-center">
               <div class="col-lg-6">
                 <div class="text-center my-5">
-                  <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}}>Añadir canciones a la lista de reproducción</h1>
-                  <ButtonOnClick onClick={meterCancionesEnListaRep} id="" text="Añadir canciones"/>
+                  <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}}>Añadir canciones</h1>
                 </div>
+                <div class="form-floating mb-3">
+                <input class="form-control" id="busqueda-anyadir" type="text" placeholder="Cancion X"/>
+                <label for="busqueda">Buscar  &#128269;</label>
+              </div>
               </div>
             </div>
           </div>
@@ -650,7 +871,7 @@ function enviar_peticion_registro(email, usuario, contra){
     console.log(response)
     if(response.ok){
       response.json().then(function(data){
-        window.idUsuario = email;
+        window.idUsuario = data.idUsr;
         window.passwd = contra
         return menuPrincipal();
       }).catch(function(error){
@@ -682,7 +903,7 @@ function enviar_peticion_inicio(e){
   }).then(function(response){
     if(response.ok){
       response.json().then(function(data){
-        window.idUsuario = email;
+        window.idUsuario = data.idUsr;
         window.passwd = contra
         return menuPrincipal();
       }).catch(function(error){
@@ -692,6 +913,25 @@ function enviar_peticion_inicio(e){
       toast.error("El usuario o la contraseña son incorrectos")
     }
   }).catch(error => toast.error(error.message))
+}
+
+function enviar_peticion_artista(){
+  fetch(ipBackend + "AskAdminToBeArtist()/", {
+    method : "POST",
+    body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.password})
+  }).then(function(response){
+    console.log(response)
+    if(response.ok){
+      response.json().then(function(data){
+        window.idUsuario = data.idUsr;
+        //window.passwd = contra
+        return menuPrincipal();
+      }).catch(function(error){
+        console.error('Error al analizar la respuesta JSON:', error);
+      })
+    }
+  })
+  .catch(error => toast.error(error.message))
 }
 
 function ultimo_punto_de_escucha(){
@@ -766,7 +1006,7 @@ function Profile(){
   )
 }
 
-function becomeArtist(){
+function BecomeArtist(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
@@ -849,7 +1089,7 @@ function perfil(){
 }
 
 function serArtista(){
-  root.render(<becomeArtist/>)
+  root.render(<BecomeArtist/>)
 }
 
 function menuPrincipal(){
@@ -865,6 +1105,10 @@ function nuevaListaDeReproduccion(){
 }
 
 function anyadirCancionListaRep(){
+  root.render(<AnyadirCancionLista/>)
+}
+
+function reproduccionAleatoria(){
   root.render(<PlayListContenido/>)
 }
 
