@@ -11482,6 +11482,18 @@ input[type="file"]::-webkit-file-upload-button:hover {
   color: white;
 }
 
+.label {
+  margin-Right: '10px'
+};
+
+.input-formArtista {
+  width: 2rem;
+  height: 2rem;
+}
+
+.form-floating textarea::placeholder {
+  color: black;
+}
 
 
 /*

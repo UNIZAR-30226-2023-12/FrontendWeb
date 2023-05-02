@@ -9,6 +9,7 @@ import 'react-h5-audio-player/lib/styles.css';
 import { BsSliders2Vertical } from 'react-icons/bs';
 import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat} from 'react-icons/md'
 import * as DjangoAPI from './Django_API';
+import * as Tone from 'tone';
 
 import { createRoot } from 'react-dom/client';
 
@@ -19,6 +20,21 @@ window.password = "example";
 window.idUsuario = "example";
 window.listasReproduccion = "example";
 window.nombreNuevaListaReproduccion = "Nueva lista de reproducción";
+
+//Funciones de prueba
+
+// Inicializa Tone.js
+Tone.start();
+
+const eq = new Tone.EQ3({
+  low: -200, // ganancia para frecuencias bajas
+  mid: -200, // ganancia para frecuencias medias
+  high: -200 // ganancia para frecuencias altas
+});
+
+//-----------
+
+
 
 function active(elem, num){
   if(elem === num){
@@ -292,20 +308,9 @@ class Reproductor extends React.Component{
   constructor(props){
     super(props)
 
+    this.reproductor = React.createRef()
+
     this.state = {'audioSrc' : '', 
-    'volumeGain' : {bass : 1.5, treble : 0.5},
-      equalizer: [
-        { freq: 32, type: 'lowshelf', gain: 9 },
-        { freq: 64, type: 'peaking', gain: 9 },
-        { freq: 125, type: 'peaking', gain:9 },
-        { freq: 250, type: 'peaking', gain: 9 },
-        { freq: 500, type: 'peaking', gain: -9 },
-        { freq: 1000, type: 'peaking', gain: -9},
-        { freq: 2000, type: 'peaking', gain: -9 },
-        { freq: 4000, type: 'peaking', gain: -9 },
-        { freq: 8000, type: 'peaking', gain: -9 },
-        { freq: 16000, type: 'highshelf', gain: -9 },
-      ],
     'loop' : 0}
 
     let x = 2;
@@ -321,13 +326,25 @@ class Reproductor extends React.Component{
     }
   }
 
+  ecualiza() {
+    // Obtén el reproductor de audio de H5AudioPlayer
+    console.log(this.reproductor)
+    const audio = 'ost/Gangsters_Delight.mp3';
+    //create a distortion effect
+    const reverb = new Tone.Reverb(3).toDestination();
+    const player = new Tone.Player(audio).toDestination();
+    player.autostart = true;
+    player.connect(reverb);
+    
+  }
+
   enable_loop = () =>{
     //console.log(DjangoAPI.prueba());
     if(this.state.loop === 0){
-      console.log("Reproduccion en bucle habilitada")
+      toast.info("Reproduccion en bucle habilitada")
       this.state.loop = 1;
     }else{
-      console.log("Reproduccion en bucle deshabilitada")
+      toast.info("Reproduccion en bucle deshabilitada")
       this.state.loop = 0;
     }
   }
@@ -337,15 +354,15 @@ class Reproductor extends React.Component{
     return (
         <div style={{"display" : "flex"}}>
           <H5AudioPlayer
+            ref={this.reproductor}
             id='reproductor'
             src={this.state.audioSrc}
             autoPlay={false}
+            volume={0.2}
             showFilledVolume={true}
             showSkipControls={true}
-            equalizer={this.state.equalizer}
-            volumeGain={this.state.volumeGain}
             customAdditionalControls={[
-              <BsSliders2Vertical class="rhap_repeat-button rhap_button-clear" onClick={this.enable_loop}/>,
+              <BsSliders2Vertical class="rhap_repeat-button rhap_button-clear" onClick={this.ecualiza.bind(this)}/>,
             ]}
             customControlsSection={[
               RHAP_UI["ADDITIONAL_CONTROLS"],
@@ -404,7 +421,7 @@ class PerfilUsuario extends React.Component {
     super(props);
     this.state = {
       name: "",
-      esArtista: false,
+      esArtista: true,
     };
   }
 
@@ -440,7 +457,7 @@ class PerfilUsuario extends React.Component {
       .then(
         (result) => {
           this.setState({
-            esArtista: true/*result.esArtista*/,
+            esArtista: false/*result.esArtista*/,
           });
         },
         (error) => {
@@ -483,7 +500,7 @@ class PerfilUsuario extends React.Component {
                   Juan
                 </p>
                 <div class="d-grid gap-3 d-sm-flex justify-content-sm-center" />
-                <div class="row justify-content-center align-items-center">
+                <div class="row justify-content-center align-items-center mb-4">
                   {this.state.esArtista == false && (
                     <ButtonOnClick
                       onClick={serArtista}
@@ -492,13 +509,11 @@ class PerfilUsuario extends React.Component {
                     />
                   )}
                   {this.state.esArtista == true && (
-                    <a
-                      class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3"
-                      href="#!"
-                    >
-                      {" "}
-                      Subir canción
-                    </a>
+                    <ButtonOnClick
+                    onClick={subirCancion}
+                    id=""
+                    text="Publica nuevo contenido"
+                  />
                   )}
                 </div>
               </div>
@@ -555,6 +570,167 @@ function FormularioArtista() {
 
 function enviarAscenso(){
   //para que no se queje el react
+}
+
+function SelectorMusicaPodcast(props) {
+  const [opcionSeleccionada, setOpcionSeleccionada] = useState("");
+
+  const handleOptionChange = (event) => {
+    const newValue = event.target.value;
+    setOpcionSeleccionada(newValue);
+    props.onOptionChange(newValue);
+  }
+
+  return (
+    <div>
+      <p class="cuerpo-formArtista fw-bolder subtitulo-formArtista subtitulo-formArtista-md mb-4 text-white">Selecciona el tipo de contenido</p>
+      <label className="text-white marginRight:10px">
+        <input
+          type="radio"
+          name="selectorMusicaPodcast"
+          value="musica"
+          checked={opcionSeleccionada === "musica"}
+          onChange={handleOptionChange}
+        />
+        Música
+      </label>
+      <label className="text-white marginRight:10px">
+        <input
+          type="radio"
+          name="selectorMusicaPodcast"
+          value="podcast"
+          checked={opcionSeleccionada === "podcast"}
+          onChange={handleOptionChange}
+        />
+        Podcast
+      </label>
+    </div>
+  );
+}
+
+function CampoDescripcion(props) {
+  const [descripcion, setDescripcion] = useState("");
+  const [contador, setContador] = useState(0);
+
+  const handleDescripcionChange = (event) => {
+    setDescripcion(event.target.value);
+    setContador(event.target.value.length);
+  };
+  // TODO: conseguir que donde pone jijijijijiji se escriba en la página escribe tu descripcion, ahora no pone nada
+  if (props.opcionSeleccionada === "podcast") {
+    return (
+      <div className="form-floating mb-3 text-white">
+        <textarea
+          className="form-control"
+          id="descripcion"
+          placeholder="Escribe una descripción de tu podcast"
+          value={descripcion}
+          onChange={handleDescripcionChange}
+          maxLength={500}
+          cols={85}
+          rows={7}
+          style={{ height: '100px' , color: 'black'}}
+        />
+        <div className="text-muted">{contador}/500 carácteres</div>
+        <label htmlFor="descripcion">jijijijij</label>
+      </div>
+    );
+  } else {
+    return null;
+  }
+}
+
+function SelectorGenero(props) {
+  const [generoSeleccionado, setGeneroSeleccionado] = useState("");
+
+  const handleGeneroChange = (event) => {
+    setGeneroSeleccionado(event.target.value);
+  };
+
+  if (props.opcionSeleccionada === "musica") {
+    return (
+      <div className="form-floating mb-3">
+        <select
+          className="cuerpo-formArtist cuerpo-formArtist cuerpo-formArtist-md mb-4 text-black"
+          id=""
+          value={generoSeleccionado}
+          onChange={handleGeneroChange}
+        >
+          <option value="">Selecciona el género de tu canción</option>
+          <option value="0">Pop</option>
+          <option value="1">Rock</option>
+          <option value="2">Metal</option>
+          <option value="3">Rap</option>
+          <option value="4">Reggae</option>
+          <option value="5">Jazz</option>
+          <option value="6">Blues</option>
+          <option value="7">Clásica</option>
+          <option value="8">Electrónica</option>
+          <option value="9">Folk</option>
+          <option value="10">Latina</option>
+          <option value="11">Indie</option>
+          <option value="12">Country</option>
+          <option value="13">Ambient</option>
+          <option value="14">Trap</option>
+          <option value="15">Dance</option>
+          <option value="16">Hip hop</option>
+          <option value="17">R&B</option>
+          <option value="18">Soul</option>
+          <option value="19">Punk</option>
+          <option value="20">Funk</option>
+        </select>
+      </div>
+    );
+  } else {
+    return null;
+  }
+}
+
+class NuevaCancion extends React.Component{
+  constructor(props) {
+    super(props);
+    this.state = { opcionSeleccionada: '' };
+    this.handleOptionChange = this.handleOptionChange.bind(this);
+  }
+
+  handleOptionChange(newValue) {
+    this.setState({ opcionSeleccionada: newValue });
+  }
+  
+  render(){
+    return (
+      <div className="container-fluid --bs-body-bg h-100 d-flex align-items-center main">
+        <div className="col-md-3 --bs-blue-bg"></div>
+        <div className="col-md-6 --bs-blue-bg d-flex justify-content-center">
+          <div className="text-center">
+            <p className="titulo-formArtista titulo-formArtista-lg mb-3 text-white">Publica tu nuevo contenido</p>
+            <div class="form-floating mb-3">
+                <input class="form-control" id="nombreAudio" type="text" placeholder="nuevaCancion"/>
+                <label for="audio">Nombre del audio</label>
+            </div>
+            <SelectorMusicaPodcast onOptionChange={this.handleOptionChange}/>
+            <CampoDescripcion opcionSeleccionada={this.state.opcionSeleccionada} />
+            <SelectorGenero opcionSeleccionada={this.state.opcionSeleccionada} />
+            <div className="text-center">
+              <p className="cuerpo-formArtista fw-bolder subtitulo-formArtista subtitulo-formArtista-md mb-4 text-white">
+                Sube la imagen asociada a tu audio
+              </p>
+              <div className="justify-content-center mb-4">
+                <input class="input-formArtista text-white" type="file"  name="image" accept="image/*" />
+              </div>
+              <p className="cuerpo-formArtista fw-bolder subtitulo-formArtista subtitulo-formArtista-md mb-4 text-white">
+                Sube el archivo de audio a añadir en tu perfil de artista
+              </p>
+              <div className="d-flex justify-content-center mb-4">
+                <input class="input-formArtista text-white" type="file" accept=".wav,.mp3" />
+              </div>
+              <ButtonCommit onClick={enviar_contenido_artista} id="" text="Subir contenido"/>
+            </div>
+        </div>
+        </div>
+      </div>
+    );
+  }
 }
 
 class ListasReproduccion extends React.Component{
@@ -931,7 +1107,7 @@ function enviar_peticion_inicio(e){
 }
 
 function enviar_peticion_artista(){
-  fetch(ipBackend + "AskAdminToBeArtist()/", {
+  fetch(ipBackend + "AskAdminToBeArtist/", {
     method : "POST",
     body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.password})
   }).then(function(response){
@@ -941,6 +1117,26 @@ function enviar_peticion_artista(){
         window.idUsuario = data.idUsr;
         //window.passwd = contra
         return menuPrincipal();
+      }).catch(function(error){
+        console.error('Error al analizar la respuesta JSON:', error);
+      })
+    }
+  })
+  .catch(error => toast.error(error.message))
+}
+
+function enviar_contenido_artista(){
+  fetch(ipBackend + "SetSong/", {
+    method : "POST",
+    // Se deberá pasar como último dato de la petición un struct con los datos del audio
+    body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.password, "song" : window.idUsuario})
+  }).then(function(response){
+    console.log(response)
+    if(response.ok){
+      response.json().then(function(data){
+        window.idUsuario = data.idUsr;
+        //window.passwd = contra
+        return perfil();
       }).catch(function(error){
         console.error('Error al analizar la respuesta JSON:', error);
       })
@@ -1032,6 +1228,17 @@ function BecomeArtist(){
   )
 }
 
+function UploadSong(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+    <BarraNavegacionApp/>
+    <NuevaCancion/>
+    <Footer/>
+    <ToastContainer/>
+  </div>
+  )
+}
+
 function PlayLists(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
@@ -1105,6 +1312,10 @@ function perfil(){
 
 function serArtista(){
   root.render(<BecomeArtist/>)
+}
+
+function subirCancion(){
+  root.render(<UploadSong/>)
 }
 
 function menuPrincipal(){
