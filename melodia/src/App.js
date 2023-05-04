@@ -7,7 +7,7 @@ import styled from "styled-components"
 import H5AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
 import { BsSliders2Vertical } from 'react-icons/bs';
-import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat} from 'react-icons/md'
+import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat, MdArrowDownward, MdArrowUpward} from 'react-icons/md'
 import * as DjangoAPI from './Django_API';
 import * as Tone from 'tone';
 
@@ -15,7 +15,7 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-const ipBackend = "http://192.168.56.1:8081/";
+const ipBackend = "http://127.0.0.1:8081/";
 window.password = "example";
 window.idUsuario = "example";
 window.listasReproduccion = "example";
@@ -268,14 +268,14 @@ class ShuffleButtonNoTransition extends React.Component{
 class UpArrowNoTransition extends React.Component{
 
   render(){
-    return(<MdOutlineShuffle class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
+    return(<MdArrowUpward class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
   }
 }
 
 class DownArrowNoTransition extends React.Component{
 
   render(){
-    return(<MdOutlineShuffle class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
+    return(<MdArrowDownward class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
   }
 }
 
@@ -811,18 +811,27 @@ class ListasReproduccion extends React.Component{
   componentDidMount() {
     fetch(ipBackend + "GetListasUsr/", {
       method : "POST",
-      body : JSON.stringify({"email" : window.idUsuario, "contrasenya" : window.passwd})
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd})
     }).then(function(response){
       if(response.ok){
         response.json().then(function(data){
-          window.listasReproduccion = data.listas;
+          if (data.listas.length > 0){
+            // hay alguna lista, hay que comprobar de qué tipo es
+            // buscar tipoLista == listaReproduccion
+            // GetLista/
+            //fetch(ipBackend + "GetLista/", {
+            //  method : "POST",
+            //  body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista" : data.listas.lista})
+            //})
+          }
+          toast("Ha devuelto: ", data)
         }).catch(function(error){
           console.error('Error al analizar la respuesta JSON:', error);
         })
       }else{
         toast.error("El usuario o la contraseña son incorrectos")
       }
-    }).catch(error => toast(error.message))
+    }).catch(error => toast.error(error.message))
   }
 
   // <PlaylistSortSelector onChange={handleSortChangeFolders} /> servira para las carpetas
@@ -888,7 +897,7 @@ class NuevaListaReproduccionContenido extends React.Component{
       }else{
         toast.error("El usuario o la contraseña son incorrectos")
       }
-    }).catch(error => toast(error.message))
+    }).catch(error => toast.error(error.message))
     console.log("Cris: nombre recargado:", window.nombreNuevaListaReproduccion);
   }
 
@@ -963,7 +972,6 @@ class AnyadirCancionListaReproduccion extends React.Component{
     this.state = {listas: "", nombreLista: ""};
   }
 
-  // HAY QUE CAMBIAR LA FUNCION PORQUE AHORA MISMO NO HAY NADA QUE DEVUELVA LO QUE NECESITO: METER UNA BÚSQUEDA
   componentDidMount() {
     fetch(ipBackend + "GetSongs/", {
       method : "GET",
@@ -978,7 +986,7 @@ class AnyadirCancionListaReproduccion extends React.Component{
       }else{
         toast.error("El usuario o la contraseña son incorrectos")
       }
-    }).catch(error => toast(error.message))
+    }).catch(error => toast.error(error.message))
   }
 
 
@@ -1028,7 +1036,7 @@ class ListaReproduccionContenido extends React.Component{
   //     }else{
   //       toast.error("El usuario o la contraseña son incorrectos")
   //     }
-  //   }).catch(error => toast(error.message))
+  //   }).catch(error => toast.error(error.message))
   // }
 
   // Cristina: importante el botón de añadir canciones tiene que llamar a la api para meter otra canción y volver a recargar esta página
@@ -1126,7 +1134,7 @@ function comprobar_entrada_registro(e){
 function enviar_peticion_registro(email, usuario, contra){
   fetch(ipBackend + "SetUser/", {
     method : "POST",
-    body : JSON.stringify({"idUsr" : 0, "email" : email, "contrasenya" : contra, "tipoUsuario" : "normalUser", "alias" : usuario})
+    body : JSON.stringify({"email" : email, "contrasenya" : contra, "tipoUsuario" : "normalUser", "alias" : usuario})
   }).then(function(response){
     console.log(response)
     if(response.ok){
