@@ -433,6 +433,7 @@ function CalidadAudio() {
   const handleGuardar = () => {
     // TODO: falta guardar la calidad que tiene el usuario en la base de datos
     // Cambiar la variable calidad para que no sea constante
+    // Al darle a guardar se deberán subir los cambios a la base de datos
     setCambios(false);
     toast.info(`La calidad del audio se ha guardado como ${calidad}.`);
   };
