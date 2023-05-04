@@ -20,6 +20,7 @@ window.password = "example";
 window.idUsuario = "example";
 window.listasReproduccion = "example";
 window.nombreNuevaListaReproduccion = "Nueva lista de reproducción";
+window.calidad = "baja";
 
 //Funciones de prueba
 
@@ -416,12 +417,68 @@ class MenuPrincipal extends React.Component{
   }
 }
 
+function CalidadAudio() {
+  const [calidad, setCalidad] = useState("baja");
+  const [cambios, setCambios] = useState(false);
+
+  const handleChange = (event) => {
+    setCalidad(event.target.value);
+    setCambios(true);
+    if (event.target.value === "alta") {
+      toast.warning("La reproducción en alta calidad puede conllevar mayor gasto de datos móviles.");
+      toast.warning("No todas las canciones están disponibles en alta calidad.");
+    }
+  };
+
+  const handleGuardar = () => {
+    // TODO: falta guardar la calidad que tiene el usuario en la base de datos
+    // Cambiar la variable calidad para que no sea constante
+    setCambios(false);
+    toast.info(`La calidad del audio se ha guardado como ${calidad}.`);
+  };
+
+  return (
+    <div>
+      <p class="text-white marginRight:10px">Selecciona la calidad del audio:</p>
+      <div>
+        <label class="text-white marginRight:10px">
+          <input
+            type="radio"
+            name="calidad"
+            value="baja"
+            checked={calidad === "baja"}
+            onChange={handleChange}
+          />
+          Baja calidad
+        </label>
+      </div>
+      <div>
+        <label class="text-white marginRight:10px">
+          <input
+            type="radio"
+            name="calidad"
+            value="alta"
+            checked={calidad === "alta"}
+            onChange={handleChange}
+          />
+          Alta calidad
+        </label>
+      </div>
+      {cambios && <ButtonCommit
+                    onClick={handleGuardar}
+                    id=""
+                    text="Guardar"
+      />}
+    </div>
+  );
+}
+
 class PerfilUsuario extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       name: "",
-      esArtista: true,
+      esArtista: false,
     };
   }
 
@@ -490,6 +547,13 @@ class PerfilUsuario extends React.Component {
                     />
                   </li>
                 </div>
+                <div class="row justify-content-center align-items-center">
+                  <ButtonCommit
+                    onClick={editar_foto_perfil}
+                    id=""
+                    text="Editar foto de perfil"
+                  />
+                </div>
               </div>
             </div>
             <div class="col-md-4 mb-4 mb-md-0">
@@ -500,6 +564,8 @@ class PerfilUsuario extends React.Component {
                   Juan
                 </p>
                 <div class="d-grid gap-3 d-sm-flex justify-content-sm-center" />
+                <CalidadAudio/>
+                <div class="row justify-content-center align-items-center mb-4"></div>
                 <div class="row justify-content-center align-items-center mb-4">
                   {this.state.esArtista == false && (
                     <ButtonOnClick
@@ -570,6 +636,8 @@ function FormularioArtista() {
 
 function enviarAscenso(){
   //para que no se queje el react
+  // TODO
+  toast.error("No implementado");
 }
 
 function SelectorMusicaPodcast(props) {
@@ -1104,6 +1172,11 @@ function enviar_peticion_inicio(e){
       toast.error("El usuario o la contraseña son incorrectos")
     }
   }).catch(error => toast.error(error.message))
+}
+
+function editar_foto_perfil (){
+  // TODO
+  toast.error("Funcionalidad no implementada");
 }
 
 function enviar_peticion_artista(){
