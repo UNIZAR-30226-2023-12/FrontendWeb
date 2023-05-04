@@ -6,7 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import styled from "styled-components"
 import H5AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
-import { BsSliders2Vertical } from 'react-icons/bs';
+import { BsSliders2Vertical, BsBarChartLineFill } from 'react-icons/bs';
 import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat} from 'react-icons/md'
 import * as DjangoAPI from './Django_API';
 import * as Tone from 'tone';
@@ -223,6 +223,22 @@ class ButtonCommit extends React.Component{
   }
 }
 
+class ButtonSmall extends React.Component {
+  render() {
+    return (
+      <a
+        class="btn btn-primary_blue_4th btn-sm px-4 me-sm-3"
+        href="#!"
+        onClick={this.props.onClick}
+        id={this.props.id}
+        style={{ fontSize: '12px' }}
+      >
+        {this.props.text}
+      </a>
+    );
+  }
+}
+
 class ButtonType extends React.Component{
   render(){
     return (<button class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!" type={this.props.type} id={this.props.id} style={this.props.style}>{this.props.text}</button>)
@@ -418,7 +434,7 @@ class MenuPrincipal extends React.Component{
 }
 
 function CalidadAudio() {
-  const [calidad, setCalidad] = useState("baja");
+  const [calidad, setCalidad] = useState(window.calidad || "baja");
   const [cambios, setCambios] = useState(false);
 
   const handleChange = (event) => {
@@ -436,6 +452,12 @@ function CalidadAudio() {
     // Al darle a guardar se deberán subir los cambios a la base de datos
     setCambios(false);
     toast.info(`La calidad del audio se ha guardado como ${calidad}.`);
+    if (window.calidad === "alta") { // Anteriormente estaba en alta y queremos cambiar a baja
+      window.calidad = "baja";
+    }
+    else {
+      window.calidad = "alta"; // Anteriormente estaba en baja y queremos cambiar a alta
+    }
   };
 
   return (
@@ -479,7 +501,7 @@ class PerfilUsuario extends React.Component {
     super(props);
     this.state = {
       name: "",
-      esArtista: false,
+      esArtista: true,
     };
   }
 
@@ -515,7 +537,7 @@ class PerfilUsuario extends React.Component {
       .then(
         (result) => {
           this.setState({
-            esArtista: false/*result.esArtista*/,
+            esArtista: true/*result.esArtista*/,
           });
         },
         (error) => {
@@ -558,6 +580,13 @@ class PerfilUsuario extends React.Component {
               </div>
             </div>
             <div class="col-md-4 mb-4 mb-md-0">
+              <div class="d-flex align-items-right justify-content-end mb-3">
+                <ButtonSmall
+                  onClick={ver_reproducciones_artista}
+                  id=""
+                  text = {<BsBarChartLineFill />}
+                />
+              </div>
               <div class="text-center">
                 <h1 class="tuPerfil text-tuPerfil-50 mb-3">Tu perfil</h1>
                 <p class="display-5 fw-bolder text-white mb-4 ">
@@ -1197,6 +1226,11 @@ function enviar_peticion_artista(){
     }
   })
   .catch(error => toast.error(error.message))
+}
+
+function ver_reproducciones_artista(){
+  // TODO
+  toast.error("Funcionalidad no implementada");
 }
 
 function enviar_contenido_artista(){
