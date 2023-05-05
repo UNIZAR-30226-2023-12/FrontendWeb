@@ -16,6 +16,17 @@ npm install --save react-toastify
 npm install styled-components
 ```
 
+```bash
+npm i react-h5-audio-player
+```
+
+```bash
+npm i react-upload-box
+
+npm i react-icons
+
+npm i tone
+```
 
 ### Tomcat
 

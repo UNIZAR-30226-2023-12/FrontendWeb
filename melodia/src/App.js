@@ -6,8 +6,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import styled from "styled-components"
 import H5AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
-import { BsSliders2Vertical } from 'react-icons/bs';
-import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat} from 'react-icons/md'
+import { BsSliders2Vertical, BsBarChartLineFill } from 'react-icons/bs';
+import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat, MdArrowUpward, MdArrowDownward} from 'react-icons/md'
 import * as DjangoAPI from './Django_API';
 import * as Tone from 'tone';
 
@@ -15,11 +15,13 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-const ipBackend = "http://192.168.56.1:8081/";
+const ipBackend = "http://127.0.0.1:8081/";
+const tipoListaReproduccion = "listaReproduccion";
 window.password = "example";
 window.idUsuario = "example";
 window.listasReproduccion = "example";
 window.nombreNuevaListaReproduccion = "Nueva lista de reproducción";
+window.calidad = "baja";
 
 //Funciones de prueba
 
@@ -222,6 +224,22 @@ class ButtonCommit extends React.Component{
   }
 }
 
+class ButtonSmall extends React.Component {
+  render() {
+    return (
+      <a
+        class="btn btn-primary_blue_4th btn-sm px-4 me-sm-3"
+        href="#!"
+        onClick={this.props.onClick}
+        id={this.props.id}
+        style={{ fontSize: '12px' }}
+      >
+        {this.props.text}
+      </a>
+    );
+  }
+}
+
 class ButtonType extends React.Component{
   render(){
     return (<button class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!" type={this.props.type} id={this.props.id} style={this.props.style}>{this.props.text}</button>)
@@ -267,14 +285,14 @@ class ShuffleButtonNoTransition extends React.Component{
 class UpArrowNoTransition extends React.Component{
 
   render(){
-    return(<MdOutlineShuffle class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
+    return(<MdArrowUpward class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
   }
 }
 
 class DownArrowNoTransition extends React.Component{
 
   render(){
-    return(<MdOutlineShuffle class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
+    return(<MdArrowDownward class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
   }
 }
 
@@ -416,6 +434,69 @@ class MenuPrincipal extends React.Component{
   }
 }
 
+function CalidadAudio() {
+  const [calidad, setCalidad] = useState(window.calidad || "baja");
+  const [cambios, setCambios] = useState(false);
+
+  const handleChange = (event) => {
+    setCalidad(event.target.value);
+    setCambios(true);
+    if (event.target.value === "alta") {
+      toast.warning("La reproducción en alta calidad puede conllevar mayor gasto de datos móviles.");
+      toast.warning("No todas las canciones están disponibles en alta calidad.");
+    }
+  };
+
+  const handleGuardar = () => {
+    // TODO: falta guardar la calidad que tiene el usuario en la base de datos
+    // Cambiar la variable calidad para que no sea constante
+    // Al darle a guardar se deberán subir los cambios a la base de datos
+    setCambios(false);
+    toast.info(`La calidad del audio se ha guardado como ${calidad}.`);
+    if (window.calidad === "alta") { // Anteriormente estaba en alta y queremos cambiar a baja
+      window.calidad = "baja";
+    }
+    else {
+      window.calidad = "alta"; // Anteriormente estaba en baja y queremos cambiar a alta
+    }
+  };
+
+  return (
+    <div>
+      <p class="text-white marginRight:10px">Selecciona la calidad del audio:</p>
+      <div>
+        <label class="text-white marginRight:10px">
+          <input
+            type="radio"
+            name="calidad"
+            value="baja"
+            checked={calidad === "baja"}
+            onChange={handleChange}
+          />
+          Baja calidad
+        </label>
+      </div>
+      <div>
+        <label class="text-white marginRight:10px">
+          <input
+            type="radio"
+            name="calidad"
+            value="alta"
+            checked={calidad === "alta"}
+            onChange={handleChange}
+          />
+          Alta calidad
+        </label>
+      </div>
+      {cambios && <ButtonCommit
+                    onClick={handleGuardar}
+                    id=""
+                    text="Guardar"
+      />}
+    </div>
+  );
+}
+
 class PerfilUsuario extends React.Component {
   constructor(props) {
     super(props);
@@ -457,7 +538,7 @@ class PerfilUsuario extends React.Component {
       .then(
         (result) => {
           this.setState({
-            esArtista: false/*result.esArtista*/,
+            esArtista: true/*result.esArtista*/,
           });
         },
         (error) => {
@@ -490,9 +571,23 @@ class PerfilUsuario extends React.Component {
                     />
                   </li>
                 </div>
+                <div class="row justify-content-center align-items-center">
+                  <ButtonCommit
+                    onClick={editar_foto_perfil}
+                    id=""
+                    text="Editar foto de perfil"
+                  />
+                </div>
               </div>
             </div>
             <div class="col-md-4 mb-4 mb-md-0">
+              <div class="d-flex align-items-right justify-content-end mb-3">
+                <ButtonSmall
+                  onClick={ver_reproducciones_artista}
+                  id=""
+                  text = {<BsBarChartLineFill />}
+                />
+              </div>
               <div class="text-center">
                 <h1 class="tuPerfil text-tuPerfil-50 mb-3">Tu perfil</h1>
                 <p class="display-5 fw-bolder text-white mb-4 ">
@@ -500,6 +595,8 @@ class PerfilUsuario extends React.Component {
                   Juan
                 </p>
                 <div class="d-grid gap-3 d-sm-flex justify-content-sm-center" />
+                <CalidadAudio/>
+                <div class="row justify-content-center align-items-center mb-4"></div>
                 <div class="row justify-content-center align-items-center mb-4">
                   {this.state.esArtista == false && (
                     <ButtonOnClick
@@ -570,6 +667,8 @@ function FormularioArtista() {
 
 function enviarAscenso(){
   //para que no se queje el react
+  // TODO
+  toast.error("No implementado");
 }
 
 function SelectorMusicaPodcast(props) {
@@ -737,42 +836,83 @@ class ListasReproduccion extends React.Component{
 
   constructor(props) {
     super(props);
+    this.state = {hayListasReproduccion: false};
   }
 
   componentDidMount() {
     fetch(ipBackend + "GetListasUsr/", {
       method : "POST",
-      body : JSON.stringify({"email" : window.idUsuario, "contrasenya" : window.passwd})
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd})
     }).then(function(response){
       if(response.ok){
         response.json().then(function(data){
-          window.listasReproduccion = data.listas;
+          if (data.listas.length > 0){
+            data.listas.forEach(function(lista, index){
+              fetch(ipBackend + "GetLista/", {
+                method : "POST",
+                body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista" : lista})
+              }).then(function(response){
+                  if(response.ok){
+                    response.json().then(function(datos){
+                      if (datos.lista.tipoLista == tipoListaReproduccion){
+                        this.state.hayListasReproduccion = true;
+                        console.log("Cris: datos lista: ", datos.lista)
+                      } else {
+                        console.log("Cris: no es reproducción, var = ")
+                      }
+                    })
+                  } else{
+                    toast.error("El usuario o la contraseña son incorrectos")
+                  }
+                }).catch(error => toast.error(error.message))
+            })
+          }
         }).catch(function(error){
           console.error('Error al analizar la respuesta JSON:', error);
         })
       }else{
         toast.error("El usuario o la contraseña son incorrectos")
       }
-    }).catch(error => toast(error.message))
+    }).catch(error => toast.error(error.message))
   }
 
   // <PlaylistSortSelector onChange={handleSortChangeFolders} /> servira para las carpetas
+  // style={{"padding-bottom" : "1rem"}} abajo
+  // style={{"margin-top" : "3rem"}} arriba en container
+
+  // <header class="bg-blue_7th py-5" >
+  //         <div class="container px-5">
+  //           <div class="row gx-5 justify-content-center">
+  //             <div class="col-lg-6">
+  //               <div class="text-center my-5">
+  //                 <h1 class="display-5 fw-bolder text-white mb-2">Mis listas de reproducción</h1>
+  //               </div>
+  //             </div>
+  //           </div>
+  //         </div>
+  //       </header>
   render(){
     return (
       <>
-        <header class="bg-blue_7th py-5" >
-          <div class="container px-5" style={{"margin-top" : "3rem"}}>
-            <div class="row gx-5 justify-content-center">
-              <div class="col-lg-6">
-                <div class="text-center my-5">
-                  <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}}>Mis listas de reproducción</h1>
-                  <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Crear nueva lista"/>
-                </div>
-              </div>
-            </div>
+        <header class="bg-blue_7th" >
+          <div class="text-center my-5 justify-content-center row gx-5">
+            <h1 class="display-5 fw-bolder text-white mb-2">Mis listas de reproducción</h1>
           </div>
         </header>
-        <mostrar_listas_reproduccion playlists={window.listasReproduccion} />
+        <body>
+          <div class="text-center my-5 justify-content-center row gx-5">
+            {this.state.hayListasReproduccion ? (
+              <mostrar_listas_reproduccion playlists={window.listasReproduccion} />
+            ) : (
+              <p class="display-6 fw-bolder text-white mb-2">No tiene listas de reproducción</p>
+            )}
+          </div>
+          <div class="text-center my-5 justify-content-center row gx-5">
+            <div class="d-flex justify-content-center">
+              <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Crear nueva lista"/>
+            </div>
+          </div>
+        </body>
       </>
     )
   }
@@ -808,18 +948,18 @@ class NuevaListaReproduccionContenido extends React.Component{
   componentDidMount() {
     fetch(ipBackend + "SetLista/", {
       method : "POST",
-      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd})
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "tipoLista": tipoListaReproduccion, "nombreLista": window.nombreNuevaListaReproduccion})
     }).then(function(response){
       if(response.ok){
         response.json().then(function(data){
-          
+          // Lista creada
         }).catch(function(error){
           console.error('Error al analizar la respuesta JSON:', error);
         })
       }else{
         toast.error("El usuario o la contraseña son incorrectos")
       }
-    }).catch(error => toast(error.message))
+    }).catch(error => toast.error(error.message))
     console.log("Cris: nombre recargado:", window.nombreNuevaListaReproduccion);
   }
 
@@ -894,7 +1034,6 @@ class AnyadirCancionListaReproduccion extends React.Component{
     this.state = {listas: "", nombreLista: ""};
   }
 
-  // HAY QUE CAMBIAR LA FUNCION PORQUE AHORA MISMO NO HAY NADA QUE DEVUELVA LO QUE NECESITO: METER UNA BÚSQUEDA
   componentDidMount() {
     fetch(ipBackend + "GetSongs/", {
       method : "GET",
@@ -909,7 +1048,7 @@ class AnyadirCancionListaReproduccion extends React.Component{
       }else{
         toast.error("El usuario o la contraseña son incorrectos")
       }
-    }).catch(error => toast(error.message))
+    }).catch(error => toast.error(error.message))
   }
 
 
@@ -959,7 +1098,7 @@ class ListaReproduccionContenido extends React.Component{
   //     }else{
   //       toast.error("El usuario o la contraseña son incorrectos")
   //     }
-  //   }).catch(error => toast(error.message))
+  //   }).catch(error => toast.error(error.message))
   // }
 
   // Cristina: importante el botón de añadir canciones tiene que llamar a la api para meter otra canción y volver a recargar esta página
@@ -1057,7 +1196,7 @@ function comprobar_entrada_registro(e){
 function enviar_peticion_registro(email, usuario, contra){
   fetch(ipBackend + "SetUser/", {
     method : "POST",
-    body : JSON.stringify({"idUsr" : 0, "email" : email, "contrasenya" : contra, "tipoUsuario" : "normalUser", "alias" : usuario})
+    body : JSON.stringify({"email" : email, "contrasenya" : contra, "tipoUsuario" : "normalUser", "alias" : usuario})
   }).then(function(response){
     console.log(response)
     if(response.ok){
@@ -1106,6 +1245,11 @@ function enviar_peticion_inicio(e){
   }).catch(error => toast.error(error.message))
 }
 
+function editar_foto_perfil (){
+  // TODO
+  toast.error("Funcionalidad no implementada");
+}
+
 function enviar_peticion_artista(){
   fetch(ipBackend + "AskAdminToBeArtist/", {
     method : "POST",
@@ -1123,6 +1267,11 @@ function enviar_peticion_artista(){
     }
   })
   .catch(error => toast.error(error.message))
+}
+
+function ver_reproducciones_artista(){
+  // TODO
+  toast.error("Funcionalidad no implementada");
 }
 
 function enviar_contenido_artista(){
