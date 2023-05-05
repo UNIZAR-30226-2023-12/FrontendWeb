@@ -836,7 +836,7 @@ class ListasReproduccion extends React.Component{
 
   constructor(props) {
     super(props);
-    this.contListas = 0;
+    this.state = {hayListasReproduccion: false};
   }
 
   componentDidMount() {
@@ -855,7 +855,10 @@ class ListasReproduccion extends React.Component{
                   if(response.ok){
                     response.json().then(function(datos){
                       if (datos.lista.tipoLista == tipoListaReproduccion){
-                        this.contListas = this.contListas + 1;
+                        this.state.hayListasReproduccion = true;
+                        console.log("Cris: datos lista: ", datos.lista)
+                      } else {
+                        console.log("Cris: no es reproducción, var = ")
                       }
                     })
                   } else{
@@ -863,11 +866,6 @@ class ListasReproduccion extends React.Component{
                   }
                 }).catch(error => toast.error(error.message))
             })
-            //idLista = data.listas[0];
-            // hay alguna lista, hay que comprobar de qué tipo es
-            // buscar tipoLista == listaReproduccion
-            // GetLista/
-            
           }
         }).catch(function(error){
           console.error('Error al analizar la respuesta JSON:', error);
@@ -879,22 +877,42 @@ class ListasReproduccion extends React.Component{
   }
 
   // <PlaylistSortSelector onChange={handleSortChangeFolders} /> servira para las carpetas
+  // style={{"padding-bottom" : "1rem"}} abajo
+  // style={{"margin-top" : "3rem"}} arriba en container
+
+  // <header class="bg-blue_7th py-5" >
+  //         <div class="container px-5">
+  //           <div class="row gx-5 justify-content-center">
+  //             <div class="col-lg-6">
+  //               <div class="text-center my-5">
+  //                 <h1 class="display-5 fw-bolder text-white mb-2">Mis listas de reproducción</h1>
+  //               </div>
+  //             </div>
+  //           </div>
+  //         </div>
+  //       </header>
   render(){
     return (
       <>
-        <header class="bg-blue_7th py-5" >
-          <div class="container px-5" style={{"margin-top" : "3rem"}}>
-            <div class="row gx-5 justify-content-center">
-              <div class="col-lg-6">
-                <div class="text-center my-5">
-                  <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}}>Mis listas de reproducción</h1>
-                  <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Crear nueva lista"/>
-                </div>
-              </div>
-            </div>
+        <header class="bg-blue_7th" >
+          <div class="text-center my-5 justify-content-center row gx-5">
+            <h1 class="display-5 fw-bolder text-white mb-2">Mis listas de reproducción</h1>
           </div>
         </header>
-        <mostrar_listas_reproduccion playlists={window.listasReproduccion} />
+        <body>
+          <div class="text-center my-5 justify-content-center row gx-5">
+            {this.state.hayListasReproduccion ? (
+              <mostrar_listas_reproduccion playlists={window.listasReproduccion} />
+            ) : (
+              <p class="display-6 fw-bolder text-white mb-2">No tiene listas de reproducción</p>
+            )}
+          </div>
+          <div class="text-center my-5 justify-content-center row gx-5">
+            <div class="d-flex justify-content-center">
+              <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Crear nueva lista"/>
+            </div>
+          </div>
+        </body>
       </>
     )
   }
@@ -930,11 +948,11 @@ class NuevaListaReproduccionContenido extends React.Component{
   componentDidMount() {
     fetch(ipBackend + "SetLista/", {
       method : "POST",
-      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd})
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "tipoLista": tipoListaReproduccion, "nombreLista": window.nombreNuevaListaReproduccion})
     }).then(function(response){
       if(response.ok){
         response.json().then(function(data){
-          
+          // Lista creada
         }).catch(function(error){
           console.error('Error al analizar la respuesta JSON:', error);
         })
