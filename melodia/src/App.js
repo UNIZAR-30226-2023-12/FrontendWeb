@@ -328,13 +328,13 @@ class Reproductor extends React.Component{
 
   ecualiza() {
     // Obtén el reproductor de audio de H5AudioPlayer
-    console.log(this.reproductor)
-    const audio = 'ost/Gangsters_Delight.mp3';
+    console.log(this.reproductor.current.audio.current)
+    const audio = this.reproductor.current.audio.current;
     //create a distortion effect
     const reverb = new Tone.Reverb(3).toDestination();
     const player = new Tone.Player(audio).toDestination();
-    player.autostart = true;
-    player.connect(reverb);
+    //player.autostart = true;
+    Tone.connect(audio, reverb);
     
   }
 
