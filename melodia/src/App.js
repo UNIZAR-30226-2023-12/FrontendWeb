@@ -7,7 +7,7 @@ import styled from "styled-components"
 import H5AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
 import { BsSliders2Vertical, BsBarChartLineFill } from 'react-icons/bs';
-import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat} from 'react-icons/md'
+import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat, MdArrowUpward, MdArrowDownward} from 'react-icons/md'
 import * as DjangoAPI from './Django_API';
 import * as Tone from 'tone';
 
@@ -16,6 +16,7 @@ import { createRoot } from 'react-dom/client';
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
 const ipBackend = "http://127.0.0.1:8081/";
+const tipoListaReproduccion = "listaReproduccion";
 window.password = "example";
 window.idUsuario = "example";
 window.listasReproduccion = "example";
@@ -835,6 +836,7 @@ class ListasReproduccion extends React.Component{
 
   constructor(props) {
     super(props);
+    this.contListas = 0;
   }
 
   componentDidMount() {
@@ -845,15 +847,28 @@ class ListasReproduccion extends React.Component{
       if(response.ok){
         response.json().then(function(data){
           if (data.listas.length > 0){
+            data.listas.forEach(function(lista, index){
+              fetch(ipBackend + "GetLista/", {
+                method : "POST",
+                body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista" : lista})
+              }).then(function(response){
+                  if(response.ok){
+                    response.json().then(function(datos){
+                      if (datos.lista.tipoLista == tipoListaReproduccion){
+                        this.contListas = this.contListas + 1;
+                      }
+                    })
+                  } else{
+                    toast.error("El usuario o la contraseña son incorrectos")
+                  }
+                }).catch(error => toast.error(error.message))
+            })
+            //idLista = data.listas[0];
             // hay alguna lista, hay que comprobar de qué tipo es
             // buscar tipoLista == listaReproduccion
             // GetLista/
-            //fetch(ipBackend + "GetLista/", {
-            //  method : "POST",
-            //  body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista" : data.listas.lista})
-            //})
+            
           }
-          toast("Ha devuelto: ", data)
         }).catch(function(error){
           console.error('Error al analizar la respuesta JSON:', error);
         })
