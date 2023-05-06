@@ -344,9 +344,7 @@ class Reproductor extends React.Component{
     this.reproductor = React.createRef()
 
     this.state = {'audioSrc' : '', 
-    'loop' : 0,
-    eq: new Tone.EQ3(-10, 0, 10),
-    reverb: new Tone.Reverb(3)}
+    'loop' : 0}
 
     let x = 2;
     switch (x){
@@ -361,12 +359,37 @@ class Reproductor extends React.Component{
     }
   }
 
-  ecualiza() {
-    const audioNode = this.reproductor.current.audio.current; // Obtener el nodo de audio del reproductor
-    const audioContext = this.reproductor.current.context;
-    console.log(audioContext)
+  componentDidMount(){
     
-    //const toneAudioContext = new Context()
+  }
+
+  ecualiza() {
+
+    const audioElement = document.querySelector('[src="' + this.state.audioSrc + '"]');
+    const audioCtx = new AudioContext();
+    const sourceNode = audioCtx.createMediaElementSource(audioElement);
+    
+    const lowshelf = audioCtx.createBiquadFilter();
+    lowshelf.type = 'highshelf';
+    lowshelf.frequency.value = 300;
+    lowshelf.gain.value = -10;
+
+    const peaking = audioCtx.createBiquadFilter();
+    peaking.type = 'highshelf';
+    peaking.frequency.value = 1000;
+    peaking.gain.value = 5;
+    peaking.Q.value = 10;
+
+    const highshelf = audioCtx.createBiquadFilter();
+    highshelf.type = 'highshelf';
+    highshelf.frequency.value = 5000;
+    highshelf.gain.value = -10;
+
+    // Conectar los nodos en serie
+    sourceNode.connect(lowshelf);
+    lowshelf.connect(peaking);
+    peaking.connect(highshelf);
+    highshelf.connect(audioCtx.destination);
   }
 
   enable_loop = () =>{
