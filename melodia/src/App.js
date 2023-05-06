@@ -28,11 +28,15 @@ window.calidad = "baja";
 // Inicializa Tone.js
 Tone.start();
 
+//const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
 const eq = new Tone.EQ3({
   low: -200, // ganancia para frecuencias bajas
   mid: -200, // ganancia para frecuencias medias
   high: -200 // ganancia para frecuencias altas
 });
+
+//const reverb = new Tone.Reverb(3).toDestination();
 
 //-----------
 
@@ -329,7 +333,8 @@ class Reproductor extends React.Component{
     this.reproductor = React.createRef()
 
     this.state = {'audioSrc' : '', 
-    'loop' : 0}
+    'loop' : 0,
+    eq: new Tone.EQ3(-10, 0, 10),}
 
     let x = 2;
     switch (x){
@@ -345,15 +350,17 @@ class Reproductor extends React.Component{
   }
 
   ecualiza() {
-    // Obtén el reproductor de audio de H5AudioPlayer
-    console.log(this.reproductor.current.audio.current)
-    const audio = this.reproductor.current.audio.current;
-    //create a distortion effect
-    const reverb = new Tone.Reverb(3).toDestination();
-    const player = new Tone.Player(audio).toDestination();
-    //player.autostart = true;
-    Tone.connect(audio, reverb);
-    
+    try {
+      console.log(this.reproductor.current.audio.current);
+      const mediaElement = Tone.context.createMediaElementSource(this.reproductor.current.audio.current);
+      const gainNode = new Tone.Gain();
+      console.log(mediaElement)
+      console.log(gainNode)
+      const reverb = new Tone.Reverb(3).toDestination();
+      mediaElement.connect(gainNode);
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   enable_loop = () =>{
