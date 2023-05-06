@@ -15,12 +15,14 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-const ipBackend = "http://127.0.0.1:8081/";
+const ipBackend = "http://127.0.0.1:8081/"; // cristina
+// const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 window.password = "example";
 window.idUsuario = "example";
-window.listasReproduccion = "example";
 window.nombreNuevaListaReproduccion = "Nueva lista de reproducción";
+window.listasReproduccion = [];
+window.hayListasReproduccion = 0;
 window.calidad = "baja";
 
 //Funciones de prueba
@@ -843,38 +845,37 @@ class ListasReproduccion extends React.Component{
 
   constructor(props) {
     super(props);
-    this.state = {hayListasReproduccion: false};
+    window.hayListasReproduccion = 0;
+    window.listasReproduccion = [];
   }
 
   componentDidMount() {
     fetch(ipBackend + "GetListasUsr/", {
       method : "POST",
       body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd})
-    }).then(function(response){
+    }).then(response => {
       if(response.ok){
-        response.json().then(function(data){
+        response.json().then((data) =>{
           if (data.listas.length > 0){
-            data.listas.forEach(function(lista, index){
+            data.listas.forEach((lista, index) => {
               fetch(ipBackend + "GetLista/", {
                 method : "POST",
                 body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista" : lista})
-              }).then(function(response){
+              }).then((response) => {
                   if(response.ok){
-                    response.json().then(function(datos){
-                      if (datos.lista.tipoLista == tipoListaReproduccion){
-                        this.state.hayListasReproduccion = true;
-                        console.log("Cris: datos lista: ", datos.lista)
-                      } else {
-                        console.log("Cris: no es reproducción, var = ")
+                    response.json().then((datos) => {
+                      if (datos.lista.tipoLista === tipoListaReproduccion){
+                        window.hayListasReproduccion++;
+                        window.listasReproduccion.push(datos.lista.nombreLista)
                       }
                     })
                   } else{
-                    toast.error("El usuario o la contraseña son incorrectos")
+                    toast.warning("No se ha podido recuperar la información de tus listas de reproduccion")
                   }
                 }).catch(error => toast.error(error.message))
             })
           }
-        }).catch(function(error){
+        }).catch((error) => {
           console.error('Error al analizar la respuesta JSON:', error);
         })
       }else{
@@ -884,42 +885,59 @@ class ListasReproduccion extends React.Component{
   }
 
   // <PlaylistSortSelector onChange={handleSortChangeFolders} /> servira para las carpetas
-  // style={{"padding-bottom" : "1rem"}} abajo
-  // style={{"margin-top" : "3rem"}} arriba en container
-
-  // <header class="bg-blue_7th py-5" >
-  //         <div class="container px-5">
-  //           <div class="row gx-5 justify-content-center">
-  //             <div class="col-lg-6">
-  //               <div class="text-center my-5">
-  //                 <h1 class="display-5 fw-bolder text-white mb-2">Mis listas de reproducción</h1>
-  //               </div>
-  //             </div>
-  //           </div>
+  // render(){
+  //   return (
+  //     <>
+  //       <header class="bg-blue_7th" >
+  //         <div class="text-center my-5 justify-content-center row gx-5">
+  //           <h1 class="display-5 fw-bolder text-white mb-2">Mis listas de reproducción</h1>
   //         </div>
   //       </header>
+  //       <body>
+  //         <div class="text-center my-5 justify-content-center row gx-5">
+  //           {(window.hayListasReproduccion === 0) ? (
+  //             <p class="display-6 fw-bolder text-white mb-2"></p>
+  //           ) : (
+  //             <div>
+  //               <ul>
+  //                 {window.listasReproduccion.map((lista) => (
+  //                   <li key={lista}>{lista}</li>
+  //                 ))}
+  //               </ul>
+  //             </div>
+  //           )}
+  //         </div>
+  //         <div class="text-center my-5 justify-content-center row gx-5">
+  //           <div class="d-flex justify-content-center">
+  //             <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Crear nueva lista"/>
+  //           </div>
+  //         </div>
+  //       </body>
+  //     </>
+  //   )
+  // }
   render(){
     return (
       <>
-        <header class="bg-blue_7th" >
-          <div class="text-center my-5 justify-content-center row gx-5">
-            <h1 class="display-5 fw-bolder text-white mb-2">Mis listas de reproducción</h1>
-          </div>
-        </header>
-        <body>
-          <div class="text-center my-5 justify-content-center row gx-5">
-            {this.state.hayListasReproduccion ? (
-              <mostrar_listas_reproduccion playlists={window.listasReproduccion} />
+        <div className="bg-blue_7th" >
+          <div className="text-center my-5 justify-content-center row gx-5">
+            <h1 className="display-5 fw-bolder text-white mb-2">Mis listas de reproducción</h1>
+            {(window.hayListasReproduccion === 0) ? (
+              <p className="display-6 fw-bolder text-white mb-2"></p>
             ) : (
-              <p class="display-6 fw-bolder text-white mb-2">No tiene listas de reproducción</p>
+              <div>
+                <ul>
+                  {window.listasReproduccion.map((lista) => (
+                    <li key={lista}>{lista}</li>
+                  ))}
+                </ul>
+              </div>
             )}
-          </div>
-          <div class="text-center my-5 justify-content-center row gx-5">
-            <div class="d-flex justify-content-center">
+            <div className="d-flex justify-content-center">
               <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Crear nueva lista"/>
             </div>
           </div>
-        </body>
+        </div>
       </>
     )
   }
@@ -955,7 +973,7 @@ class NuevaListaReproduccionContenido extends React.Component{
   componentDidMount() {
     fetch(ipBackend + "SetLista/", {
       method : "POST",
-      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "tipoLista": tipoListaReproduccion, "nombreLista": window.nombreNuevaListaReproduccion})
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "tipoLista": tipoListaReproduccion, "nombreLista": window.nombreNuevaListaReproduccion, "privada": "privada"})
     }).then(function(response){
       if(response.ok){
         response.json().then(function(data){
@@ -964,10 +982,9 @@ class NuevaListaReproduccionContenido extends React.Component{
           console.error('Error al analizar la respuesta JSON:', error);
         })
       }else{
-        toast.error("El usuario o la contraseña son incorrectos")
+        toast.error("Ha habido un error")
       }
     }).catch(error => toast.error(error.message))
-    console.log("Cris: nombre recargado:", window.nombreNuevaListaReproduccion);
   }
 
   render(){
@@ -983,6 +1000,7 @@ class NuevaListaReproduccionContenido extends React.Component{
                   />
                 </div>
                 <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                  <ButtonOnClick onClick={misListasDeReproduccion} id="" text="Volver atrás"/>
                   <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
                   <ShuffleButtonNoTransition class="rhap_repeat-button rhap_button-clear" onClick={reproduccionAleatoria}/>
                 </div>
@@ -990,7 +1008,6 @@ class NuevaListaReproduccionContenido extends React.Component{
             </div>
           </div>
         </header>
-        <mostrar_listas_reproduccion playlists={this.state.listas} />
       </>
     )
   }
@@ -1005,7 +1022,21 @@ function FormularioRenombre({ nombre }) {
     e.preventDefault();
     window.nombreNuevaListaReproduccion = nuevoNombre;
     setNombreEditando(false);
-    // Cris TODO llevar el cambio al backend
+    // Cris TODO: cuando este el backend, cambiar la llamada a renombrar lista de reproduccion
+    fetch(ipBackend + "SetLista/", {
+      method : "POST",
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "tipoLista": tipoListaReproduccion, "nombreLista": window.nombreNuevaListaReproduccion, "privada": "privada"})
+    }).then(function(response){
+      if(response.ok){
+        response.json().then(function(data){
+          
+        }).catch(function(error){
+          console.error('Error al analizar la respuesta JSON:', error);
+        })
+      }else{
+        toast.error("Ha habido un error")
+      }
+    }).catch(error => toast.error(error.message))
     return (
       root.render(<PlayListContenido/>)
     )
@@ -1077,7 +1108,6 @@ class AnyadirCancionListaReproduccion extends React.Component{
             </div>
           </div>
         </header>
-        <mostrar_listas_reproduccion playlists={this.state.listas} />
       </>
     )
   }
@@ -1124,7 +1154,6 @@ class ListaReproduccionContenido extends React.Component{
             </div>
           </div>
         </header>
-        <mostrar_listas_reproduccion playlists={this.state.listas} />
       </>
     )
   }
@@ -1309,25 +1338,6 @@ function ultimo_punto_de_escucha(){
           <Button id="" text="Continuar ultima escucha"/>
     </ButtonGroup>
   )
-}
-
-function mostrar_listas_reproduccion(props) {
-  const playlists = props.playlists;
-
-  const playlistItems = playlists.map((playlist) => (
-    <div key={playlist.link}>
-      <h3>{playlist.name}</h3>
-      <p>{playlist.description}</p>
-      <a href={playlist.link}>Ver playlist</a>
-    </div>
-  ));
-
-  return (
-    <div>
-      <h2>Listas de reproducción:</h2>
-      {playlistItems}
-    </div>
-  );
 }
 
 function meterCancionesEnListaRep(){
