@@ -7,7 +7,7 @@ import styled from "styled-components"
 import H5AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
 import { BsSliders2Vertical, BsBarChartLineFill } from 'react-icons/bs';
-import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat, MdArrowUpward, MdArrowDownward} from 'react-icons/md'
+import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat, MdArrowUpward, MdArrowDownward, MdArrowForward} from 'react-icons/md'
 import * as DjangoAPI from './Django_API';
 import * as Tone from 'tone';
 
@@ -21,7 +21,8 @@ const tipoListaReproduccion = "listaReproduccion";
 window.password = "example";
 window.idUsuario = "example";
 window.nombreNuevaListaReproduccion = "Nueva lista de reproducción";
-window.listasReproduccion = [];
+window.idsLista = [];
+window.idLista = 0;
 window.hayListasReproduccion = 0;
 window.calidad = "baja";
 window.cancionesLista = [];
@@ -303,6 +304,13 @@ class DownArrowNoTransition extends React.Component{
   }
 }
 
+class RightArrowNoTransition extends React.Component{
+
+  render(){
+    return(<MdArrowForward class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
+  }
+}
+
 class Shuffle_Button extends React.Component{
   constructor(props){
     super(props)
@@ -358,7 +366,7 @@ class Reproductor extends React.Component{
     const audioContext = this.reproductor.current.context;
     console.log(audioContext)
     
-    const toneAudioContext = new Context()
+    //const toneAudioContext = new Context()
   }
 
   enable_loop = () =>{
@@ -870,8 +878,9 @@ class ListasReproduccion extends React.Component{
 
   constructor(props) {
     super(props);
-    window.hayListasReproduccion = 0;
-    window.listasReproduccion = [];
+    this.state = {
+      listasReproduccion: []
+    };
   }
 
   componentDidMount() {
@@ -882,7 +891,7 @@ class ListasReproduccion extends React.Component{
       if(response.ok){
         response.json().then((data) =>{
           if (data.listas.length > 0){
-            data.listas.forEach((lista, index) => {
+            data.listas.forEach((lista) => {
               fetch(ipBackend + "GetLista/", {
                 method : "POST",
                 body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista" : lista})
@@ -890,8 +899,8 @@ class ListasReproduccion extends React.Component{
                   if(response.ok){
                     response.json().then((datos) => {
                       if (datos.lista.tipoLista === tipoListaReproduccion){
-                        window.hayListasReproduccion++;
-                        window.listasReproduccion.push(datos.lista.nombreLista)
+                        this.setState({ listasReproduccion: [...this.state.listasReproduccion, datos.lista.nombreLista] });
+                        this.setState({ idLista: [...this.state.idLista, lista] });
                       }
                     })
                   } else{
@@ -908,30 +917,40 @@ class ListasReproduccion extends React.Component{
       }
     }).catch(error => toast.error(error.message))
   }
-
+  
   render(){
     return (
       <>
         <div className="bg-blue_7th" >
           <div className="text-center my-5 justify-content-center row gx-5">
             <h1 className="display-5 fw-bolder text-white mb-2">Mis listas de reproducción</h1>
-            {(window.hayListasReproduccion === 0) ? (
-              <p className="display-6 fw-bolder text-white mb-2"></p>
-            ) : (
-              <div>
-                <ul>
-                  {window.listasReproduccion.map((lista) => (
-                    <li key={lista}>{lista}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+          </div>
+          <div className="text-center my-5 justify-content-center row gx-5">
             <div className="d-flex justify-content-center">
+              <ButtonOnClick onClick={menuPrincipal} id="" text="Volver al menú"/>
               <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Crear nueva lista"/>
             </div>
           </div>
+          <div className="text-center my-5 justify-content-center row gx-5" style={{display: 'flex', alignItems: 'center' }}>
+            {(this.state.listasReproduccion.length === 0) ? (
+              <p className="display-6 fw-bolder text-white mb-2">No tienes listas de reproducción</p>
+            ) : (
+                this.state.listasReproduccion.map((nombre, index) => <CardNamePlaylist key={index} text={nombre}/>)
+            )}
+          </div>
         </div>
       </>
+    )
+  }
+}
+
+class CardNamePlaylist extends React.Component{
+  render(){
+    return (
+      <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
+        <p className="display-6 fw-bolder text-white mb-2" key={this.props.key}>{this.props.text}</p>
+        <RightArrowNoTransition onClick={() => ContenidoListaDeReproduccion(this.props.key)}/>
+      </div>
     )
   }
 }
@@ -947,9 +966,6 @@ class NuevaListaReproduccionContenido extends React.Component{
   }
 
   componentDidMount() {
-    // Aquí puedes colocar tu lógica de carga inicial de la lista de canciones
-    // Puedes hacer la solicitud fetch y actualizar el estado "songs" con el resultado
-    // Recuerda usar this.setState({ songs: ... }) para actualizar el estado
     fetch(ipBackend + "SetLista/", {
       method : "POST",
       body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "tipoLista": tipoListaReproduccion, "nombreLista": window.nombreNuevaListaReproduccion, "privada": "privada"})
@@ -1570,6 +1586,11 @@ function misListasDeReproduccion(){
 
 function nuevaListaDeReproduccion(){
   root.render(<PlayListContenido/>)
+}
+
+function ContenidoListaDeReproduccion(props){
+  window.idLista = window.idsLista(this.props.index);
+  root.render(<PlayListContenido/>);
 }
 
 function anyadirCancionListaRep(){
