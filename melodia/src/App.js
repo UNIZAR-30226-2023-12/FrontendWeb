@@ -460,17 +460,19 @@ class MenuPrincipal extends React.Component{
   }
 
   render(){
+    const esArtista = this.state.esArtista;
     return(
       <div class="main" style={{"display" : "flex"}}>
         <div style={{"display" : "flex", "flex-direction" : "column", "justify-content" : "center" , "width":"15rem", "margin-left" : "0.5rem"}}>
+        <p style={{ marginBottom: '10px' }}><br/></p>
           {ultimo_punto_de_escucha()}
-          <p><br/></p>
+          <p style={{ marginBottom: '10px' }}><br/></p>
           <ButtonGroup>
             <Button id="" text="Mis Carpetas"/>
             <p></p>
             <ButtonOnClick onClick={misListasDeReproduccion} id="" text="Mis Listas"/>
           </ButtonGroup>
-          <p><br/></p>
+          <p style={{ marginBottom: '10px' }}><br/></p>
           <ButtonGroup>
             <Button id="" text="Favoritos"/>
             <p></p>
@@ -478,10 +480,9 @@ class MenuPrincipal extends React.Component{
             <p></p>
             <Button id="" text="Social"/>
           </ButtonGroup>
-          <ButtonGroup>
-            <ButtonOnClick onClick={misCanciones} id="" text="Mis Canciones"/>
-          </ButtonGroup>
-          <p><br/></p>
+          <p style={{ marginBottom: '10px' }}><br/></p>
+          {esArtista ? <ButtonOnClick onClick={misCanciones} id="" text="Mis Canciones"/> : null}
+          <p style={{ marginBottom: '10px' }}><br/></p>
         </div>
         <div style={{"display" : "flex", "flex-direction" : "column", "flex" : "1"}}>
           <div class="bg-blue_3th main" style={{"width" : "100%", "heigth" : "100%", "flex": 1 }}>
@@ -1259,6 +1260,8 @@ class CancionesArtista extends React.Component {
           {Array.from(this.state.songs).map(song => (
             <p key={song}>{song}</p>
           ))}
+           <div>
+        </div>
         </div>
       </div>
     );
