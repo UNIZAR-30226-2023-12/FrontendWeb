@@ -8,6 +8,7 @@ import H5AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
 import { BsSliders2Vertical, BsBarChartLineFill } from 'react-icons/bs';
 import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat, MdArrowUpward, MdArrowDownward, MdArrowForward} from 'react-icons/md'
+import { GiDrum, GiMusicalKeyboard, GiUltrasound } from 'react-icons/gi'
 import * as DjangoAPI from './Django_API';
 import * as Tone from 'tone';
 
@@ -21,6 +22,7 @@ const tipoListaReproduccion = "listaReproduccion";
 window.password = "example";
 window.idUsuario = "example";
 window.nombreNuevaListaReproduccion = "Nueva lista de reproducción";
+window.nombreNuevaListaGlobal = "Nueva lista global";
 window.idsLista = [];
 window.idLista = 0;
 window.hayListasReproduccion = 0;
@@ -344,9 +346,34 @@ class Reproductor extends React.Component{
     this.reproductor = React.createRef()
 
     this.state = {'audioSrc' : '', 
-    'loop' : 0}
+                  'loop' : 0,
+                  'audioCtx' : new AudioContext(),
+                  'bajos' : 0,
+                  'medios' : 0,
+                  'altos' : 0,
+                  'showEqualizer' : false
+                }
 
-    let x = 2;
+    //Configuracion de ecualizacion de los bajos
+    this.bajos = this.state.audioCtx.createBiquadFilter();
+    this.bajos.type = 'lowshelf';
+    this.bajos.frequency.value = 250;
+    this.bajos.gain.value = this.state.bajos;
+
+    //Configuracion de ecualizacion de los medios
+    this.medios = this.state.audioCtx.createBiquadFilter();
+    this.medios.type = 'peaking';
+    this.medios.frequency.value = 2000;
+    this.medios.Q.value = 1;
+    this.medios.gain.value = this.state.medios;
+
+    //Configuracion de ecualizacion de los altos
+    this.altos = this.state.audioCtx.createBiquadFilter();
+    this.altos.type = 'highshelf';
+    this.altos.frequency.value = 4000;
+    this.altos.gain.value = this.state.altos;
+    
+    let x = randomIntFromInterval(0, 2);
     switch (x){
       case 0:
         this.state.audioSrc = 'ost/Down_Queens_Boulevard.mp3';
@@ -360,39 +387,36 @@ class Reproductor extends React.Component{
   }
 
   componentDidMount(){
-    
-  }
-
-  ecualiza() {
-
     const audioElement = document.querySelector('[src="' + this.state.audioSrc + '"]');
-    const audioCtx = new AudioContext();
-    const sourceNode = audioCtx.createMediaElementSource(audioElement);
+    const sourceNode = this.state.audioCtx.createMediaElementSource(audioElement);
     
-    const lowshelf = audioCtx.createBiquadFilter();
-    lowshelf.type = 'highshelf';
-    lowshelf.frequency.value = 300;
-    lowshelf.gain.value = -10;
-
-    const peaking = audioCtx.createBiquadFilter();
-    peaking.type = 'highshelf';
-    peaking.frequency.value = 1000;
-    peaking.gain.value = 5;
-    peaking.Q.value = 10;
-
-    const highshelf = audioCtx.createBiquadFilter();
-    highshelf.type = 'highshelf';
-    highshelf.frequency.value = 5000;
-    highshelf.gain.value = -10;
-
     // Conectar los nodos en serie
-    sourceNode.connect(lowshelf);
-    lowshelf.connect(peaking);
-    peaking.connect(highshelf);
-    highshelf.connect(audioCtx.destination);
+    sourceNode.connect(this.bajos);
+    this.bajos.connect(this.medios);
+    this.medios.connect(this.altos);
+    this.altos.connect(this.state.audioCtx.destination);
   }
 
-  enable_loop = () =>{
+  setBajosGain(value) {
+    this.bajos.gain.value = value
+    this.setState({bajos : value})
+  }
+
+  setMediosGain(value) {
+    this.medios.gain.value = value;
+    this.setState({medios : value}) 
+  }
+
+  setAltosGain(value) {
+    this.altos.gain.value = value;
+    this.setState({altos : value})
+  }
+
+  toggleSlider = () => {
+      this.setState({ showEqualizer: !this.state.showEqualizer });
+  }
+
+  enable_loop = () => {
     //console.log(DjangoAPI.prueba());
     if(this.state.loop === 0){
       toast.info("Reproduccion en bucle habilitada")
@@ -407,16 +431,33 @@ class Reproductor extends React.Component{
 
     return (
         <div style={{"display" : "flex"}}>
+          {this.state.showEqualizer && (
+            <div style={{"display" : "flex", "flex-direction" : "column", "justify-content" : "space-evenly", "background-color" : "#ffffff", "padding" : "0.3rem"}}>
+              <div style={{"display" : "flex"}}>
+                <GiDrum/>
+                <input type="range" min="-20" max="20" value={this.state.bajos} onChange={(e) => this.setBajosGain(e.target.value)} />
+              </div>
+              <div style={{"display" : "flex"}}>
+                <GiMusicalKeyboard/>
+                <input type="range" min="-20" max="20" value={this.state.medios} onChange={(e) => this.setMediosGain(e.target.value)} />
+              </div>
+              
+              <div style={{"display" : "flex"}}>
+                <GiUltrasound/>
+                <input type="range" min="-20" max="20" value={this.state.altos} onChange={(e) => this.setAltosGain(e.target.value)} />
+              </div>
+            </div>
+          )}
           <H5AudioPlayer
             ref={this.reproductor}
             id='reproductor'
             src={this.state.audioSrc}
             autoPlay={false}
-            volume={0.2}
+            volume={1}
             showFilledVolume={true}
             showSkipControls={true}
             customAdditionalControls={[
-              <BsSliders2Vertical class="rhap_repeat-button rhap_button-clear" onClick={this.ecualiza.bind(this)}/>,
+              <BsSliders2Vertical class="rhap_repeat-button rhap_button-clear" onClick={this.toggleSlider.bind(this)}/>,
             ]}
             customControlsSection={[
               RHAP_UI["ADDITIONAL_CONTROLS"],
@@ -437,7 +478,8 @@ class MenuPrincipal extends React.Component{
     super(props);
     this.state = {
       name: "",
-      esArtista: true,
+      esArtista: false,
+      esAdmin: true,
     };
   }
 
@@ -450,7 +492,7 @@ class MenuPrincipal extends React.Component{
       .then(
         (result) => {
           this.setState({
-            esArtista: true/*result.esArtista*/,
+            esArtista: false/*result.esArtista*/,
           });
         },
         (error) => {
@@ -459,8 +501,27 @@ class MenuPrincipal extends React.Component{
       );
   }
 
+  mostrarListasGlobales(){
+    fetch(ipBackend + "GetUser/", {
+      method: "POST",
+      body:JSON.stringify({idUsr: window.idUsuario, passwd:window.password}),
+    })
+    .then((res) => res.json())
+    .then(
+      (result) => {
+        this.setState({
+          esAdmin : true /*result.esAdmin*/,
+        });
+      },
+      (error) => {
+        console.log(error);
+      }
+    );
+  }
+
   render(){
     const esArtista = this.state.esArtista;
+    const esAdmin = this.state.esAdmin;
     return(
       <div class="main" style={{"display" : "flex"}}>
         <div style={{"display" : "flex", "flex-direction" : "column", "justify-content" : "center" , "width":"15rem", "margin-left" : "0.5rem"}}>
@@ -482,6 +543,7 @@ class MenuPrincipal extends React.Component{
           </ButtonGroup>
           <p style={{ marginBottom: '10px' }}><br/></p>
           {esArtista ? <ButtonOnClick onClick={misCanciones} id="" text="Mis Canciones"/> : null}
+          {esAdmin ? <ButtonOnClick onClick={listaGlobal} id="" text="Listas Globales"/> : null}
           <p style={{ marginBottom: '10px' }}><br/></p>
         </div>
         <div style={{"display" : "flex", "flex-direction" : "column", "flex" : "1"}}>
@@ -649,7 +711,7 @@ class PerfilUsuario extends React.Component {
             <div class="col-md-4 mb-4 mb-md-0">
               <div class="d-flex align-items-right justify-content-end mb-3">
                 <ButtonSmall
-                  onClick={ver_reproducciones_artista}
+                  onClick={misCanciones}
                   id=""
                   text = {<BsBarChartLineFill />}
                 />
@@ -1224,6 +1286,216 @@ class ListaReproduccionContenido extends React.Component{
   }
 }
 
+function FormularioRenombreGlobal({ nombre }) {
+  const [nombreEditando, setNombreEditando] = useState(false);
+  const [nuevoNombre, setNuevoNombre] = useState(nombre);
+
+  function handleNombreCambiado(e) {
+    e.preventDefault();
+    window.nombreNuevaListaReproduccion = nuevoNombre;
+    setNombreEditando(false);
+    // Cris TODO: cuando este el backend, cambiar la llamada a renombrar lista de reproduccion
+    fetch(ipBackend + "SetLista/", {
+      method : "POST",
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "tipoLista": tipoListaReproduccion, "nombreLista": window.nombreNuevaListaReproduccion, "privada": "privada"})
+    }).then(function(response){
+      if(response.ok){
+        response.json().then(function(data){
+          
+        }).catch(function(error){
+          console.error('Error al analizar la respuesta JSON:', error);
+        })
+      }else{
+        toast.error("Ha habido un error")
+      }
+    }).catch(error => toast.error(error.message))
+    return (
+      root.render(<PlayListContenido/>)
+    )
+  }
+
+  return (
+    <div>
+      {nombreEditando ? (
+        <form onSubmit={handleNombreCambiado}>
+          <input
+            class="display-6 fw-normal text-black mb-2 justify-content-center"
+            style={{"padding-bottom" : "1rem"}}
+            type="text"
+            value={nuevoNombre}
+            onChange={(e) => setNuevoNombre(e.target.value)}
+          />
+          <ButtonType style={{"padding-bottom" : "1rem"}} type="submit" id="" text="Cambiar el nombre"/>
+        </form>
+      ) : (
+        <div>
+          <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}} onClick={() => setNombreEditando(true)}>{nombre}</h1>
+        </div>
+      )}
+    </div>
+  );
+}
+
+class ListasGlobales extends React.Component{
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      listasReproduccion: []
+    };
+  }
+
+  componentDidMount() {
+    fetch(ipBackend + "GetListasUsr/", {
+      method : "POST",
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd})
+    }).then(response => {
+      if(response.ok){
+        response.json().then((data) =>{
+          if (data.listas.length > 0){
+            data.listas.forEach((lista) => {
+              fetch(ipBackend + "GetLista/", {
+                method : "POST",
+                body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista" : lista})
+              }).then((response) => {
+                  if(response.ok){
+                    response.json().then((datos) => {
+                      if (datos.lista.tipoLista === tipoListaReproduccion){
+                        this.setState({ listasReproduccion: [...this.state.listasReproduccion, datos.lista.nombreLista] });
+                        this.setState({ idLista: [...this.state.idLista, lista] });
+                      }
+                    })
+                  } else{
+                    toast.warning("No se ha podido recuperar la información de tus listas de reproduccion")
+                  }
+                }).catch(error => toast.error(error.message))
+            })
+          }
+        }).catch((error) => {
+          console.error('Error al analizar la respuesta JSON:', error);
+        })
+      }else{
+        toast.error("El usuario o la contraseña son incorrectos")
+      }
+    }).catch(error => toast.error(error.message))
+  }
+  
+  render(){
+    return (
+      <>
+        <div className="bg-blue_7th" >
+          <div className="text-center my-5 justify-content-center row gx-5">
+            <h1 className="display-5 fw-bolder text-white mb-2">Listas de reproducción globales</h1>
+          </div>
+          <div className="text-center my-5 justify-content-center row gx-5">
+            <div className="d-flex justify-content-center">
+              <ButtonOnClick onClick={menuPrincipal} id="" text="Volver al menú"/>
+              <ButtonOnClick onClick={nuevaListaGlobal} id="" text="Crear lista global"/>
+            </div>
+          </div>
+          <div className="text-center my-5 justify-content-center row gx-5" style={{display: 'flex', alignItems: 'center' }}>
+            {(this.state.listasReproduccion.length === 0) ? (
+              <p className="display-6 fw-bolder text-white mb-2">No se han creado listas de reproduccion globales</p>
+            ) : (
+                this.state.listasReproduccion.map((nombre, index) => <CardNamePlaylist key={index} text={nombre}/>)
+            )}
+          </div>
+        </div>
+      </>
+    )
+  }
+}
+
+// TODO: ver como mandar la nueva lista global para que sea pública
+class CrearListaGlobal extends React.Component{
+
+  constructor(props) {
+    super(props);
+    window.cancionesLista = [];
+    this.state = {
+      sortKey: 'tematica'
+    };
+  }
+
+  componentDidMount() {
+    fetch(ipBackend + "SetLista/", {
+      method : "POST",
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "tipoLista": tipoListaReproduccion, "nombreLista": window.nombreNuevaListaReproduccion, "publica": "TRUE"})
+    }).then(response => {
+      if(response.ok){
+        response.json().then(data => {
+          // Lista creada
+          // modificar la llamada con los parametros adecuados, esto es solo para que compile
+          fetch(ipBackend + "GetLista/", {
+            method : "POST",
+            body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "tipoLista": tipoListaReproduccion, "nombreLista": window.nombreNuevaListaReproduccion, "publica": "TRUE"})
+          }).then(response =>{
+            if(response.ok){
+              response.json().then(datos => {
+                // obtener los datos de la lista
+                window.cancionesLista.push(datos.canciones); // no va a funcionar, es solamente para que compile
+              }).catch(error => {
+                console.error('Error al analizar la respuesta JSON:', error);
+              })
+            }else{
+              toast.error("Ha habido un error")
+            }
+          }).catch(error => toast.error(error.message))
+        }).catch(function(error){
+          console.error('Error al analizar la respuesta JSON:', error);
+        })
+      }else{
+        toast.error("Ha habido un error")
+      }
+    }).catch(error => toast.error(error.message))
+  }
+
+  handleSortChange = (value) => {
+    this.setState({ sortKey: value });
+  };
+
+  sortSongs = () => {
+
+    if (this.state.sortKey === "tematica"){
+      window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.tematica.localeCompare(b.tematica))];
+    } else if (this.state.sortKey === "titulo") {
+      window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.titulo.localeCompare(b.titulo))];
+    } else if (this.state.sortKey === "artista") {
+      window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.artista.localeCompare(b.artista))];
+    } else if (this.state.sortKey === "idioma") {
+      window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.idioma.localeCompare(b.idioma))];
+    }
+  };
+
+  render(){
+    return (
+      <>
+        <header class="bg-blue_7th py-5" >
+          <div class="container px-5" style={{"margin-top" : "3rem"}}>
+            <div class="row gx-5 justify-content-center">
+              <div class="col-lg-6">
+                <div class="text-center my-5">
+                  <FormularioRenombreGlobal
+                    nombre={window.nombreNuevaListaGlobal}
+                  />
+                </div>
+                <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                  <PlaylistSortSelector onChange={this.handleSortChange} />
+                </div>
+                <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                  <ButtonOnClick onClick={listaGlobal} id="" text="Volver atrás"/>
+                  <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
+                  <ShuffleButtonNoTransition class="rhap_repeat-button rhap_button-clear" onClick={reproduccionAleatoria}/>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+      </>
+    )
+  }
+}
+
 class CancionesArtista extends React.Component {
   constructor(props) {
     super(props);
@@ -1412,11 +1684,6 @@ function enviar_peticion_artista(){
   .catch(error => toast.error(error.message))
 }
 
-function ver_reproducciones_artista(){
-  // TODO
-  toast.error("Funcionalidad no implementada");
-}
-
 function enviar_contenido_artista(){
   fetch(ipBackend + "SetSong/", {
     method : "POST",
@@ -1545,6 +1812,28 @@ function AnyadirCancionLista(){
   )
 }
 
+function GlobalPlayList(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <ListasGlobales/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
+function newGlobalPlaylist(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <CrearListaGlobal/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
 function MySongs(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
@@ -1625,6 +1914,14 @@ function anyadirCancionListaRep(){
 
 function misCanciones(){
   root.render(<MySongs/>)
+}
+
+function listaGlobal(){
+  root.render(<GlobalPlayList/>)
+}
+
+function nuevaListaGlobal(){
+  root.render(<newGlobalPlaylist/>)
 }
 
 function reproduccionAleatoria(){
