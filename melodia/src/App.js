@@ -309,8 +309,12 @@ class DownArrowNoTransition extends React.Component{
 
 class RightArrowNoTransition extends React.Component{
 
+  CambiarPantalla = () => {
+    ContenidoListaDeReproduccion(this.props.var);
+  }  
+
   render(){
-    return(<MdArrowForward class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
+    return(<MdArrowForward class="rhap_repeat-button rhap_button-clear" onClick={this.CambiarPantalla}/>)
   }
 }
 
@@ -978,6 +982,7 @@ class ListasReproduccion extends React.Component{
     this.state = {
       listasReproduccion: []
     };
+    window.idsLista = [];
   }
 
   componentDidMount() {
@@ -996,8 +1001,12 @@ class ListasReproduccion extends React.Component{
                   if(response.ok){
                     response.json().then((datos) => {
                       if (datos.lista.tipoLista === tipoListaReproduccion){
-                        this.setState({ listasReproduccion: [...this.state.listasReproduccion, datos.lista.nombreLista] });
-                        this.setState({ idLista: [...this.state.idLista, lista] });
+                        const listaCustom = {
+                          id: lista,
+                          nombre: datos.lista.nombreLista
+                        };
+                        this.setState({ listasReproduccion: [...this.state.listasReproduccion, listaCustom] });
+                        console.log("Cris: lista = ", this.state.listasReproduccion);
                       }
                     })
                   } else{
@@ -1032,7 +1041,7 @@ class ListasReproduccion extends React.Component{
             {(this.state.listasReproduccion.length === 0) ? (
               <p className="display-6 fw-bolder text-white mb-2">No tienes listas de reproducción</p>
             ) : (
-                this.state.listasReproduccion.map((nombre, index) => <CardNamePlaylist key={index} text={nombre}/>)
+                this.state.listasReproduccion.map((lista) => <CardNamePlaylist var={lista.id} text={lista.nombre}/>)
             )}
           </div>
         </div>
@@ -1042,11 +1051,16 @@ class ListasReproduccion extends React.Component{
 }
 
 class CardNamePlaylist extends React.Component{
+
+  constructor(props) {
+    super(props);
+  }
+
   render(){
     return (
       <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
-        <p className="display-6 fw-bolder text-white mb-2" key={this.props.key}>{this.props.text}</p>
-        <RightArrowNoTransition onClick={() => ContenidoListaDeReproduccion(this.props.key)}/>
+        <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
+        <RightArrowNoTransition var={this.props.var}/>
       </div>
     )
   }
@@ -1242,52 +1256,6 @@ class AnyadirCancionListaReproduccion extends React.Component{
                 <input class="form-control" id="busqueda-anyadir" type="text" placeholder="Cancion X"/>
                 <label for="busqueda">Buscar  &#128269;</label>
               </div>
-              </div>
-            </div>
-          </div>
-        </header>
-      </>
-    )
-  }
-}
-
-class ListaReproduccionContenido extends React.Component{
-
-  constructor(props) {
-    super(props);
-    this.state = {listas: "", nombreLista: ""};
-  }
-
-  // hay que comprobar cómo furula esto
-  // componentDidMount() {
-  //   fetch(ipBackend + "SetLista/", {
-  //     method : "POST",
-  //     body : JSON.stringify({"idUsr" : idUsuario, "contrasenya" : passwd})
-  //   }).then(function(response){
-  //     if(response.ok){
-  //       response.json().then(function(data){
-  //         this.state.listas = data.listas;
-  //       }).catch(function(error){
-  //         console.error('Error al analizar la respuesta JSON:', error);
-  //       })
-  //     }else{
-  //       toast.error("El usuario o la contraseña son incorrectos")
-  //     }
-  //   }).catch(error => toast.error(error.message))
-  // }
-
-  // Cristina: importante el botón de añadir canciones tiene que llamar a la api para meter otra canción y volver a recargar esta página
-  render(){
-    return (
-      <>
-        <header class="bg-blue_7th py-5" >
-          <div class="container px-5" style={{"margin-top" : "3rem"}}>
-            <div class="row gx-5 justify-content-center">
-              <div class="col-lg-6">
-                <div class="text-center my-5">
-                  <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}}>{this.state.nombreLista}</h1>
-                  <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Añadir canciones"/>
-                </div>
               </div>
             </div>
           </div>
@@ -1928,8 +1896,8 @@ function nuevaListaDeReproduccion(){
   root.render(<PlayListContenido/>)
 }
 
-function ContenidoListaDeReproduccion(props){
-  window.idLista = window.idsLista(this.props.index);
+function ContenidoListaDeReproduccion(indice){
+  window.idLista = indice;
   root.render(<PlayListContenido/>);
 }
 
