@@ -29,6 +29,6 @@ export const postSong = (usuario, contrasenya, cancion) => {
    
     fetch(ipBackend + "SetSong/", {
         method: "POST",
-        body: JSON.stringify({ CLAVE_ID_USUARIO: usuario, CLAVE_CONTRASENYA: contrasenya, CLAVE_NOMBRE_AUDIO:"TestSong", CLAVE_PREFIJO_AUDIO : base64_file, CLAVE_ES_PODCAST : false, "longitud" : 2, "genero" : 1, "calidad": alta, "artista": "Mario"}),
+        body: JSON.stringify({ CLAVE_ID_USUARIO: usuario, CLAVE_CONTRASENYA: contrasenya, CLAVE_NOMBRE_AUDIO:"TestSong", CLAVE_PREFIJO_AUDIO : base64_file, CLAVE_ES_PODCAST : false, "longitud" : 2, "genero" : 1, "calidad": "alta", "artista": "Mario"}),
     })
 }

@@ -9,9 +9,12 @@ import 'react-h5-audio-player/lib/styles.css';
 import { BsSliders2Vertical, BsBarChartLineFill } from 'react-icons/bs';
 import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat, MdArrowUpward, MdArrowDownward, MdArrowForward} from 'react-icons/md'
 import { GiDrum, GiMusicalKeyboard, GiUltrasound } from 'react-icons/gi'
+import {AiOutlineGlobal} from 'react-icons/ai'
+import {FiShare2} from 'react-icons/fi'
 import * as DjangoAPI from './Django_API';
 import * as Tone from 'tone';
 import moment from 'moment';
+import 'moment/locale/es';
 
 import { createRoot } from 'react-dom/client';
 
@@ -432,6 +435,30 @@ class Reproductor extends React.Component{
     }
   }
 
+  share_song = () => {
+    fetch(ipBackend + "GetLinkCancion/", {
+      method: "POST",
+      body: JSON.stringify({ //TODO: cambiar idCancion por la canción escuchada en el momento concreto
+        "idUsr": window.idUsuario, "contrasenya": window.passwd, "idSong": window.idCancion
+
+      })
+    }).then(response => {
+      if (response.ok) {
+        response.text().then(data => {
+          // Copiar enlace al portapapeles
+          navigator.clipboard.writeText(data);
+          // Mostrar mensaje de éxito
+          toast.info("Enlace a la canción copiado en el portapapeles");
+        }).catch(error => {
+          console.error('Error al analizar la respuesta de texto:', error);
+        })
+      } else {
+        toast.error("Ha habido un error");
+      }
+    }).catch(error => toast.error(error.message))
+  }
+  
+
   render(){
 
     return (
@@ -453,6 +480,9 @@ class Reproductor extends React.Component{
               </div>
             </div>
           )}
+          <div style={{"display" : "flex"}}>
+            <button onClick={this.share_song}>{FiShare2}</button>
+          </div>
           <H5AudioPlayer
             ref={this.reproductor}
             id='reproductor'
@@ -540,11 +570,11 @@ class MenuPrincipal extends React.Component{
           </ButtonGroup>
           <p style={{ marginBottom: '10px' }}><br/></p>
           <ButtonGroup>
-            <Button id="" text="Favoritos"/>
+            <ButtonOnClick id="" text="Favoritos"/>
             <p></p>
-            <Button id="" text="Random"/>
+            <ButtonOnClick id="" text="Random"/>
             <p></p>
-            <Button id="" text="Social"/>
+            <ButtonOnClick onClick={perfilOtroUsuario} id="" text="Social"/>
           </ButtonGroup>
           <p style={{ marginBottom: '10px' }}><br/></p>
           {esArtista ? <ButtonOnClick onClick={misCanciones} id="" text="Mis Canciones"/> : null}
@@ -727,7 +757,12 @@ class PerfilUsuario extends React.Component {
                   <ButtonSmall
                     onClick={estadisticas}
                     id=""
-                    text = {<BsBarChartLineFill />}
+                    text = 
+                    {
+                      <span>
+                        <BsBarChartLineFill/> <AiOutlineGlobal/>
+                      </span>
+                    }
                   />
                 )}
               </div>
@@ -1523,14 +1558,242 @@ class CancionesArtista extends React.Component {
 }
 
 class MinutajeSemanal extends React.Component{
+  
+  constructor(props) {
+    super(props);
+    this.state = {
+      segundosReproducidos: 0
+    };
+  }
+
+  componentDidMount() {
+    fetch(ipBackend + "GetTotRepTime(String idUsr, String contrasenya/", {
+      method: "POST",
+      body: JSON.stringify({ "idUsr": window.idUsuario, "contrasenya": window.passwd })
+    })
+    .then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      throw new Error("Error al obtener el minutaje semanal");
+    })
+    .then(data => {
+      const segundosReproducidos = new Set(data.segs); //TODO: ver como se llama el resultado en el backend
+      this.setState({ segundosReproducidos: segundosReproducidos});
+    })
+    .catch(error => toast.error(error.message));
+  }
+
   render(){
+    const diaDeLaSemana = moment().locale('es').format('dddd');
+    const { segundosReproducidos } = this.state;
+
     return(
       <div className="bg-blue_7th" >
         <div className="text-center my-5 justify-content-center row gx-5">
-          <h1 className="display-5 fw-bolder text-white mb-2">Listas de reproducción globales</h1>
+          <h1 className="display-5 fw-bolder text-white mb-2">Estadísticas de reproducciones globales</h1>
+        </div>
+        <div className="text-center my-5 justify-content-center row gx-5">
+          <h1 className="titulo-formArtista titulo-formArtista-lg mb-3 text-white">Hoy es {diaDeLaSemana}</h1>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos} segundos de audio</p>
+        </div>
+        <div class="text-center my-5">
+          <ButtonOnClick onClick={historicoEstadistico} id="" text="Ver historico semanal"/>
         </div>
       </div>
-    )
+    );
+  }
+}
+
+// TODO: ver como obtener del backend el historico semanal para cada día de la semana que se guarda
+class HistoricoSemanal extends React.Component{
+  constructor(props) {
+    super(props);
+    this.state = {
+      segundosReproducidos1: 0, // Día actual
+      segundosReproducidos2: 10, // Día anterior
+      segundosReproducidos3: 20, 
+      segundosReproducidos4: 30,
+      segundosReproducidos5: 40,
+      segundosReproducidos6: 50,
+      segundosReproducidos7: 60, // Hace una semana, último día del historico
+    };
+  }
+
+  componentDidMount() {
+    fetch(ipBackend + "GetTotRepTime/", {
+      method: "POST",
+      body: JSON.stringify({ "idUsr": window.idUsuario, "contrasenya": window.passwd })
+    })
+    .then(response => {
+      if (response.ok) {
+        return response.json();
+      }
+      throw new Error("Error al obtener el minutaje semanal");
+    })
+    .then(data => {
+      const segundosReproducidos1 = new Set(data.segs); //TODO: ver como se llama el resultado en el backend
+      this.setState({ segundosReproducidos1: segundosReproducidos1});
+    })
+    .catch(error => toast.error(error.message));
+  }
+  
+  render(){
+    const diaDeLaSemana1 = moment().locale('es').format('dddd');
+    const diaDeLaSemana2 = moment().locale('es').subtract(1, 'days').format('dddd');
+    const diaDeLaSemana3 = moment().locale('es').subtract(2, 'days').format('dddd');
+    const diaDeLaSemana4 = moment().locale('es').subtract(3, 'days').format('dddd');
+    const diaDeLaSemana5 = moment().locale('es').subtract(4, 'days').format('dddd');
+    const diaDeLaSemana6 = moment().locale('es').subtract(5, 'days').format('dddd');
+    const diaDeLaSemana7 = moment().locale('es').subtract(6, 'days').format('dddd');
+
+    const { segundosReproducidos1 } = this.state;
+    const { segundosReproducidos2 } = this.state;
+    const { segundosReproducidos3 } = this.state;
+    const { segundosReproducidos4 } = this.state;
+    const { segundosReproducidos5 } = this.state;
+    const { segundosReproducidos6 } = this.state;
+    const { segundosReproducidos7 } = this.state;
+
+    return(
+      <div className="bg-blue_7th" >
+        <div className="text-center my-5 justify-content-center row gx-5">
+          <h1 className="display-5 fw-bolder text-white mb-2">Estadísticas de reproducciones globales</h1>
+        </div>
+        <div className="text-center my-5 justify-content-center row gx-5">
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">Hasta ahora se han reproducido{' '} 
+                      {segundosReproducidos1} segundos de audio el {diaDeLaSemana1}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos2} segundos de audio el {diaDeLaSemana2}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos3} segundos de audio el {diaDeLaSemana3}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos4} segundos de audio el {diaDeLaSemana4}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos5} segundos de audio el {diaDeLaSemana5}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos6} segundos de audio el {diaDeLaSemana6}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos7} segundos de audio el {diaDeLaSemana7}</p>
+        </div>
+      </div>
+    );
+  }
+}
+
+class UsuarioExtra extends React.Component{
+  constructor(props) {
+    super(props);
+    this.state = {
+      name: "",
+      esArtista: false, // Si el artista es falso se puede mandar solicitud de amistad
+                        // Si el artista es true se puede suscribir el usuario a su perfil
+    };
+  }
+
+  componentDidMount() {
+    this.mostrarBotones();
+    this.obtenerNombre();
+  }
+
+  obtenerNombre() {
+    fetch(ipBackend + "GetUser/", {
+      method: "POST",
+      body: JSON.stringify({ idUsr: window.idUsuario }), // TODO: se debe enviar el usuario devuelto por la búsqueda y clicado
+    })
+      .then((res) => res.json())
+      .then(
+        (result) => {
+          this.setState({
+            name: result.name,
+          });
+        },
+        (error) => {
+          console.log(error);
+        }
+      );
+  }
+
+  mostrarBotones() {
+    fetch(ipBackend + "GetUser/", {
+      method: "POST",
+      body: JSON.stringify({ idUsr: window.idUsuario, passwd: window.password }),
+    })
+      .then((res) => res.json())
+      .then(
+        (result) => {
+          this.setState({
+            esArtista: false/*result.esArtista*/,
+          });
+        },
+        (error) => {
+          console.log(error);
+        }
+      );
+  }
+
+  render() {
+    return (
+      <header
+        class="bg-blue_7th py-5"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          flex: 1,
+        }}
+      >
+        <div class="container">
+          <div class="row justify-content-center align-items-center">
+            <div class="col-md-4">
+              <div class="card-body p-5">
+                <div class="list-unstyled mb-4">
+                  <li class="mb-2">
+                    <img
+                      src="assets/boy_listening_music.jpg"
+                      width="100%"
+                      style={{ borderRadius: "50%" }}
+                    />
+                  </li>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4 mb-4 mb-md-0">
+              <div class="d-flex align-items-right justify-content-end mb-3">
+              </div>
+              <div class="text-center">
+                <p class="display-5 fw-bolder text-white mb-4 ">
+                  {/*{this.state.name}*/}
+                  Juan
+                </p>
+                <div class="d-grid gap-3 d-sm-flex justify-content-sm-center" />
+                <div class="row justify-content-center align-items-center mb-4"></div>
+                <div class="row justify-content-center align-items-center mb-4">
+                  {this.state.esArtista === true && (
+                    <div>
+                      <p className="cuerpo-formArtista fw-bolder subtitulo-formArtista subtitulo-formArtista-md mb-4 text-white">
+                        ¿Te gusta la música de este artista? ¡Suscríbete!
+                      </p>
+                      <ButtonOnClick
+                      onClick={suscribirse}
+                      id=""
+                      text="Suscribirse"
+                      />
+                    </div>
+                  )}
+                  {this.state.esArtista === false && (
+                    <div>
+                      <p className="cuerpo-formArtista fw-bolder subtitulo-formArtista subtitulo-formArtista-md mb-4 text-white">
+                        ¿Conoces a este usuario? ¡Envíale una solicitud de amistad y comparte tu música!
+                      </p>
+                      <ButtonOnClick
+                      onClick={enviar_solicitud_amistad}
+                      id=""
+                      text="Enviar solicitud de amistad"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+    );
   }
 }
 
@@ -1698,6 +1961,35 @@ function enviar_contenido_artista(){
   .catch(error => toast.error(error.message))
 }
 
+function suscribirse(){
+  // TODO
+  toast.error("Funcionalidad no implementada");
+}
+
+function enviar_solicitud_amistad(){
+  fetch(ipBackend + "AskFriend/", {
+    method: "POST",
+    body: JSON.stringify({ // TODO: conseguir el id del usuario al que se le quiere enviar la solicitud, del que estamos viendo el perfil
+      "idUsr": window.idUsuario, "contrasenya": window.passwd, "idAmigo": "idAmigo"
+    })
+  }).then(response => {
+    if (response.ok) {
+      response.json().then(data => {
+        // Mostrar mensaje de éxito
+        if (data === 1) {
+          toast.success("Solicitud de amistad enviada con éxito");
+        } else {
+          toast.info("Ya has enviado una solicitud de amistad a este usuario");
+        }
+      }).catch(error => {
+        console.error('Error al analizar la respuesta JSON:', error);
+      })
+    } else {
+      toast.error("Ha habido un error");
+    }
+  }).catch(error => toast.error(error.message))
+}
+
 function ultimo_punto_de_escucha(){
 
   //TODO: Comprobar que haya un ultimo punto de escucha
@@ -1850,11 +2142,33 @@ function Statistics(){
   )
 }
 
+function StatisticHistory(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <HistoricoSemanal/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
 function Menu(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
       <MenuPrincipal/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
+function ProfileOtherUser(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <UsuarioExtra/>
       <Footer/>
       <ToastContainer/>
     </div>
@@ -1925,6 +2239,10 @@ function estadisticas(){
   root.render(<Statistics/>) 
 }
 
+function historicoEstadistico(){
+  root.render(<StatisticHistory/>)
+}
+
 function listaGlobal(){
   root.render(<GlobalPlayList/>)
 }
@@ -1935,6 +2253,10 @@ function nuevaListaGlobal(){
 
 function reproduccionAleatoria(){
   root.render(<PlayListContenido/>)
+}
+
+function perfilOtroUsuario(){
+  root.render(<ProfileOtherUser/>)
 }
 
 export default App;
