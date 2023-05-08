@@ -11,13 +11,14 @@ import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat, MdArrowUpward, MdA
 import { GiDrum, GiMusicalKeyboard, GiUltrasound } from 'react-icons/gi'
 import * as DjangoAPI from './Django_API';
 import * as Tone from 'tone';
+import moment from 'moment';
 
 import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-const ipBackend = "http://127.0.0.1:8081/"; // cristina
-// const ipBackend = "http://192.168.56.1:8081/"; // ismael
+// const ipBackend = "http://127.0.0.1:8081/"; // cristina
+const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 window.password = "example";
 window.idUsuario = "example";
@@ -630,7 +631,8 @@ class PerfilUsuario extends React.Component {
     super(props);
     this.state = {
       name: "",
-      esArtista: true,
+      esArtista: false,
+      esAdmin: true,
     };
   }
 
@@ -666,7 +668,7 @@ class PerfilUsuario extends React.Component {
       .then(
         (result) => {
           this.setState({
-            esArtista: true/*result.esArtista*/,
+            esArtista: false/*result.esArtista*/,
           });
         },
         (error) => {
@@ -710,11 +712,20 @@ class PerfilUsuario extends React.Component {
             </div>
             <div class="col-md-4 mb-4 mb-md-0">
               <div class="d-flex align-items-right justify-content-end mb-3">
-                <ButtonSmall
-                  onClick={misCanciones}
-                  id=""
-                  text = {<BsBarChartLineFill />}
-                />
+                {this.state.esArtista === true && (
+                  <ButtonSmall
+                    onClick={misCanciones}
+                    id=""
+                    text = {<BsBarChartLineFill />}
+                  />
+                )}
+                {this.state.esAdmin === true && (
+                  <ButtonSmall
+                    onClick={estadisticas}
+                    id=""
+                    text = {<BsBarChartLineFill />}
+                  />
+                )}
               </div>
               <div class="text-center">
                 <h1 class="tuPerfil text-tuPerfil-50 mb-3">Tu perfil</h1>
@@ -726,14 +737,14 @@ class PerfilUsuario extends React.Component {
                 <CalidadAudio/>
                 <div class="row justify-content-center align-items-center mb-4"></div>
                 <div class="row justify-content-center align-items-center mb-4">
-                  {this.state.esArtista == false && (
+                  {this.state.esArtista === false && this.state.esAdmin == false && (
                     <ButtonOnClick
                       onClick={serArtista}
                       id=""
                       text="Conviértete en artista"
                     />
                   )}
-                  {this.state.esArtista == true && (
+                  {this.state.esArtista === true && (
                     <ButtonOnClick
                     onClick={subirCancion}
                     id=""
@@ -1406,7 +1417,7 @@ class ListasGlobales extends React.Component{
   }
 }
 
-// TODO: ver como mandar la nueva lista global para que sea pública
+// TODO:comprobar que al mandar la nueva lista global es pública
 class CrearListaGlobal extends React.Component{
 
   constructor(props) {
@@ -1438,14 +1449,14 @@ class CrearListaGlobal extends React.Component{
                 console.error('Error al analizar la respuesta JSON:', error);
               })
             }else{
-              toast.error("Ha habido un error")
+              toast.error("Ha habido un error, la respuesta de GetLista no es ok")
             }
           }).catch(error => toast.error(error.message))
         }).catch(function(error){
           console.error('Error al analizar la respuesta JSON:', error);
         })
       }else{
-        toast.error("Ha habido un error")
+        toast.error("Ha habido un error, la respuesta de SetLista no es ok")
       }
     }).catch(error => toast.error(error.message))
   }
@@ -1485,7 +1496,6 @@ class CrearListaGlobal extends React.Component{
                 <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
                   <ButtonOnClick onClick={listaGlobal} id="" text="Volver atrás"/>
                   <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
-                  <ShuffleButtonNoTransition class="rhap_repeat-button rhap_button-clear" onClick={reproduccionAleatoria}/>
                 </div>
               </div>
             </div>
@@ -1538,6 +1548,10 @@ class CancionesArtista extends React.Component {
       </div>
     );
   }
+}
+
+class MinutajeSemanal extends React.Component{
+
 }
 
 /** 
@@ -1709,7 +1723,7 @@ function ultimo_punto_de_escucha(){
   //TODO: Comprobar que haya un ultimo punto de escucha
   return(
     <ButtonGroup>
-          <Button id="" text="Continuar ultima escucha"/>
+          <Button id="" text="Última escucha"/>
     </ButtonGroup>
   )
 }
@@ -1823,7 +1837,7 @@ function GlobalPlayList(){
   )
 }
 
-function newGlobalPlaylist(){
+function NewGlobalPlaylist(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
@@ -1839,6 +1853,17 @@ function MySongs(){
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
       <CancionesArtista/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
+function Statistics(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <MinutajeSemanal/>
       <Footer/>
       <ToastContainer/>
     </div>
@@ -1916,12 +1941,16 @@ function misCanciones(){
   root.render(<MySongs/>)
 }
 
+function estadisticas(){
+  root.render(<Statistics/>) 
+}
+
 function listaGlobal(){
   root.render(<GlobalPlayList/>)
 }
 
 function nuevaListaGlobal(){
-  root.render(<newGlobalPlaylist/>)
+  root.render(<NewGlobalPlaylist/>)
 }
 
 function reproduccionAleatoria(){
