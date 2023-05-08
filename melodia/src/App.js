@@ -950,6 +950,10 @@ class NuevaCancion extends React.Component{
                 <input class="form-control" id="nombreAudio" type="text" placeholder="nuevaCancion"/>
                 <label for="audio">Nombre del audio</label>
             </div>
+            <div class="form-floating mb-3">
+                <input class="form-control" id="nombreAudio" type="text" placeholder="nuevaCancion"/>
+                <label for="audio">Duración del audio</label>
+            </div>
             <SelectorMusicaPodcast onOptionChange={this.handleOptionChange}/>
             <CampoDescripcion opcionSeleccionada={this.state.opcionSeleccionada} />
             <SelectorGenero opcionSeleccionada={this.state.opcionSeleccionada} />
@@ -1519,7 +1523,15 @@ class CancionesArtista extends React.Component {
 }
 
 class MinutajeSemanal extends React.Component{
-
+  render(){
+    return(
+      <div className="bg-blue_7th" >
+        <div className="text-center my-5 justify-content-center row gx-5">
+          <h1 className="display-5 fw-bolder text-white mb-2">Listas de reproducción globales</h1>
+        </div>
+      </div>
+    )
+  }
 }
 
 /** 
