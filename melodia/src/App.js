@@ -166,6 +166,13 @@ class FormularioInicio extends React.Component{
                                     </div>
                                     <button class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" id="submitButton" type="submit" >Iniciar Sesión</button>
                                 </form>
+                                <p></p>
+                                <h1 class="cuerpo-formArtista fw-bolder text-white mb-2" style={{"padding-bottom" : "1 rem"}}>¿Has olvidado la contraseña?</h1>
+                                <ButtonOnClick
+                                  onClick={correoRecuperacion}
+                                  id=""
+                                  text="Recuperar contraseña"
+                                />
                                 <p class="fw-normal fst-italic text-warning fs-5" id="error_input"></p>
                             <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
                             </div>
@@ -174,6 +181,106 @@ class FormularioInicio extends React.Component{
                 </div>
             </div>
         </header>
+    )
+  }
+}
+
+class EnviarCorreoRecuperacion extends React.Component {
+  enviar_codigo_recuperacion = (event) => {
+    event.preventDefault(); // evita que la página se recargue
+    const mailRecuperacion = document.getElementById("mailRecuperacion").value;
+    // TODO: debe invocar al backend para mandar el correo, función fuera de frontAPI, nombre inventado :)
+    // TODO: ver como pasar los parámetros a la función
+    fetch(ipBackend + "EnviarCodigoEmail/", {
+      method: "POST",
+      body: JSON.stringify({ email: mailRecuperacion }),
+    })
+      .then(function (response) {
+        console.log(response);
+        if (response.ok) {
+          response
+            .json()
+            .then(function (data) {
+              return cambiarContrasena();
+            })
+            .catch(function (error) {
+              console.error("Error al analizar la respuesta JSON:", error);
+            });
+        }
+      })
+      .catch((error) => toast.error(error.message));
+  };
+
+  render() {
+    return (
+      <header
+        className="bg-blue_7th py-5 main"
+        style={{ alignSelf: "center" }}
+      >
+        <div className="container">
+          <div className="row gx-5 justify-content-center">
+            <div className="col-lg-6">
+              <div className="text-center my-5">
+                <h1
+                  className="display-5 fw-bolder text-white mb-2"
+                  style={{ paddingBottom: "1rem" }}
+                >
+                  <span
+                    style={{
+                      display: "block",
+                      textAlign: "center",
+                    }}
+                  >
+                    Recuperación de Contraseña
+                  </span>
+                </h1>
+                <form
+                  id="contactForm"
+                  style={{
+                    margin: "auto",
+                    maxWidth: "20rem",
+                    width: "100%",
+                    alignSelf: "center",
+                  }}
+                  onSubmit={this.enviar_codigo_recuperacion} // llama al método definido dentro del componente
+                >
+                  <div className="form-floating mb-3">
+                    <input
+                      className="form-control"
+                      id="mailRecuperacion"
+                      type="text"
+                      placeholder="Introduce tu correo electronico"
+                    />
+                    <label htmlFor="name">
+                      Email asociado a la cuenta
+                    </label>
+                  </div>
+                  <button
+                    className="btn btn-primary_blue_4th btn-lg px-4 me-sm-3"
+                    id="submitButton"
+                    type="submit"
+                  >
+                    Mandar código validación
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+    );
+  }
+}
+
+
+class FormularioCambiarContrasena extends React.Component{
+  // TODO: falta implementar el formulario: introducir código verificación, contraseña nueva y confirmar contraseña nueva
+  //       se debe comprobar que el código de verificación es correcto y que las contraseñas coinciden
+  //       si todos se cumple se envía la nueva contraseña al backend
+  render(){
+    return(
+      <>
+      </>
     )
   }
 }
@@ -728,6 +835,7 @@ class PerfilUsuario extends React.Component {
               <div class="card-body p-5">
                 <div class="list-unstyled mb-4">
                   <li class="mb-2">
+                    {/*TODO cambiar la imagen de perfil por la del usuario real, hacer llamada al backend*/}
                     <img
                       src="assets/boy_listening_music.jpg"
                       width="100%"
@@ -1680,7 +1788,7 @@ class UsuarioExtra extends React.Component{
     super(props);
     this.state = {
       name: "",
-      esArtista: false, // Si el artista es falso se puede mandar solicitud de amistad
+      esArtista: true, // Si el artista es falso se puede mandar solicitud de amistad
                         // Si el artista es true se puede suscribir el usuario a su perfil
     };
   }
@@ -1717,7 +1825,7 @@ class UsuarioExtra extends React.Component{
       .then(
         (result) => {
           this.setState({
-            esArtista: false/*result.esArtista*/,
+            esArtista: true/*result.esArtista*/,
           });
         },
         (error) => {
@@ -1962,8 +2070,25 @@ function enviar_contenido_artista(){
 }
 
 function suscribirse(){
-  // TODO
-  toast.error("Funcionalidad no implementada");
+  fetch(ipBackend + "SubscribeToArtist/", {
+    method: "POST",
+    body: JSON.stringify({ // TODO: conseguir el id del usuario al que nos queremos suscribir, desde la pantalla de búsqueda seguramente
+      "idUsr": window.idUsuario, "contrasenya": window.passwd, "idUsrArtista": "idArtista"
+    })
+  }).then(response => {
+    if (response.ok) {
+      response.json().then(data => {
+        // Mostrar mensaje de éxito
+        if (data === 1) {
+          toast.success("Te has suscrito al artista con éxito");
+        }
+      }).catch(error => {
+        console.error('Error al analizar la respuesta JSON:', error);
+      })
+    } else {
+      toast.error("Ha habido un error");
+    }
+  }).catch(error => toast.error(error.message))
 }
 
 function enviar_solicitud_amistad(){
@@ -2017,6 +2142,28 @@ function Login(){
       <ToastContainer/>
     </div>
   );
+}
+
+function RecoveryMail(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacion/>
+      <EnviarCorreoRecuperacion/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
+function ChangePassword(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacion/>
+      <FormularioCambiarContrasena/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
 }
 
 function Signin(){
@@ -2192,6 +2339,14 @@ function principal(){
 
 function inicioSesion(){
   root.render(<Login/>)
+}
+
+function correoRecuperacion(){
+  root.render(<RecoveryMail/>)
+}
+
+function cambiarContrasena(){
+  root.render(<ChangePassword/>)
 }
 
 function registrarse(){
