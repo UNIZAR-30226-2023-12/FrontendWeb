@@ -7,7 +7,7 @@ import styled from "styled-components"
 import H5AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
 import { BsSliders2Vertical, BsBarChartLineFill } from 'react-icons/bs';
-import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat, MdArrowUpward, MdArrowDownward, MdArrowForward} from 'react-icons/md'
+import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat, MdArrowUpward, MdArrowDownward, MdArrowForward, MdWatchLater} from 'react-icons/md'
 import { GiDrum, GiMusicalKeyboard, GiUltrasound } from 'react-icons/gi'
 import {AiOutlineGlobal} from 'react-icons/ai'
 import {FiShare2} from 'react-icons/fi'
@@ -382,9 +382,15 @@ class Repeat_Button extends React.Component{
   }
 
   switch_state = () => {
-    this.setState(prevState => ({
-      loop: !prevState.loop
-    }));
+    this.setState(
+      prevState => ({
+        loop: !prevState.loop
+      }),
+      () => {
+        // Llamada a la funcion pasada por el padre
+        this.props.onLoopChange(this.state.loop);
+      }
+    );
   }
 
   render(){
@@ -436,9 +442,15 @@ class Shuffle_Button extends React.Component{
   }
 
   switch_state = () => {
-    this.setState(prevState => ({
-      shuffle: !prevState.shuffle
-    }));
+    this.setState(
+      prevState => ({
+        shuffle: !prevState.shuffle
+      }),
+      () => {
+        // Llamada a la funcion pasada por el padre
+        this.props.onShuffleChange(this.state.shuffle);
+      }
+    );
   }
 
   render(){
@@ -459,16 +471,18 @@ class Reproductor extends React.Component{
     super(props)
 
     this.reproductor = React.createRef()
-
+    this.repeatButton = React.createRef()
+    this.shuffleButton = React.createRef()
+    
     this.state = {'audioSrc' : '', 
-                  'loop' : 0,
                   'audioCtx' : new AudioContext(),
                   'bajos' : 0,
                   'medios' : 0,
                   'altos' : 0,
-                  'showEqualizer' : false
+                  'showEqualizer' : false,
+                  'repeatButton' : {}
                 }
-
+    
     //Configuracion de ecualizacion de los bajos
     this.bajos = this.state.audioCtx.createBiquadFilter();
     this.bajos.type = 'lowshelf';
@@ -510,6 +524,8 @@ class Reproductor extends React.Component{
     this.bajos.connect(this.medios);
     this.medios.connect(this.altos);
     this.altos.connect(this.state.audioCtx.destination);
+
+    this.reproductor.current.audio.current.currentTime = 10;
   }
 
   setBajosGain(value) {
@@ -528,18 +544,25 @@ class Reproductor extends React.Component{
   }
 
   toggleSlider = () => {
-      this.setState({ showEqualizer: !this.state.showEqualizer });
+    this.setState({ showEqualizer: !this.state.showEqualizer });
   }
 
-  enable_loop = () => {
-    //console.log(DjangoAPI.prueba());
-    if(this.state.loop === 0){
-      toast.info("Reproduccion en bucle habilitada")
-      this.state.loop = 1;
-    }else{
-      toast.info("Reproduccion en bucle deshabilitada")
-      this.state.loop = 0;
-    }
+  enable_loop = (loop) => {
+    this.reproductor.current.audio.current.loop = loop;
+    this.shuffleButton.current.setState({shuffle : false});
+  }
+
+  enable_shuffle = (shuffle) => {
+    this.reproductor.current.audio.current.loop = false;
+    this.repeatButton.current.setState({loop : false});
+  }
+
+  store_time = () => {
+    //TO DO: Almacenar en la BBDD el tiempo
+    this.reproductor.current.audio.current.pause();
+    let segundo = this.reproductor.current.audio.current.currentTime;
+    toast.info("Guardado el tiempo: " + segundo);
+    DjangoAPI.setLastSecondHeared(window.idUsr, window.contrasenya, window.idCancion, segundo)
   }
 
   share_song = () => {
@@ -565,7 +588,6 @@ class Reproductor extends React.Component{
     }).catch(error => toast.error(error.message))
   }
   
-
   render(){
 
     return (
@@ -580,16 +602,12 @@ class Reproductor extends React.Component{
                 <GiMusicalKeyboard/>
                 <input type="range" min="-20" max="20" value={this.state.medios} onChange={(e) => this.setMediosGain(e.target.value)} />
               </div>
-              
               <div style={{"display" : "flex"}}>
                 <GiUltrasound/>
                 <input type="range" min="-20" max="20" value={this.state.altos} onChange={(e) => this.setAltosGain(e.target.value)} />
               </div>
             </div>
           )}
-          <div style={{"display" : "flex"}}>
-            <button onClick={this.share_song}>{FiShare2}</button>
-          </div>
           <H5AudioPlayer
             ref={this.reproductor}
             id='reproductor'
@@ -600,12 +618,14 @@ class Reproductor extends React.Component{
             showSkipControls={true}
             customAdditionalControls={[
               <BsSliders2Vertical class="rhap_repeat-button rhap_button-clear" onClick={this.toggleSlider.bind(this)}/>,
+              <FiShare2 class="rhap_repeat-button rhap_button-clear" onClick={this.share_song}/>
             ]}
             customControlsSection={[
               RHAP_UI["ADDITIONAL_CONTROLS"],
-              <Repeat_Button/>,
+              <Repeat_Button ref={this.repeatButton} onLoopChange={this.enable_loop}/>,
               RHAP_UI["MAIN_CONTROLS"],
-              <Shuffle_Button/>,
+              <Shuffle_Button ref={this.shuffleButton} onShuffleChange={this.enable_shuffle}/>,
+              <MdWatchLater class="rhap_repeat-button rhap_button-clear" onClick={this.store_time}/>,
               RHAP_UI["VOLUME_CONTROLS"]
             ]}
           />
