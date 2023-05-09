@@ -25,6 +25,7 @@ const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 window.password = "example";
 window.idUsuario = "example";
+window.email = "example";
 window.nombreNuevaListaReproduccion = "Nueva lista de reproducción";
 window.nombreNuevaListaGlobal = "Nueva lista global";
 window.idsLista = [];
@@ -91,7 +92,8 @@ class BarraNavegacionApp extends React.Component{
                       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                           <li class="nav-item"><a id='nav' class="nav-link active" aria-current="page">Notificaciones  &#128276;</a></li>
                           <li class="nav-item"><a id='nav' class="nav-link"  onClick={perfil}>Perfil &#128578;	</a></li>
-                          <li class="nav-item"><a id='nav' class="nav-link">Top Diario &#129351; </a></li>
+                          {/*TODO: cuando se pueda acceder al envio de correo eliminar de aqui, se verá desde el botón de mandar correo*/}
+                          <li class="nav-item"><a id='nav' class="nav-link" onClick={cambiarContrasena}>Top Diario &#129351; </a></li>
                           <li><p>&emsp;&emsp;&emsp;&emsp;</p></li>
                           <li class="nav-item"><a id='nav' class="nav-link" onClick={inicioSesion}>Cerrar Sesión &#128682;</a></li>
                       </ul>
@@ -149,38 +151,38 @@ class ImagenInfo extends React.Component{
 class FormularioInicio extends React.Component{
   render(){
     return(
-        <header class="bg-blue_7th py-5 main" style={{"align-self" : "center"}}>
-            <div class="container">
-                <div class="row gx-5 justify-content-center">
-                    <div class="col-lg-6">
-                        <div class="text-center my-5">
-                            <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1 rem"}}>Iniciar Sesión</h1>
-                                <form id="contactForm" style={{"margin" : "auto", "max-width" : "20rem", "width" : "100%", "align-self": "center"}} onSubmit={enviar_peticion_inicio}>
-                                    <div class="form-floating mb-3">
-                                        <input class="form-control" id="email" type="text" placeholder="Introduce tu correo electronico"/>
-                                        <label for="name">Email</label>
-                                    </div>
-                                    <div class="form-floating mb-3">
-                                        <input class="form-control" id="passwd" type="password" placeholder="Introduce tu Contraseña"/>
-                                        <label for="passwd">Contraseña</label>
-                                    </div>
-                                    <button class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" id="submitButton" type="submit" >Iniciar Sesión</button>
-                                </form>
-                                <p></p>
-                                <h1 class="cuerpo-formArtista fw-bolder text-white mb-2" style={{"padding-bottom" : "1 rem"}}>¿Has olvidado la contraseña?</h1>
-                                <ButtonOnClick
-                                  onClick={correoRecuperacion}
-                                  id=""
-                                  text="Recuperar contraseña"
-                                />
-                                <p class="fw-normal fst-italic text-warning fs-5" id="error_input"></p>
-                            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
+      <header class="bg-blue_7th py-5 main" style={{"align-self" : "center"}}>
+          <div class="container">
+              <div class="row gx-5 justify-content-center">
+                  <div class="col-lg-6">
+                      <div class="text-center my-5">
+                          <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1 rem"}}>Iniciar Sesión</h1>
+                              <form id="contactForm" style={{"margin" : "auto", "max-width" : "20rem", "width" : "100%", "align-self": "center"}} onSubmit={enviar_peticion_inicio}>
+                                  <div class="form-floating mb-3">
+                                      <input class="form-control" id="email" type="text" placeholder="Introduce tu correo electronico"/>
+                                      <label for="name">Email</label>
+                                  </div>
+                                  <div class="form-floating mb-3">
+                                      <input class="form-control" id="passwd" type="password" placeholder="Introduce tu Contraseña"/>
+                                      <label for="passwd">Contraseña</label>
+                                  </div>
+                                  <button class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" id="submitButton" type="submit" >Iniciar Sesión</button>
+                              </form>
+                              <p></p>
+                              <h1 class="cuerpo-formArtista fw-bolder text-white mb-2" style={{"padding-bottom" : "1 rem"}}>¿Has olvidado la contraseña?</h1>
+                              <ButtonOnClick
+                                onClick={correoRecuperacion}
+                                id=""
+                                text="Recuperar contraseña"
+                              />
+                              <p class="fw-normal fst-italic text-warning fs-5" id="error_input"></p>
+                          <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </header>
     )
   }
 }
@@ -189,6 +191,7 @@ class EnviarCorreoRecuperacion extends React.Component {
   enviar_codigo_recuperacion = (event) => {
     event.preventDefault(); // evita que la página se recargue
     const mailRecuperacion = document.getElementById("mailRecuperacion").value;
+    window.email = document.getElementById("mailRecuperacion").value;
     // TODO: debe invocar al backend para mandar el correo, función fuera de frontAPI, nombre inventado :)
     // TODO: ver como pasar los parámetros a la función
     fetch(ipBackend + "EnviarCodigoEmail/", {
@@ -279,8 +282,34 @@ class FormularioCambiarContrasena extends React.Component{
   //       si todos se cumple se envía la nueva contraseña al backend
   render(){
     return(
-      <>
-      </>
+      <header class="bg-blue_7th py-5 main" style={{"align-self" : "center"}}>
+          <div class="container">
+              <div class="row gx-5 justify-content-center">
+                  <div class="text-center my-5">
+                      <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1 rem"}}>Recuperar contraseña</h1>
+                          <form id="contactForm" style={{"margin" : "auto", "max-width" : "20rem", "width" : "100%", "align-self": "center"}} onSubmit={enviar_cambio_contra}>
+                              <div class="form-floating mb-3">
+                                  <input class="form-control" id="email" type="text" placeholder="Introduce el código de verificación enviado a tu correo"/>
+                                  <label for="name">Codigo</label>
+                              </div>
+                              <div class="form-floating mb-3">
+                                  <input class="form-control" id="passwd" type="password" placeholder="Introduce la nueva contraseña"/>
+                                  <label for="passwd">Nueva contraseña</label>
+                              </div>
+                              <div class="form-floating mb-3">
+                                  <input class="form-control" id="passwd" type="password2" placeholder="Repite la nueva contraseña"/>
+                                  <label for="passwd2">Repetir nueva contraseña</label>
+                              </div>
+                              <button class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" id="submitButton" type="submit" >Recuperar contraseña</button>
+                          </form>
+                          <p></p>
+                          <p class="fw-normal fst-italic text-warning fs-5" id="error_input"></p>
+                      <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </header>
     )
   }
 }
@@ -792,8 +821,8 @@ class PerfilUsuario extends React.Component {
     super(props);
     this.state = {
       name: "",
-      esArtista: false,
-      esAdmin: true,
+      esArtista: true,
+      esAdmin: false,
     };
   }
 
@@ -829,7 +858,7 @@ class PerfilUsuario extends React.Component {
       .then(
         (result) => {
           this.setState({
-            esArtista: false/*result.esArtista*/,
+            esArtista: true/*result.esArtista*/,
           });
         },
         (error) => {
@@ -961,7 +990,7 @@ function FormularioArtista() {
               Sube una demo musical, una canción o un fragmento de podcast originales
             </p>
             <div className="d-flex justify-content-center mb-4">
-              <input class="subcuerpo-formArtista fw-normal text-white" type="file" accept=".wav,.mp3" />
+              <input id="fichero_audio" class="subcuerpo-formArtista fw-normal text-white" type="file" accept=".wav,.mp3"/>
             </div>
             <ButtonCommit onClick={enviar_peticion_artista} id="" text="Enviar solicitud"/>
           </div>
@@ -2045,6 +2074,41 @@ function enviar_peticion_inicio(e){
   }).catch(error => toast.error(error.message))
 }
 
+function enviar_cambio_contra(e){
+  e.preventDefault();
+
+  let code = (document.getElementById("codigo")).value
+  let contra = (document.getElementById("passwd")).value
+  let contra2 = (document.getElementById("passwd2")).value
+  
+  let textBox = document.getElementById("error_input")
+
+  if (code === "" || contra === "" || contra2 === ""){
+      toast.warning("Complete todos los campos para iniciar sesión");
+      
+      return false;
+  }
+
+  if (contra !== contra2){
+    toast.warning("Las contraseñas no coinciden");
+  }
+
+  fetch(ipBackend + "SetContrasenyaUsr/", {
+    method : "POST",
+    body : JSON.stringify({"email" : window.email, "contrasenya" : contra, "codigo" : code})
+  }).then(function(response){
+    if(response.ok){
+      response.json().then(function(data){
+        return menuPrincipal();
+      }).catch(function(error){
+        console.error('Error al analizar la respuesta JSON:', error);
+      })
+    }else{
+      toast.error("El código es incorrecto")
+    }
+  }).catch(error => toast.error(error.message))
+}
+
 function editar_foto_perfil (){
   // TODO
   toast.error("Funcionalidad no implementada");
@@ -2067,6 +2131,7 @@ function enviar_peticion_artista(){
     }
   })
   .catch(error => toast.error(error.message))
+
 }
 
 function enviar_contenido_artista(){
@@ -2087,6 +2152,9 @@ function enviar_contenido_artista(){
     }
   })
   .catch(error => toast.error(error.message))
+
+  let ficheroAudio = document.getElementById("fichero_audio");
+  DjangoAPI.setSong(window.idUsr, window.contrasenya, ficheroAudio);
 }
 
 function suscribirse(){

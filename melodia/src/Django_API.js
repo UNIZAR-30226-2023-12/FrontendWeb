@@ -145,38 +145,45 @@ const CLAVE_CODIGO_RECUPERACION = "codigo"
 
 
 
-export const setSong = (usuario, contrasenya, cancion) => {
+export const setSong = (usuario, contrasenya, inputNode) => {
 
     let bytes;
-    let base64_file;
+    let base64;
 
-    // Suponiendo que tienes el nombre del archivo en una variable llamada "filename"
-    let file = new File([cancion], cancion); 
+    let archivo = inputNode.files[0]
+    let lector = new FileReader()
 
-    let reader = new FileReader();
-    reader.readAsArrayBuffer(file);
+    lector.onload = function(evento) {
+        bytes = evento.target.result;
+      
+        base64 = btoa(
+          new Uint8Array(bytes)
+            .reduce((datos, byte) => datos + String.fromCharCode(byte), '')
+        );
+      
+        console.log(base64);
+      };
+      
+    lector.readAsArrayBuffer(archivo);
+    while(!lector.DONE);
 
-    while(!reader.DONE);
-
-    let arrayBuffer = reader.result;
-    bytes = new Uint8Array(arrayBuffer);
-    let decoder = new TextDecoder("utf-8");
-    base64_file = btoa(decoder.decode(bytes));
-    
-    console.log(base64_file);
+    console.log(base64);
    
     fetch(ipBackend + "SetSong/", {
         method: "POST",
-        body: JSON.stringify({ CLAVE_ID_USUARIO: usuario, CLAVE_CONTRASENYA: contrasenya, CLAVE_NOMBRE_AUDIO:"TestSong", CLAVE_PREFIJO_AUDIO : base64_file, CLAVE_ES_PODCAST : false, "longitud" : 2, "const genero" : 1, "calidad": "alta", "artista": "Mario"}),
+        body: JSON.stringify({ [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_NOMBRE_AUDIO]:"TestSong", [CLAVE_PREFIJO_AUDIO] : base64, [CLAVE_ES_PODCAST] : false, "longitud" : 2, [CLAVE_GENEROS_AUDIO] : 1, [CLAVE_CALIDAD_AUDIO]: "alta", [CLAVE_ARTISTA_AUDIO]: "Mario"}),
     })
 }
 
 
 export const setLastSecondHeared = (usuario, contrasenya, audio, segundos) => {
+
+    console.log(JSON.stringify({[CLAVE_ID_USUARIO] : usuario, [CLAVE_CONTRASENYA] : contrasenya, [CLAVE_ID_AUDIO] : audio, [CLAVE_SECOND]: segundos}))
     fetch(ipBackend + "SetLastSecondHeared/", {
         method: "POST",
-        body: JSON.stringify({ CLAVE_ID_USUARIO: usuario, CLAVE_CONTRASENYA: contrasenya, CLAVE_NOMBRE_AUDIO: audio, CLAVE_SECOND: segundos})
-    }).catch((e) => {
-        console.log(e.status)
+        body: JSON.stringify({  [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, 
+                                [CLAVE_ID_AUDIO]: audio, [CLAVE_SECOND]: segundos})
+    }).then(response => {
+        console.log(response)
     })
 }
