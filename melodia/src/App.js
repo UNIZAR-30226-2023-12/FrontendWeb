@@ -7,7 +7,7 @@ import styled from "styled-components"
 import H5AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
 import { BsSliders2Vertical, BsBarChartLineFill } from 'react-icons/bs';
-import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat, MdArrowUpward, MdArrowDownward, MdArrowForward, MdWatchLater, MdPlayArrow} from 'react-icons/md'
+import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat, MdArrowUpward, MdArrowDownward, MdArrowForward, MdWatchLater, MdPlayArrow, MdAdd} from 'react-icons/md'
 import { GiDrum, GiMusicalKeyboard, GiUltrasound } from 'react-icons/gi'
 import {AiOutlineGlobal} from 'react-icons/ai'
 import {FiShare2} from 'react-icons/fi'
@@ -25,6 +25,8 @@ const ipBackend = "http://127.0.0.1:8081/"; // cristina
 const tipoListaReproduccion = "listaReproduccion";
 const constListaNueva = "nueva";
 const constListaExistente = "existente";
+const constCarpetaNueva = "nueva";
+const constCarpetaExistente = "existente";
 
 window.password = "example";
 window.idUsuario = "example";
@@ -37,6 +39,7 @@ window.hayListasReproduccion = 0;
 window.calidad = "baja";
 window.cancionesLista = [];
 window.origenPasoListaRepACanciones = "";
+window.origenPasoCarpetaALista = "";
 
 //Funciones de prueba
 
@@ -463,10 +466,17 @@ class PlayNoTransition extends React.Component{
   }
 }
 
+class AddNoTransition extends React.Component{
+
+  render(){
+    return(<MdAdd class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
+  }
+}
+
 class RightArrowNoTransition extends React.Component{
 
   CambiarPantalla = () => {
-    ContenidoListaDeReproduccion(this.props.var);
+    contenidoListaDeReproduccion(this.props.var);
     window.origenPasoListaRepACanciones = constListaExistente;
     window.nombreNuevaListaReproduccion = this.props.text;
   }  
@@ -1360,6 +1370,14 @@ class NuevaListaReproduccionContenido extends React.Component{
                   />
                 </div>
                 <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                  <ButtonOnClick onClick={misListasDeReproduccion} id="" text="Volver atrás"/>
+                  <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
+                  {(this.state.numCanciones !== 0 &&
+                    <ShuffleButtonNoTransition class="rhap_repeat-button rhap_button-clear" onClick={reproduccionAleatoria}/>
+                  )}
+                  
+                </div>
+                <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
                 {this.state.numCanciones === 0 ? (
                   <p className="display-6 fw-bolder text-white mb-2">Esta lista no contiene ninguna canción</p>
                 ) : (
@@ -1368,15 +1386,6 @@ class NuevaListaReproduccionContenido extends React.Component{
                     {window.cancionesLista.map((lista) => (<CardNameListaSong var={lista.id} text={lista.nombre}/>))}
                   </>
                 )}
-                  
-                </div>
-                <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
-                  <ButtonOnClick onClick={misListasDeReproduccion} id="" text="Volver atrás"/>
-                  <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
-                  {(this.state.numCanciones !== 0 &&
-                    <ShuffleButtonNoTransition class="rhap_repeat-button rhap_button-clear" onClick={reproduccionAleatoria}/>
-                  )}
-                  
                 </div>
               </div>
             </div>
@@ -1424,7 +1433,6 @@ function FormularioRenombre({ nombre }) {
     e.preventDefault();
     window.nombreNuevaListaReproduccion = nuevoNombre;
     setNombreEditando(false);
-    // Cris TODO: cuando este el backend, cambiar la llamada a renombrar lista de reproduccion
     fetch(ipBackend + "SetNombreListaRep/", {
       method : "POST",
       body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista": window.idLista, "nombreLista": window.nombreNuevaListaReproduccion, "privada": "privada"})
@@ -1492,7 +1500,8 @@ class AnyadirCancionListaReproduccion extends React.Component{
     }).catch(error => toast.error(error.message))
   }
 
-
+  // cuando la busqueda este hecha, usar esto CardNameAddSong para mostrar el nombre y un icono de añadir.
+  // ejemplo exitoso de uso con CardNamePlaylist
   render(){
     return (
       <>
@@ -1516,6 +1525,25 @@ class AnyadirCancionListaReproduccion extends React.Component{
   }
 }
 
+
+// hay que pasarle un text que es el nombre de la canción
+// y también el id de la canción con "idAudio"
+class CardNameAddSong extends React.Component{
+
+  constructor(props) {
+    super(props);
+  }
+
+  render(){
+    return (
+      <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
+        <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
+        <AddNoTransition onClick={meterCancionEnListaRep(this.props.idAudio)}/>
+      </div>
+    )
+  }
+}
+
 function FormularioRenombreGlobal({ nombre }) {
   const [nombreEditando, setNombreEditando] = useState(false);
   const [nuevoNombre, setNuevoNombre] = useState(nombre);
@@ -1524,10 +1552,9 @@ function FormularioRenombreGlobal({ nombre }) {
     e.preventDefault();
     window.nombreNuevaListaReproduccion = nuevoNombre;
     setNombreEditando(false);
-    // Cris TODO: cuando este el backend, cambiar la llamada a renombrar lista de reproduccion
-    fetch(ipBackend + "SetLista/", {
+    fetch(ipBackend + "SetNombreListaRep/", {
       method : "POST",
-      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "tipoLista": tipoListaReproduccion, "nombreLista": window.nombreNuevaListaReproduccion, "privada": "privada"})
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista": window.idLista, "nombreLista": window.nombreNuevaListaReproduccion, "privada": "privada"})
     }).then(function(response){
       if(response.ok){
         response.json().then(function(data){
@@ -1710,11 +1737,11 @@ class CrearListaGlobal extends React.Component{
                   />
                 </div>
                 <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
-                  <PlaylistSortSelector onChange={this.handleSortChange} />
-                </div>
-                <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
                   <ButtonOnClick onClick={listaGlobal} id="" text="Volver atrás"/>
                   <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
+                </div>
+                <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                  <PlaylistSortSelector onChange={this.handleSortChange} />
                 </div>
               </div>
             </div>
@@ -1725,11 +1752,25 @@ class CrearListaGlobal extends React.Component{
   }
 }
 
-// Cris: comprobar si esta función es necesaria
-function meterCancionesEnListaRep(){
-  // meter las canciones que me pasen en la lista de reproduccion con un SetMultipleSongsLista
-  // volver a renderizar el contenido de la lista de reproduccion
-  return nuevaListaDeReproduccion;
+function meterCancionEnListaRep(idAudio){
+
+  fetch(ipBackend + "SetSongLista/", {
+            method : "POST",
+            body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista": window.idLista, "idAudio": idAudio})
+          }).then(response =>{
+            if(response.ok){
+              response.json().then(datos => {
+                // obtener los datos de la lista
+                window.cancionesLista.push(datos.canciones); // no va a funcionar, es solamente para que compile
+              }).catch(error => {
+                console.error('Error al analizar la respuesta JSON:', error);
+              })
+            }else{
+              toast.error("Ha habido un error, la respuesta de GetLista no es ok")
+            }
+          }).catch(error => toast.error(error.message))
+  
+  contenidoListaDeReproduccion();
 }
 
 class Carpetas extends React.Component{
@@ -1743,29 +1784,28 @@ class Carpetas extends React.Component{
   }
 
   componentDidMount() {
-    // Cris TODO: cambiar llamada
-    fetch(ipBackend + "GetListasUsr/", {
+    fetch(ipBackend + "GetFoldersUsr/", {
       method : "POST",
       body : JSON.stringify({"idUsr" : window.idUsuario, "idUsrGet" : window.idUsuario, "contrasenya" : window.passwd})
     }).then(response => {
       if(response.ok){
         response.json().then((data) =>{
-          console.log("Cris respuesta: ", data)
+          console.log("Cris respuesta carpeta: ", data)
           if (data.listas.length > 0){
-            data.listas.forEach((lista) => {
-              // Cris TODO: cambiar llamada
-              fetch(ipBackend + "GetLista/", {
+            data.listas.forEach((carpeta) => {
+              fetch(ipBackend + "GetFolder/", {
                 method : "POST",
-                body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista" : lista})
+                body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idFolder" : carpeta})
               }).then((response) => {
                   if(response.ok){
                     response.json().then((datos) => {
+                      console.log("Cris carpeta recibida: ", datos);
                       if (datos.lista.tipoLista === tipoListaReproduccion){
-                        const listaCustom = {
-                          id: lista,
+                        const carpetaCustom = {
+                          id: carpeta,
                           nombre: datos.lista.nombreLista
                         };
-                        this.setState({ listasReproduccion: [...this.state.listasReproduccion, listaCustom] });
+                        this.setState({ listasReproduccion: [...this.state.listasReproduccion, carpetaCustom] });
                       }
                     })
                   } else{
@@ -1793,7 +1833,7 @@ class Carpetas extends React.Component{
           <div className="text-center my-5 justify-content-center row gx-5">
             <div className="d-flex justify-content-center">
               <ButtonOnClick onClick={menuPrincipal} id="" text="Volver al menú"/>
-              <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Crear nueva carpeta"/>
+              <ButtonOnClick onClick={nuevaCarpeta} id="" text="Crear nueva carpeta"/>
             </div>
           </div>
           <div className="text-center my-5 justify-content-center row gx-5" style={{display: 'flex', alignItems: 'center' }}>
@@ -1807,6 +1847,196 @@ class Carpetas extends React.Component{
       </>
     )
   }
+}
+
+// Cris TODO: actualizar para usar carpetas
+class NuevaCarpetaContenido extends React.Component{
+
+  constructor(props) {
+    super(props);
+    window.cancionesLista = [];
+    this.state = {
+      sortKey: 'tematica',
+      numCanciones: 0
+    };
+  }
+
+  componentDidMount() {
+    if (window.origenPasoListaRepACanciones === constListaNueva) {
+      // hay que crear la nueva lista
+      fetch(ipBackend + "SetLista/", {
+        method : "POST",
+        body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "tipoLista": tipoListaReproduccion, "nombreLista": window.nombreNuevaListaReproduccion, "privada": "privada"})
+      }).then(response => {
+        if(response.ok){
+          response.json().then(data => {
+            // Lista creada
+            console.log("Cris valores devueltos nueva lista = ", data);
+            window.idLista = data.idLista;
+            
+          }).catch(error => {
+            console.error('Error al analizar la respuesta JSON:', error);
+          })
+        }else{
+          toast.error("Ha habido un error")
+        }
+      }).catch(error => toast.error(error.message))
+    } else if (window.origenPasoListaRepACanciones === constListaExistente) {
+      // la lista ya existe, solo hay que coger sus canciones
+      fetch(ipBackend + "GetAudiosLista/", {
+        method : "POST",
+        body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista": window.idLista})
+      }).then(response =>{
+        if(response.ok){
+          response.json().then(datos => {
+            // obtener los datos de la lista
+            this.setState({numCanciones: datos.audio.length});
+            console.log("Cris valores devueltos lista antigua = ", this.state.numCanciones);
+            window.cancionesLista.push(datos.audio); // no va a funcionar, es solamente para que compile
+            // hay que sacar el numero de canciones de la lista
+          }).catch(error => {
+            console.error('Error al analizar la respuesta JSON:', error);
+          })
+        }else{
+          toast.error("Ha habido un error")
+        }
+      }).catch(error => toast.error(error.message))
+      window.origenPasoListaRepACanciones = "";
+    }
+  }
+
+  handleSortChange = (value) => {
+    this.setState({ sortKey: value });
+  };
+
+  sortSongs = () => {
+
+    if (this.state.sortKey === "tematica"){
+      window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.tematica.localeCompare(b.tematica))];
+    } else if (this.state.sortKey === "titulo") {
+      window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.titulo.localeCompare(b.titulo))];
+    } else if (this.state.sortKey === "artista") {
+      window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.artista.localeCompare(b.artista))];
+    } else if (this.state.sortKey === "idioma") {
+      window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.idioma.localeCompare(b.idioma))];
+    }
+  };
+
+  render(){
+    return (
+      <>
+        <header class="bg-blue_7th py-5" >
+          <div class="container px-5" style={{"margin-top" : "3rem"}}>
+            <div class="row gx-5 justify-content-center">
+              <div class="col-lg-6">
+                <div class="text-center my-5">
+                  <FormularioRenombreCarpeta
+                    nombre={window.nombreNuevaListaReproduccion}
+                  />
+                </div>
+                <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                  <ButtonOnClick onClick={misListasDeReproduccion} id="" text="Volver atrás"/>
+                  <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
+                  {(this.state.numCanciones !== 0 &&
+                    <ShuffleButtonNoTransition class="rhap_repeat-button rhap_button-clear" onClick={reproduccionAleatoria}/>
+                  )}
+                  
+                </div>
+                <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                {this.state.numCanciones === 0 ? (
+                  <p className="display-6 fw-bolder text-white mb-2">Esta lista no contiene ninguna canción</p>
+                ) : (
+                  <>
+                    <FolderSortSelector onChange={this.handleSortChange}/>
+                    {window.cancionesLista.map((lista) => (<CardNameCarpetaLista var={lista.id} text={lista.nombre}/>))}
+                  </>
+                )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+      </>
+    )
+  }
+}
+
+class CardNameCarpetaLista extends React.Component{
+
+  constructor(props) {
+    super(props);
+  }
+
+  render(){
+    return (
+      <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
+        <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
+        <UpArrowNoTransition/>
+        <DownArrowNoTransition/>
+        <PlayNoTransition/>
+      </div>
+    )
+  }
+}
+
+const FolderSortSelector = ({ onChange }) => {
+  return (
+    <select onChange={onChange}>
+      <option value="tematica">Temática</option>
+      <option value="titulo">Título</option>
+      <option value="artista">Artista</option>
+      <option value="idioma">Idioma</option>
+    </select>
+  );
+};
+
+function FormularioRenombreCarpeta({ nombre }) {
+  const [nombreEditando, setNombreEditando] = useState(false);
+  const [nuevoNombre, setNuevoNombre] = useState(nombre);
+
+  function handleNombreCambiado(e) {
+    e.preventDefault();
+    window.nombreNuevaListaReproduccion = nuevoNombre;
+    setNombreEditando(false);
+    fetch(ipBackend + "SetNombreListaRep/", {
+      method : "POST",
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista": window.idLista, "nombreLista": window.nombreNuevaListaReproduccion, "privada": "privada"})
+    }).then(function(response){
+      if(response.ok){
+        response.json().then(function(data){
+          
+        }).catch(function(error){
+          console.error('Error al analizar la respuesta JSON:', error);
+        })
+      }else{
+        toast.error("Ha habido un error")
+      }
+    }).catch(error => toast.error(error.message))
+    return (
+      root.render(<PlayListContenido/>)
+    )
+  }
+
+  return (
+    <div>
+      {nombreEditando ? (
+        <form onSubmit={handleNombreCambiado}>
+          <input
+            class="display-6 fw-normal text-black mb-2 justify-content-center"
+            style={{"padding-bottom" : "1rem"}}
+            type="text"
+            value={nuevoNombre}
+            onChange={(e) => setNuevoNombre(e.target.value)}
+          />
+          <ButtonType style={{"padding-bottom" : "1rem"}} type="submit" id="" text="Cambiar el nombre"/>
+        </form>
+      ) : (
+        <div>
+          <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}} onClick={() => setNombreEditando(true)}>{nombre}</h1>
+        </div>
+      )}
+    </div>
+  );
 }
 
 class CancionesArtista extends React.Component {
@@ -2455,6 +2685,17 @@ function PlayListContenido(){
   )
 }
 
+function CarpetaContenido(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <NuevaCarpetaContenido/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
 function AnyadirCancionLista(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
@@ -2610,7 +2851,12 @@ function nuevaListaDeReproduccion(){
   root.render(<PlayListContenido/>)
 }
 
-function ContenidoListaDeReproduccion(indice){
+function nuevaCarpeta(){
+  window.origenPasoCarpetaALista = constCarpetaNueva;
+  root.render(<CarpetaContenido/>)
+}
+
+function contenidoListaDeReproduccion(indice){
   window.idLista = indice;
   root.render(<PlayListContenido/>);
 }
