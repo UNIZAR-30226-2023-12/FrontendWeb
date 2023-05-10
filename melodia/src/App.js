@@ -20,9 +20,11 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-const ipBackend = "http://127.0.0.1:8081/"; // cristina
+//const ipBackend = "http://127.0.0.1:8081/"; // cristina
+const ipBackend = "http://10.1.58.82:8081/"; // cristina
 //const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
+const tipoListaFavoritos = "listaFavoritos";
 const constListaNueva = "nueva";
 const constListaExistente = "existente";
 const constCarpetaNueva = "nueva";
@@ -104,7 +106,7 @@ class BarraNavegacionApp extends React.Component{
                           <li class="nav-item"><a id='nav' class="nav-link active" aria-current="page">Notificaciones  &#128276;</a></li>
                           <li class="nav-item"><a id='nav' class="nav-link"  onClick={perfil}>Perfil &#128578;	</a></li>
                           {/*TODO: cuando se pueda acceder al envio de correo eliminar de aqui, se verá desde el botón de mandar correo*/}
-                          <li class="nav-item"><a id='nav' class="nav-link" onClick={cambiarContrasena}>Top Diario &#129351; </a></li>
+                          <li class="nav-item"><a id='nav' class="nav-link" onClick={topDiario}>Top Diario &#129351; </a></li>
                           <li><p>&emsp;&emsp;&emsp;&emsp;</p></li>
                           <li class="nav-item"><a id='nav' class="nav-link" onClick={inicioSesion}>Cerrar Sesión &#128682;</a></li>
                       </ul>
@@ -787,7 +789,7 @@ class MenuPrincipal extends React.Component{
           </ButtonGroup>
           <p style={{ marginBottom: '10px' }}><br/></p>
           <ButtonGroup>
-            <ButtonOnClick id="" text="Favoritos"/>
+            <ButtonOnClick onClick={misFavoritos} id="" text="Favoritos"/>
             <p></p>
             <ButtonOnClick id="" text="Random"/>
             <p></p>
@@ -875,6 +877,62 @@ function CalidadAudio() {
       />}
     </div>
   );
+}
+
+class ListaTopDiario extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      top1: "", // Primera canción del top diario
+      top2: "",
+      top3: "",
+      top4: "",
+      top5: "",
+      top6: "",
+      top7: "",
+      top8: "",
+      top9: "",
+      top10: "", // Última canción del top diario
+    }
+  }
+
+  componentDidMount(){
+    fetch(ipBackend + "GetTopReproducciones/", {
+      method: "POST",
+      body: JSON.stringly({ "n": "10", "esPodcast": "FALSE"}) // TODO: ver como se llama en backend y la finalidad del parámetro
+    })
+    .then(response => {
+      if (response.ok) {
+        return reponde.json();
+      }
+      throw new Error("Error al obtener el minutaje semanal");
+    })
+    .then(data => {
+      const topCanciones = new Set(data.topAudios); // TODO: comprobar como se lla backend
+      this.setState({top1: topCanciones});
+    })
+    .catch(error => toast.error(error.message))
+  }
+
+  render(){
+    return(
+      <div className="bg-blue_7th" >
+        <div className="text-center my-5 justify-content-center row gx-5">
+          <h1 className="display-5 fw-bolder text-white mb-2">Estadísticas de reproducciones globales</h1>
+        </div>
+        <div className="text-center my-5 justify-content-center row gx-5">
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">Hasta ahora se han reproducido{' '} 
+                      {segundosReproducidos1} segundos de audio el {diaDeLaSemana1}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos2} segundos de audio el {diaDeLaSemana2}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos3} segundos de audio el {diaDeLaSemana3}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos4} segundos de audio el {diaDeLaSemana4}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos5} segundos de audio el {diaDeLaSemana5}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos6} segundos de audio el {diaDeLaSemana6}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos7} segundos de audio el {diaDeLaSemana7}</p>
+        </div>
+      </div>
+    )
+  }
 }
 
 class PerfilUsuario extends React.Component {
@@ -1913,8 +1971,6 @@ class NuevaCarpetaContenido extends React.Component{
 
   componentDidMount() {
     if (window.origenPasoCarpetaALista === constCarpetaNueva) {
-      let bd = JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "nombreCarpeta": window.nombreNuevaCarpeta, "privacidadCarpeta": "privada"});
-      console.log("Cris body: ", bd);
       // hay que crear la nueva lista
       fetch(ipBackend + "SetFolder/", {
         method : "POST",
@@ -1924,7 +1980,7 @@ class NuevaCarpetaContenido extends React.Component{
           response.json().then(data => {
             // Carpeta creada
             console.log("Cris valores devueltos nueva carpeta = ", data);
-            //window.idFolder = data.idLista;
+            //window.idCarpeta = data.idLista;
             
           }).catch(error => {
             console.error('Error al analizar la respuesta JSON:', error);
@@ -1934,8 +1990,9 @@ class NuevaCarpetaContenido extends React.Component{
         }
       }).catch(error => toast.error(error.message))
     } else if (window.origenPasoCarpetaALista === constCarpetaExistente) {
-      fetch(ipBackend + "GetListasFolder/?idUsr=" + window.idUsuario + "&contrasenya=" + window.passwd + "&idFolder=" + window.idFolder, {
-        method : "GET"
+      fetch(ipBackend + "GetListasFolder/", {
+        method : "POST",
+        body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idCarpeta" : window.idCarpeta})
       }).then(response =>{
         if(response.ok){
           console.log("Cris respuesta GetListasFolder: ", response.json());
@@ -2099,6 +2156,7 @@ class AnyadirListaReproduccionCarpeta extends React.Component{
   }
 
   componentDidMount() {
+    // Cris TODO esta función no furula en el backend
     fetch(ipBackend + "GetListasUsr/", {
       method : "POST",
       body : JSON.stringify({"idUsr" : window.idUsuario, "idUsrGet" : window.idUsuario, "contrasenya" : window.passwd})
@@ -2173,6 +2231,82 @@ class CardNameFolderPlaylist extends React.Component{
         <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
         <AddNoTransitionCarpeta idLista={this.props.idLista}/>
       </div>
+    )
+  }
+}
+
+class ListasFavoritos extends React.Component{
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      listasReproduccion: []
+    };
+    window.idsLista = [];
+  }
+
+  componentDidMount() {
+    fetch(ipBackend + "GetListasUsr/", {
+      method : "POST",
+      body : JSON.stringify({"idUsr" : window.idUsuario, "idUsrGet" : window.idUsuario, "contrasenya" : window.passwd})
+    }).then(response => {
+      if(response.ok){
+        response.json().then((data) =>{
+          console.log("Cris respuesta: ", data)
+          if (data.listas.length > 0){
+            data.listas.forEach((lista) => {
+              fetch(ipBackend + "GetLista/", {
+                method : "POST",
+                body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista" : lista})
+              }).then((response) => {
+                  if(response.ok){
+                    response.json().then((datos) => {
+                      if (datos.lista.tipoLista === tipoListaFavoritos){
+                        const listaCustom = {
+                          id: lista,
+                          nombre: datos.lista.nombreLista
+                        };
+                        this.setState({ listasReproduccion: [...this.state.listasReproduccion, listaCustom] });
+                        // Cris TODO buscar función que te de las canciones que hay en la lista
+                      }
+                    })
+                  } else{
+                    toast.warning("No se ha podido recuperar la información de tus listas de reproduccion")
+                  }
+                }).catch(error => toast.error(error.message))
+            })
+          }
+        }).catch((error) => {
+          console.error('Error al analizar la respuesta JSON:', error);
+        })
+      }else{
+        toast.error("El usuario o la contraseña son incorrectos")
+      }
+    }).catch(error => toast.error(error.message))
+  }
+  
+  render(){
+    return (
+      <>
+        <div className="bg-blue_7th" >
+          <div className="text-center my-5 justify-content-center row gx-5">
+            <h1 className="display-5 fw-bolder text-white mb-2">Mis audios favoritos</h1>
+          </div>
+          <div className="text-center my-5 justify-content-center row gx-5">
+            <div className="d-flex justify-content-center">
+              <ButtonOnClick onClick={menuPrincipal} id="" text="Volver al menú"/>
+              <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Crear nueva lista"/>
+            </div>
+          </div>
+          <div className="text-center my-5 justify-content-center row gx-5" style={{display: 'flex', alignItems: 'center' }}>
+            {(this.state.listasReproduccion.length === 0) ? (
+              <p className="display-6 fw-bolder text-white mb-2">No tienes listas de reproducción</p>
+            ) : (
+                this.state.listasReproduccion.map((lista) => <CardNamePlaylist var={lista.id} text={lista.nombre}/>)
+            )}
+          </div>
+        </div>
+      </>
     )
   }
 }
@@ -2768,6 +2902,17 @@ function Signin(){
   );
 }
 
+function DailyTop(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <ListaTopDiario/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
 function Profile(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
@@ -2889,6 +3034,17 @@ function Folders(){
   )
 }
 
+function Favs(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <ListasFavoritos/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
 function MySongs(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
@@ -2975,6 +3131,10 @@ function registrarse(){
   root.render(<Signin/>)
 }
 
+function topDiario(){
+  root.render(<DailyTop/>)
+}
+
 function perfil(){
   root.render(<Profile/>)
 }
@@ -3030,6 +3190,10 @@ function misCarpetas(){
 
 function misCanciones(){
   root.render(<MySongs/>)
+}
+
+function misFavoritos(){
+  root.render(<Favs/>)
 }
 
 function estadisticas(){
