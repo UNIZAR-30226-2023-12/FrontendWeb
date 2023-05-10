@@ -883,52 +883,55 @@ class ListaTopDiario extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      top1: "", // Primera canción del top diario
-      top2: "",
-      top3: "",
-      top4: "",
-      top5: "",
-      top6: "",
-      top7: "",
-      top8: "",
-      top9: "",
-      top10: "", // Última canción del top diario
+      top1: "Despacito", // Primera canción del top diario
+      top2: "Los pollitos",
+      top3: "Hola amigo",
+      top4: "Canción 4",
+      top5: "Canción 5",
+      top6: "Canción 6",
+      top7: "Canción 7",
+      top8: "Canción 8",
+      top9: " Cacnión 9",
+      top10: "Canción 10", // Última canción del top diario
     }
   }
 
   componentDidMount(){
     fetch(ipBackend + "GetTopReproducciones/", {
       method: "POST",
-      body: JSON.stringly({ "n": "10", "esPodcast": "FALSE"}) // TODO: ver como se llama en backend y la finalidad del parámetro
+      body: JSON.stringify({ "n": "10", "esPodcast": "FALSE"}) // TODO: ver como se llama en backend y la finalidad del parámetro
     })
     .then(response => {
       if (response.ok) {
-        return reponde.json();
+        return response.json();
       }
       throw new Error("Error al obtener el minutaje semanal");
     })
     .then(data => {
-      const topCanciones = new Set(data.topAudios); // TODO: comprobar como se lla backend
-      this.setState({top1: topCanciones});
+      const top1 = new Set(data.topAudios); // TODO: comprobar como se lla backend
+      this.setState({top1: top1});
     })
     .catch(error => toast.error(error.message))
   }
 
   render(){
+    const { top1, top2, top3, top4, top5, top6, top7, top8, top9, top10 } = this.state;
     return(
       <div className="bg-blue_7th" >
         <div className="text-center my-5 justify-content-center row gx-5">
           <h1 className="display-5 fw-bolder text-white mb-2">Estadísticas de reproducciones globales</h1>
         </div>
         <div className="text-center my-5 justify-content-center row gx-5">
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">Hasta ahora se han reproducido{' '} 
-                      {segundosReproducidos1} segundos de audio el {diaDeLaSemana1}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos2} segundos de audio el {diaDeLaSemana2}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos3} segundos de audio el {diaDeLaSemana3}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos4} segundos de audio el {diaDeLaSemana4}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos5} segundos de audio el {diaDeLaSemana5}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos6} segundos de audio el {diaDeLaSemana6}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos7} segundos de audio el {diaDeLaSemana7}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 1 { top1}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 2  {top2}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 3  {top3}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 4  {top4}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 5  {top5}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 6  {top6}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 7  {top7}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 8  {top8}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 9  {top9}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 10 {top10}</p>
         </div>
       </div>
     )
@@ -940,8 +943,8 @@ class PerfilUsuario extends React.Component {
     super(props);
     this.state = {
       name: "",
-      esArtista: true,
-      esAdmin: false,
+      esArtista: false,
+      esAdmin: true,
     };
   }
 
