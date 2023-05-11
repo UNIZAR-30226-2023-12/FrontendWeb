@@ -554,7 +554,7 @@ class Reproductor extends React.Component{
     this.medios.connect(this.altos);
     this.altos.connect(this.state.audioCtx.destination);
 
-    this.reproductor.current.audio.current.currentTime = 10;
+    //this.reproductor.current.audio.current.currentTime = 10;
   }
 
   setBajosGain(value) {
@@ -1160,7 +1160,7 @@ class NuevaCancion extends React.Component{
                 Sube el archivo de audio a añadir en tu perfil de artista
               </p>
               <div className="d-flex justify-content-center mb-4">
-                <input class="input-formArtista text-white" type="file" accept=".wav,.mp3" />
+                <input id="fichero_audio" class="input-formArtista text-white" type="file" accept=".wav,.mp3" />
               </div>
               <ButtonCommit onClick={enviar_contenido_artista} id="" text="Subir contenido"/>
             </div>
@@ -2048,8 +2048,6 @@ function enviar_peticion_inicio(e){
   let email = (document.getElementById("email")).value
   let contra = (document.getElementById("passwd")).value
   
-  let textBox = document.getElementById("error_input")
-
   if (email === "" || contra === ""){
       toast.warning("Complete todos los campos para iniciar sesión");
       
@@ -2071,7 +2069,8 @@ function enviar_peticion_inicio(e){
     }else{
       toast.error("El usuario o la contraseña son incorrectos")
     }
-  }).catch(error => toast.error(error.message))
+  })
+  .catch(error => toast.error(error.message))
 }
 
 function enviar_cambio_contra(e){
@@ -2112,6 +2111,8 @@ function enviar_cambio_contra(e){
 function editar_foto_perfil (){
   // TODO
   toast.error("Funcionalidad no implementada");
+  console.log(window.idUsuario);
+  console.log(window.passwd);
 }
 
 function enviar_peticion_artista(){
@@ -2154,7 +2155,7 @@ function enviar_contenido_artista(){
   .catch(error => toast.error(error.message))
 
   let ficheroAudio = document.getElementById("fichero_audio");
-  DjangoAPI.setSong(window.idUsr, window.contrasenya, ficheroAudio);
+  DjangoAPI.setSong(window.idUsuario, window.passwd, ficheroAudio);
 }
 
 function suscribirse(){

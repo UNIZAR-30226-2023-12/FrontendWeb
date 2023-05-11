@@ -161,17 +161,16 @@ export const setSong = (usuario, contrasenya, inputNode) => {
             .reduce((datos, byte) => datos + String.fromCharCode(byte), '')
         );
       
-        console.log(base64);
+        console.log(JSON.stringify({ [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_NOMBRE_AUDIO]:"TestSong", [CLAVE_PREFIJO_AUDIO] : base64, [CLAVE_ES_PODCAST] : false, "longitud" : 2, [CLAVE_GENEROS_AUDIO] : 1, [CLAVE_CALIDAD_AUDIO]: "alta", [CLAVE_ARTISTA_AUDIO]: "Mario"}));
       };
       
     lector.readAsArrayBuffer(archivo);
     while(!lector.DONE);
-
-    console.log(base64);
    
     fetch(ipBackend + "SetSong/", {
         method: "POST",
-        body: JSON.stringify({ [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_NOMBRE_AUDIO]:"TestSong", [CLAVE_PREFIJO_AUDIO] : base64, [CLAVE_ES_PODCAST] : false, "longitud" : 2, [CLAVE_GENEROS_AUDIO] : 1, [CLAVE_CALIDAD_AUDIO]: "alta", [CLAVE_ARTISTA_AUDIO]: "Mario"}),
+        body: JSON.stringify({ [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, 
+          "song" : {[CLAVE_NOMBRE_AUDIO]:"TestSong", [CLAVE_PREFIJO_AUDIO] : base64, [CLAVE_ES_PODCAST] : false, "longitud" : 2, [CLAVE_GENEROS_AUDIO] : 1, [CLAVE_CALIDAD_AUDIO]: "alta", [CLAVE_ARTISTA_AUDIO]: "Mario"}}),
     })
 }
 
