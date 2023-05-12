@@ -20,9 +20,9 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-//const ipBackend = "http://127.0.0.1:8081/"; // cristina
+const ipBackend = "http://127.0.0.1:8081/"; // cristina
 //const ipBackend = "http://10.1.58.82:8081/"; // cristina
-const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
 const constListaNueva = "nueva";
@@ -2244,12 +2244,14 @@ class CardNameFolderPlaylist extends React.Component{
   }
 }
 
+// Cris: tienes que venir a esta función
 class ListasFavoritos extends React.Component{
 
   constructor(props) {
     super(props);
     this.state = {
-      listasReproduccion: []
+      listasFavoritos: [],
+      numCanciones: 0
     };
     window.idsLista = [];
   }
@@ -2275,8 +2277,25 @@ class ListasFavoritos extends React.Component{
                           id: lista,
                           nombre: datos.lista.nombreLista
                         };
-                        this.setState({ listasReproduccion: [...this.state.listasReproduccion, listaCustom] });
-                        // Cris TODO buscar función que te de las canciones que hay en la lista
+                        this.setState({ listasFavoritos: [...this.state.listasFavoritos, listaCustom] });
+                        fetch(ipBackend + "GetAudiosLista/", {
+                          method : "POST",
+                          body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista": lista})
+                        }).then(response =>{
+                          if(response.ok){
+                            response.json().then(datos => {
+                              // obtener los datos de la lista
+                              this.setState({numCanciones: datos.audio.length});
+                              console.log("Cris valores devueltos lista favoritos = ", this.state.numCanciones);
+                              window.cancionesLista.push(datos.audio);
+                              // hay que sacar el numero de canciones de la lista
+                            }).catch(error => {
+                              console.error('Error al analizar la respuesta JSON:', error);
+                            })
+                          }else{
+                            toast.error("Ha habido un error")
+                          }
+                        }).catch(error => toast.error(error.message))
                       }
                     })
                   } else{
@@ -2293,6 +2312,14 @@ class ListasFavoritos extends React.Component{
       }
     }).catch(error => toast.error(error.message))
   }
+
+  // <div className="text-center my-5 justify-content-center row gx-5" style={{display: 'flex', alignItems: 'center' }}>
+  //           {(this.state.listasFavoritos.length === 0) ? (
+  //             <p className="display-6 fw-bolder text-white mb-2">No tienes listas de reproducción</p>
+  //           ) : (
+  //               this.state.listasFavoritos.map((lista) => <CardNamePlaylist var={lista.id} text={lista.nombre}/>)
+  //           )}
+  //         </div>
   
   render(){
     return (
@@ -2304,18 +2331,38 @@ class ListasFavoritos extends React.Component{
           <div className="text-center my-5 justify-content-center row gx-5">
             <div className="d-flex justify-content-center">
               <ButtonOnClick onClick={menuPrincipal} id="" text="Volver al menú"/>
-              <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Crear nueva lista"/>
             </div>
           </div>
-          <div className="text-center my-5 justify-content-center row gx-5" style={{display: 'flex', alignItems: 'center' }}>
-            {(this.state.listasReproduccion.length === 0) ? (
-              <p className="display-6 fw-bolder text-white mb-2">No tienes listas de reproducción</p>
+          <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+            {this.state.numCanciones === 0 ? (
+              <p className="display-6 fw-bolder text-white mb-2">Esta lista no contiene ninguna canción</p>
             ) : (
-                this.state.listasReproduccion.map((lista) => <CardNamePlaylist var={lista.id} text={lista.nombre}/>)
+              <>
+                <PlaylistSortSelector onChange={this.handleSortChange}/>
+                {window.cancionesLista.map((lista) => (<CardNameListaSongFav var={lista.id} text={lista.nombre}/>))}
+              </>
             )}
           </div>
         </div>
       </>
+    )
+  }
+}
+
+class CardNameListaSongFav extends React.Component{
+
+  constructor(props) {
+    super(props);
+  }
+
+  render(){
+    return (
+    <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
+      <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
+      <UpArrowNoTransition/>
+      <DownArrowNoTransition/>
+      <PlayNoTransition/>
+    </div>
     )
   }
 }
