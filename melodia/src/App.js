@@ -20,7 +20,7 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-const ipBackend = "http://127.0.0.1:8081/"; // cristina
+const ipBackend = "http://localhost:8081/"; // cristina
 //const ipBackend = "http://10.1.58.82:8081/"; // cristina
 //const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
