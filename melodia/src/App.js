@@ -717,6 +717,7 @@ class Reproductor extends React.Component{
   render(){
 
     return (
+      <>
         <div style={{"display" : "flex"}}>
           {this.state.showEqualizer && (
             <div style={{"display" : "flex", "flex-direction" : "column", "justify-content" : "space-evenly", "background-color" : "#ffffff", "padding" : "0.3rem"}}>
@@ -756,9 +757,44 @@ class Reproductor extends React.Component{
             ]}
           />
         </div>
+        <div>
+          <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
+            <p>Nombre de la canción</p>
+            <p> - </p>
+            <p>Artista</p>
+          </div>
+          <SongRating/>
+        </div>
+      </>
     );
   }
 };
+
+const SongRating = () => {
+  const [rating, setRating] = useState(0);
+
+  const handleRating = (value) => {
+    setRating(value);
+  };
+
+  return (
+    <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
+      {[1, 2, 3, 4, 5].map((value) => (
+        <Star key={value} filled={value <= rating} onClick={() => handleRating(value)} />
+      ))}
+    </div>
+  );
+};
+
+const Star = ({ filled, onClick }) => {
+  const starStyle = {
+    cursor: 'pointer',
+    color: filled ? 'yellow' : 'gray'
+  };
+
+  return <span style={starStyle} onClick={onClick}>★</span>;
+};
+
 
 
 class MenuPrincipal extends React.Component{
