@@ -21,8 +21,8 @@ import { createRoot } from 'react-dom/client';
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
 //const ipBackend = "http://127.0.0.1:8081/"; // cristina
-const ipBackend = "http://10.1.58.82:8081/"; // cristina
-//const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://10.1.58.82:8081/"; // cristina
+const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
 const constListaNueva = "nueva";
@@ -618,6 +618,12 @@ class Reproductor extends React.Component{
     this.altos.connect(this.state.audioCtx.destination);
 
     //this.reproductor.current.audio.current.currentTime = 10;
+    DjangoAPI.getSong(window.idUsuario, window.passwd, "idAudio:7").then(
+      audio => {
+        var audioURL = URL.createObjectURL(audio)
+        this.reproductor.current.audio.current.src = audioURL
+      }
+    )
   }
 
   setBajosGain(value) {
@@ -943,8 +949,8 @@ class PerfilUsuario extends React.Component {
     super(props);
     this.state = {
       name: "",
-      esArtista: false,
-      esAdmin: true,
+      esArtista: true,
+      esAdmin: false,
     };
   }
 
@@ -1265,7 +1271,7 @@ class NuevaCancion extends React.Component{
                 <label for="audio">Nombre del audio</label>
             </div>
             <div class="form-floating mb-3">
-                <input class="form-control" id="nombreAudio" type="text" placeholder="nuevaCancion"/>
+                <input class="form-control" id="duracionAudio" type="text" placeholder="nuevaCancion"/>
                 <label for="audio">Duración del audio</label>
             </div>
             <SelectorMusicaPodcast onOptionChange={this.handleOptionChange}/>
@@ -2698,7 +2704,7 @@ function enviar_peticion_inicio(e){
       return false;
   }
 
-  fetch(ipBackend + "ValidateUserEmail/", {
+  fetch(ipBackend + "ValidateUser/", {
     method : "POST",
     body : JSON.stringify({"email" : email, "contrasenya" : contra})
   }).then(function(response){
@@ -2755,8 +2761,6 @@ function enviar_cambio_contra(e){
 function editar_foto_perfil (){
   // TODO
   toast.error("Funcionalidad no implementada");
-  console.log(window.idUsuario);
-  console.log(window.passwd);
 }
 
 function enviar_peticion_artista(){
@@ -2780,6 +2784,7 @@ function enviar_peticion_artista(){
 }
 
 function enviar_contenido_artista(){
+  /*
   fetch(ipBackend + "SetSong/", {
     method : "POST",
     // Se deberá pasar como último dato de la petición un struct con los datos del audio
@@ -2797,9 +2802,21 @@ function enviar_contenido_artista(){
     }
   })
   .catch(error => toast.error(error.message))
+  */
 
   let ficheroAudio = document.getElementById("fichero_audio");
-  DjangoAPI.setSong(window.idUsuario, window.passwd, ficheroAudio);
+  let metadatos = {};
+
+  metadatos.nombre = (document.getElementById("nombreAudio")).value;
+  metadatos.duracion = (document.getElementById("duracionAudio")).value;
+  metadatos.artista = "Juan";
+  metadatos.genero = "1";
+  metadatos.numReproducciones = 0;
+  metadatos.valoracion = 0;
+  metadatos.esPodcast = 0;
+
+  DjangoAPI.setSong(window.idUsuario, window.passwd, metadatos, ficheroAudio)
+
 }
 
 function suscribirse(){

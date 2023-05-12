@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+import { ToastContainer, toast } from 'react-toastify';
 
 // const ipBackend = "http://127.0.0.1:8081/"; // cristina
 const ipBackend = "http://192.168.56.1:8081/"; // ismael
@@ -87,6 +88,7 @@ const CLAVE_PREFIJO_AUDIO = "audio"
 const CLAVE_ES_PODCAST = "esPodcast"
 const CLAVE_SECOND = "second"
 const CLAVE_ID_AMIGO = "idAmigo"
+const CLAVE_IMAGEN_AUDIO = "imagenAudio"
 
 // Constantes simbólicas para las Carpeta
 const CLAVE_CONTADOR_CARPETAS = "contadorCarpetas"
@@ -145,7 +147,7 @@ const CLAVE_CODIGO_RECUPERACION = "codigo"
 
 
 
-export const setSong = (usuario, contrasenya, inputNode) => {
+export const setSong = (usuario, contrasenya, metadatos, inputNode) => {
 
     let bytes;
     let base64;
@@ -153,27 +155,67 @@ export const setSong = (usuario, contrasenya, inputNode) => {
     let archivo = inputNode.files[0]
     let lector = new FileReader()
 
-    lector.onload = function(evento) {
-        bytes = evento.target.result;
-      
-        base64 = btoa(
-          new Uint8Array(bytes)
-            .reduce((datos, byte) => datos + String.fromCharCode(byte), '')
-        );
-      
-        console.log(JSON.stringify({ [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_NOMBRE_AUDIO]:"TestSong", [CLAVE_PREFIJO_AUDIO] : base64, [CLAVE_ES_PODCAST] : false, "longitud" : 2, [CLAVE_GENEROS_AUDIO] : 1, [CLAVE_CALIDAD_AUDIO]: "alta", [CLAVE_ARTISTA_AUDIO]: "Mario"}));
-      };
-      
-    lector.readAsArrayBuffer(archivo);
-    while(!lector.DONE);
-   
-    fetch(ipBackend + "SetSong/", {
-        method: "POST",
-        body: JSON.stringify({ [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, 
-          "song" : {[CLAVE_NOMBRE_AUDIO]:"TestSong", [CLAVE_PREFIJO_AUDIO] : base64, [CLAVE_ES_PODCAST] : false, "longitud" : 2, [CLAVE_GENEROS_AUDIO] : 1, [CLAVE_CALIDAD_AUDIO]: "alta", [CLAVE_ARTISTA_AUDIO]: "Mario"}}),
-    })
+    const promesa = new Promise((resolve, reject) => {
+        lector.onload = function(evento) {
+          let bytes = evento.target.result;
+          let base64 = btoa(
+            new Uint8Array(bytes)
+              .reduce((datos, byte) => datos + String.fromCharCode(byte), '')
+          );
+          resolve(base64);
+        };
+    
+        lector.onerror = function(evento) {
+          reject(evento);
+        }
+    
+        lector.readAsArrayBuffer(archivo);
+    });
+    
+    promesa.then( (base64) => {
+        fetch(ipBackend + "SetSong/", {
+            method: "POST",
+            body: JSON.stringify({ [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, 
+            [CLAVE_NOMBRE_AUDIO] : metadatos.nombre, [CLAVE_ARTISTA_AUDIO] : metadatos.artista, genero : metadatos.genero,
+            [CLAVE_CALIDAD_AUDIO] : "baja", [CLAVE_NUMERO_REPRODUCCIONES] : metadatos.numReproducciones, [CLAVE_VALORACION_AUDIO] : metadatos.valoracion,
+            [CLAVE_FICHERO_ALTA_CALIDAD] : " ", [CLAVE_PREFIJO_AUDIO] : base64, "longitud" : metadatos.duracion, [CLAVE_IMAGEN_AUDIO] : " ",
+            [CLAVE_ES_PODCAST] : metadatos.esPodcast}),
+        }).then(response => {
+            if(response.ok){
+                toast.success("Cancion publicada con éxito!!")
+            }else{
+                toast.error("Hubo un error al publicar la canción")
+            }
+        })
+    }) 
 }
 
+export const getSong = (usuario, contrasenya, idAudio) => {
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetSong/", {
+            method : "POST",
+            body : JSON.stringify({[CLAVE_ID_USUARIO] : usuario, [CLAVE_CONTRASENYA] : contrasenya, [CLAVE_ID_AUDIO] : idAudio})
+        }).then((response) => response.json().then(
+            data => {
+
+                // Decodificamos la cadena base64 en un array de bytes
+                const byteCharacters = atob(data.idAudio.ficheroBajaCalidad);
+
+                // Creamos un array de bytes a partir de los caracteres decodificados
+                const byteNumbers = new Array(byteCharacters.length)
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i)
+                }
+                const byteArray = new Uint8Array(byteNumbers)
+
+                // Creamos un objeto Blob a partir del array de bytes
+                const blob = new Blob([byteArray], { type: 'audio/mp3' })
+
+                resolve(blob);
+            }
+        )).catch(error => reject(error))
+    })
+}
 
 export const setLastSecondHeared = (usuario, contrasenya, audio, segundos) => {
 
