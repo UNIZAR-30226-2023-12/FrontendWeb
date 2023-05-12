@@ -6,7 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import styled from "styled-components"
 import H5AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
-import { BsSliders2Vertical, BsBarChartLineFill } from 'react-icons/bs';
+import { BsSliders2Vertical, BsBarChartLineFill, BsFillHeartFill } from 'react-icons/bs';
 import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat, MdArrowUpward, MdArrowDownward, MdArrowForward, MdWatchLater, MdPlayArrow, MdAdd} from 'react-icons/md'
 import { GiDrum, GiMusicalKeyboard, GiUltrasound } from 'react-icons/gi'
 import {AiOutlineGlobal} from 'react-icons/ai'
@@ -469,6 +469,34 @@ class PlayNoTransition extends React.Component{
 
   render(){
     return(<MdPlayArrow class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
+  }
+}
+
+class HeartNoTransition extends React.Component{
+
+  meterCancionEnListaFav(idAudio){
+
+  fetch(ipBackend + "SetSongLista/", {
+            method : "POST",
+            body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista": window.idLista, "idAudio": idAudio})
+          }).then(response =>{
+            if(response.ok){
+              response.json().then(datos => {
+                // obtener los datos de la lista
+                window.cancionesLista.push(datos.canciones); // no va a funcionar, es solamente para que compile
+              }).catch(error => {
+                console.error('Error al analizar la respuesta JSON:', error);
+              })
+            }else{
+              toast.error("Ha habido un error, la respuesta de GetLista no es ok")
+            }
+          }).catch(error => toast.error(error.message))
+  
+  // contenidoListaDeReproduccion();
+}
+
+  render(){
+    return(<BsFillHeartFill class="rhap_repeat-button rhap_button-clear" onClick={this.meterCancionEnListaFav(this.idAudio)}/>)
   }
 }
 
@@ -2024,6 +2052,7 @@ class NuevaCarpetaContenido extends React.Component{
 
   handleSortChange = (value) => {
     this.setState({ sortKey: value });
+    this.sortSongs();
   };
 
   sortSongs = () => {
@@ -2251,7 +2280,8 @@ class ListasFavoritos extends React.Component{
     super(props);
     this.state = {
       listasFavoritos: [],
-      numCanciones: 0
+      numCanciones: 0,
+      sortKey: ""
     };
     window.idsLista = [];
   }
@@ -2263,7 +2293,6 @@ class ListasFavoritos extends React.Component{
     }).then(response => {
       if(response.ok){
         response.json().then((data) =>{
-          console.log("Cris respuesta: ", data)
           if (data.listas.length > 0){
             data.listas.forEach((lista) => {
               fetch(ipBackend + "GetLista/", {
@@ -2285,6 +2314,7 @@ class ListasFavoritos extends React.Component{
                           if(response.ok){
                             response.json().then(datos => {
                               // obtener los datos de la lista
+                              window.idLista = lista;
                               this.setState({numCanciones: datos.audio.length});
                               console.log("Cris valores devueltos lista favoritos = ", this.state.numCanciones);
                               window.cancionesLista.push(datos.audio);
@@ -2313,13 +2343,19 @@ class ListasFavoritos extends React.Component{
     }).catch(error => toast.error(error.message))
   }
 
-  // <div className="text-center my-5 justify-content-center row gx-5" style={{display: 'flex', alignItems: 'center' }}>
-  //           {(this.state.listasFavoritos.length === 0) ? (
-  //             <p className="display-6 fw-bolder text-white mb-2">No tienes listas de reproducción</p>
-  //           ) : (
-  //               this.state.listasFavoritos.map((lista) => <CardNamePlaylist var={lista.id} text={lista.nombre}/>)
-  //           )}
-  //         </div>
+  handleSortChange  = (event) => {
+    this.setState({ sortKey: event.target.value });
+    this.sortSongs();
+  };
+
+  sortSongs = () => {
+
+    if (this.state.sortKey === "tema"){
+      window.listasFavoritos = [...window.listasFavoritos.sort((a, b) => a.tematica.localeCompare(b.tematica))];
+    } else if (this.state.sortKey === "genero") {
+      window.listasFavoritos = [...window.listasFavoritos.sort((a, b) => a.genero.localeCompare(b.genero))];
+    }
+  };
   
   render(){
     return (
@@ -2335,11 +2371,11 @@ class ListasFavoritos extends React.Component{
           </div>
           <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
             {this.state.numCanciones === 0 ? (
-              <p className="display-6 fw-bolder text-white mb-2">Esta lista no contiene ninguna canción</p>
+              <p className="display-6 fw-bolder text-white mb-2">No tienes nada en favoritos</p>
             ) : (
               <>
-                <PlaylistSortSelector onChange={this.handleSortChange}/>
-                {window.cancionesLista.map((lista) => (<CardNameListaSongFav var={lista.id} text={lista.nombre}/>))}
+                <FavsSortSelector onChange={this.handleSortChange}/>
+                {window.cancionesLista.map((lista) => (<CardNameListaSongFav idAudio={lista.id} text={lista.nombre}/>))}
               </>
             )}
           </div>
@@ -2348,6 +2384,16 @@ class ListasFavoritos extends React.Component{
     )
   }
 }
+
+const FavsSortSelector = ({ onChange }) => {
+  return (
+    <select onChange={onChange}>
+      <option value="">Selecciona el criterio de ordenación</option>
+      <option value="tema">Tema</option>
+      <option value="genero">Género</option>
+    </select>
+  );
+};
 
 class CardNameListaSongFav extends React.Component{
 
@@ -2361,6 +2407,7 @@ class CardNameListaSongFav extends React.Component{
       <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
       <UpArrowNoTransition/>
       <DownArrowNoTransition/>
+      <HeartNoTransition idAudio={this.props.idAudio}/>
       <PlayNoTransition/>
     </div>
     )
