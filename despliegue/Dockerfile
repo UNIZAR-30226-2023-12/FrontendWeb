@@ -16,4 +16,4 @@ RUN npm ci
 
 COPY ./melodia/public/ $DOCKERHOME/public/
 COPY ./melodia/src/ $DOCKERHOME/src/
-CMD [ "npm", "start" ]
+CMD [ "npm", "start", "--port", 8080 ]
