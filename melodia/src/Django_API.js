@@ -195,6 +195,20 @@ export const setSong = (usuario, contrasenya, metadatos, inputNodeAudio) => {
     }) 
 }
 
+export const getSong = (usuario, contrasenya, idAudio) => {
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetSong/",{
+            method : "POST",
+            body : JSON.stringify({[CLAVE_ID_USUARIO] : usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_ID_AUDIO] : idAudio})
+        }).then(response => response.json().then(data => {
+            console.log("CrisAudio:")
+            console.log(data.idAudio)
+            resolve(data.idAudio)
+        }))
+        .catch(error => reject(error))
+    })
+}
+
 export const getFicheroSong = (usuario, idAudio, esPodcast, calidad) => {
 
     let esCancionString, calidadString
@@ -221,8 +235,6 @@ export const getFicheroSong = (usuario, idAudio, esPodcast, calidad) => {
         }).then((response) => response.json().then(
             data => {
 
-                console.log(data)
-
                 // Decodificamos la cadena base64 en un array de bytes
                 const byteCharacters = atob(data.fichero);
 
@@ -242,16 +254,41 @@ export const getFicheroSong = (usuario, idAudio, esPodcast, calidad) => {
     })
 }
 
+export const getRecomendedAudio = (usuario, contrasenya) => {
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetRecomendedAudio/", {
+            method : "POST",
+            body : JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya})
+        }).then(response => response.json().then(data => {
+            console.log(data)
+            resolve(data)
+        })).catch(error => reject(error))
+    })
+}
+
 export const setLastSecondHeared = (usuario, contrasenya, audio, segundos) => {
 
-    console.log(JSON.stringify({[CLAVE_ID_USUARIO] : usuario, [CLAVE_CONTRASENYA] : contrasenya, [CLAVE_ID_AUDIO] : audio, [CLAVE_SECOND]: segundos}))
     fetch(ipBackend + "SetLastSecondHeared/", {
         method: "POST",
         body: JSON.stringify({  [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, 
                                 [CLAVE_ID_AUDIO]: audio, [CLAVE_SECOND]: segundos})
-    }).then(response => {
-        console.log(response)
     })
+
+}
+
+export const getLastSecondHeared = (usuario, contrasenya, audio) => {
+
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetLastSecondHeared/", {
+            method: "POST",
+            body: JSON.stringify({  [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, 
+                                    [CLAVE_ID_AUDIO]: audio})
+        }).then(response => response.json().then(data => {
+            resolve(data.second)
+        }))
+        .catch(error => reject(error))
+    })
+
 }
 
 export const getImageAudio = (usuario, contrasenya, audio) => {

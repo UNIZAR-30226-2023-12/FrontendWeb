@@ -44,9 +44,11 @@ window.cancionesLista = [];
 window.origenPasoListaRepACanciones = "";
 window.origenPasoCarpetaALista = "";
 window.idCarpeta = 0;
-window.idAudioReproduciendo = "idAudio:7";
+window.idAudioReproduciendo = "idAudio:4";
 window.listaAudiosReproducir = [];
 window.dataAudio = [];
+window.reproductor = React.createRef();
+window.ultimoAudio = "idAudio:2";
 
 function active(elem, num){
   if(elem === num){
@@ -85,12 +87,12 @@ class BarraNavegacionApp extends React.Component{
                   <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
                   <div class="collapse navbar-collapse" id="navbarSupportedContent">
                       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                          <li class="nav-item"><a id='nav' class="nav-link active" aria-current="page">Notificaciones  &#128276;</a></li>
-                          <li class="nav-item"><a id='nav' class="nav-link"  onClick={perfil}>Perfil &#128578;	</a></li>
+                          <li class="nav-item"><a id='nav' class={active('1', this.props.active)} aria-current="page">Notificaciones  &#128276;</a></li>
+                          <li class="nav-item"><a id='nav' class={active('2', this.props.active)}  onClick={perfil}>Perfil &#128578;	</a></li>
                           {/*TODO: cuando se pueda acceder al envio de correo eliminar de aqui, se verá desde el botón de mandar correo*/}
-                          <li class="nav-item"><a id='nav' class="nav-link" onClick={topDiario}>Top Diario &#129351; </a></li>
+                          <li class="nav-item"><a id='nav' class={active('3', this.props.active)} onClick={topDiario}>Top Diario &#129351; </a></li>
                           <li><p>&emsp;&emsp;&emsp;&emsp;</p></li>
-                          <li class="nav-item"><a id='nav' class="nav-link" onClick={inicioSesion}>Cerrar Sesión &#128682;</a></li>
+                          <li class="nav-item"><a id='nav' class='nav-link' onClick={inicioSesion}>Cerrar Sesión &#128682;</a></li>
                       </ul>
                   </div>
               </div>
@@ -353,7 +355,7 @@ class FormularioRegistro extends React.Component {
 
 class Button extends React.Component{
   render(){
-    return (<a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!" id={this.props.id} style={this.props.style}>{this.props.text}</a>)
+    return (<a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!" id={this.props.id} style={this.props.style} onClick={this.props.onClick}>{this.props.text}</a>)
   }
 }
 
@@ -582,7 +584,9 @@ class Reproductor extends React.Component{
                   'medios' : 0,
                   'altos' : 0,
                   'showEqualizer' : false,
-                  'repeatButton' : {}
+                  'repeatButton' : {},
+                  'nombreAudio' : "Nombre Audio",
+                  'artista' : "Nombre Artista"
                 }
     
     //Configuracion de ecualizacion de los bajos
@@ -627,6 +631,7 @@ class Reproductor extends React.Component{
     this.medios.connect(this.altos);
     this.altos.connect(this.state.audioCtx.destination);
 
+    window.reproductor = this.reproductor;
     //this.reproductor.current.audio.current.currentTime = 10;
     DjangoAPI.getFicheroSong(window.idUsuario, window.idAudioReproduciendo, false, DjangoAPI.CALIDAD_BAJA).then(
       audio => {
@@ -634,6 +639,12 @@ class Reproductor extends React.Component{
         this.reproductor.current.audio.current.src = audioURL;
       }
     )
+
+    DjangoAPI.getSong(window.idUsuario, window.passwd, window.idAudioReproduciendo)
+    .then(data =>{
+      window.dataAudio = data
+      this.setState({"nombreAudio" : data.nombre, "artista" : data.artista})
+    })
   }
 
   setBajosGain(value) {
@@ -666,11 +677,10 @@ class Reproductor extends React.Component{
   }
 
   store_time = () => {
-    //TO DO: Almacenar en la BBDD el tiempo
     this.reproductor.current.audio.current.pause();
     let segundo = this.reproductor.current.audio.current.currentTime;
     toast.info("Guardado el tiempo: " + segundo);
-    DjangoAPI.setLastSecondHeared(window.idUsr, window.contrasenya, window.idCancion, segundo);
+    DjangoAPI.setLastSecondHeared(window.idUsuario, window.passwd, window.idAudioReproduciendo, segundo);
   }
 
   share_song = () => {
@@ -741,12 +751,14 @@ class Reproductor extends React.Component{
         </div>
         <div>
           <div className="justify-content-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
-            <p>Nombre de la canción</p>
+            <p>{this.state.nombreAudio}</p>
             <p> - </p>
-            <p>Artista</p>
+            <p>{this.state.artista}</p>
           </div>
-          <p>Valoración global: {window.dataAudio.valoracion} estrellas</p>
-          <SongRating/>
+          <div className="justify-content-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
+            <p>Valoración global: {window.dataAudio.valoracion} estrellas</p>
+            <SongRating/>
+          </div>
         </div>
       </>
     );
@@ -800,7 +812,11 @@ const Star = ({ filled, onClick }) => {
   return <span style={starStyle} onClick={onClick}>★</span>;
 };
 
-
+const randomSong = () => {
+  DjangoAPI.getRecomendedAudio(window.idUsuario, window.passwd).then(idAudio => {
+    window.idAudioReproduciendo = idAudio
+  })
+}
 
 class MenuPrincipal extends React.Component{
   constructor(props) {
@@ -855,7 +871,7 @@ class MenuPrincipal extends React.Component{
       <div class="main" style={{"display" : "flex"}}>
         <div style={{"display" : "flex", "flex-direction" : "column", "justify-content" : "center" , "width":"15rem", "margin-left" : "0.5rem"}}>
         <p style={{ marginBottom: '10px' }}><br/></p>
-          {ultimo_punto_de_escucha()}
+          <BotonUltimaEscucha/>
           <p style={{ marginBottom: '10px' }}><br/></p>
           <ButtonGroup>
             <ButtonOnClick onClick={misCarpetas} id="" text="Mis Carpetas"/>
@@ -866,7 +882,7 @@ class MenuPrincipal extends React.Component{
           <ButtonGroup>
             <ButtonOnClick onClick={misFavoritos} id="" text="Favoritos"/>
             <p></p>
-            <ButtonOnClick id="" text="Random"/>
+            <ButtonOnClick id="" onClick={randomSong} text="Random"/>
             <p></p>
             <ButtonOnClick onClick={perfilOtroUsuario} id="" text="Social"/>
           </ButtonGroup>
@@ -2986,14 +3002,66 @@ function enviar_solicitud_amistad(){
   }).catch(error => toast.error(error.message))
 }
 
-function ultimo_punto_de_escucha(){
+class BotonUltimaEscucha extends React.Component{
+  constructor(props) {
+    super(props);
+    this.state = {
+      "mostrar" : false,
+      "lastIdAudio" : "idAudio:2",
+      "lastSecondHeared" : 0
+    };
+  }
 
-  //TODO: Comprobar que haya un ultimo punto de escucha
-  return(
-    <ButtonGroup>
-          <Button id="" text="Última escucha"/>
-    </ButtonGroup>
-  )
+  componentDidMount(){
+    this.hay_ultima_escucha().then(hay => this.setState({"mostrar": hay}))
+  }
+
+  hay_ultima_escucha(){
+    return new Promise((resolve, reject) => {
+      DjangoAPI.getUser(window.idUsuario, window.passwd, window.idUsuario).then(usuario => {
+        DjangoAPI.getLastSecondHeared(window.idUsuario, window.passwd, usuario.idUltimoAudio).then(
+          segundo => {
+            console.log(segundo)
+            this.setState({"lastIdAudio" : usuario.idUltimoAudio, "lastSecondHeared" : segundo})
+            resolve(parseFloat(segundo) !== 0)
+          }
+        )
+        .catch(error => reject(error))
+        
+      })
+    })
+  }
+
+  recuperarSegundo = () => {
+
+    if(window.idAudioReproduciendo !== this.state.lastIdAudio){
+      DjangoAPI.getFicheroSong(window.idUsuario, this.state.lastIdAudio, false, DjangoAPI.CALIDAD_BAJA).then(
+        audio => {
+          window.reproductor.current.audio.current.pause()
+          var audioURL = URL.createObjectURL(audio);
+          window.reproductor.current.audio.current.src = audioURL;
+          window.reproductor.current.audio.current.currentTime = this.state.lastSecondHeared;
+          window.reproductor.current.audio.current.load();
+
+          window.reproductor.current.audio.current.addEventListener('canplay', () => {
+            window.idAudioReproduciendo = this.state.lastIdAudio;
+            window.reproductor.current.audio.current.play();
+          });
+        }
+      ).catch(error => console.log(error))
+
+    }else{
+      window.reproductor.current.audio.current.currentTime = this.state.lastSecondHeared;
+    }
+  }
+
+  render(){
+    return(this.state.mostrar ?
+      <ButtonGroup>
+            <Button id="" onClick={this.recuperarSegundo} text="Última escucha"/>
+      </ButtonGroup> : <></>
+    )
+  }
 }
 
 function Login(){
@@ -3047,7 +3115,7 @@ function Signin(){
 function DailyTop(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
-      <BarraNavegacionApp/>
+      <BarraNavegacionApp active='3'/>
       <ListaTopDiario/>
       <Footer/>
       <ToastContainer/>
@@ -3058,7 +3126,7 @@ function DailyTop(){
 function Profile(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
-      <BarraNavegacionApp/>
+      <BarraNavegacionApp active='2'/>
       <PerfilUsuario/>
       <Footer/>
       <ToastContainer/>
@@ -3069,7 +3137,7 @@ function Profile(){
 function BecomeArtist(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
-      <BarraNavegacionApp/>
+      <BarraNavegacionApp active='2'/>
       <FormularioArtista/>
       <Footer/>
       <ToastContainer/>
@@ -3080,7 +3148,7 @@ function BecomeArtist(){
 function UploadSong(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
-    <BarraNavegacionApp/>
+    <BarraNavegacionApp active='2'/>
     <NuevaCancion/>
     <Footer/>
     <ToastContainer/>
@@ -3190,7 +3258,7 @@ function Favs(){
 function MySongs(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
-      <BarraNavegacionApp/>
+      <BarraNavegacionApp active='2'/>
       <CancionesArtista/>
       <Footer/>
       <ToastContainer/>
@@ -3201,7 +3269,7 @@ function MySongs(){
 function Statistics(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
-      <BarraNavegacionApp/>
+      <BarraNavegacionApp active='2'/>
       <MinutajeSemanal/>
       <Footer/>
       <ToastContainer/>
@@ -3212,7 +3280,7 @@ function Statistics(){
 function StatisticHistory(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
-      <BarraNavegacionApp/>
+      <BarraNavegacionApp active='2'/>
       <HistoricoSemanal/>
       <Footer/>
       <ToastContainer/>
