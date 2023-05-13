@@ -16,4 +16,9 @@ RUN npm ci
 
 COPY ./melodia/public/ $DOCKERHOME/public/
 COPY ./melodia/src/ $DOCKERHOME/src/
-CMD [ "npm", "start", "--port", 8080 ]
+RUN npm run build
+
+FROM nginx:alpine
+COPY --from=builder /usr/local/melodia/web/build/ /usr/share/nginx/html
+
+EXPOSE 80
