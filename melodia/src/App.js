@@ -19,7 +19,7 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-const ipBackend = "http://localhost:8081/"; // cristina
+const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // cristina
 //const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
@@ -634,14 +634,6 @@ class Reproductor extends React.Component{
         this.reproductor.current.audio.current.src = audioURL;
       }
     )
-    fetch(ipBackend + "GetSong/", {
-      method : "POST",
-      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idAudio" : window.idAudioReproduciendo})
-    }).then((response) => response.json().then(
-        data => {
-          window.dataAudio = data;
-        }
-    )).catch(error => toast.error(error.message))
   }
 
   setBajosGain(value) {
@@ -1052,6 +1044,7 @@ class PerfilUsuario extends React.Component {
 
     DjangoAPI.getUser(window.idUsuario, window.passwd, window.idUsuario).then(
       usuario => {
+        console.log("Cris redis devuelve esto: ", usuario);
         if(usuario.tipoUsuario === DjangoAPI.USUARIO_ARTISTA){
           this.setState({
             esArtista: true
@@ -1070,6 +1063,8 @@ class PerfilUsuario extends React.Component {
         
       }
     ).catch(error => toast.error(error))
+
+    console.log("Cris soy artista: ", this.state.esArtista);
 
   }
 

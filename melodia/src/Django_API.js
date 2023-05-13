@@ -292,7 +292,7 @@ export const getUser = (usuario, contrasenya, usuarioObjetivo) => {
             body : JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_ID_USUARIO_GET]: usuarioObjetivo})
         }).then(response => response.json().then(
             data => {
-                resolve(data)
+                resolve(data);
             }
         ))
         .catch(error => reject(error))
