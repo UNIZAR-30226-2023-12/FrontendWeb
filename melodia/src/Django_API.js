@@ -38,6 +38,8 @@ const PREFIJO_LISTA_GLOBAL_PODCASTS = "listaGlobalPodcasts"
 // Constantes simbólicas de las claves de los atributos de usuario
 const CLAVE_CONTADOR_USUARIOS = "contadorUsuarios"
 const CLAVE_ID_USUARIO = "idUsr"
+const CLAVE_ID_USUARIO_OBJETIVO = "idUsr2"
+const CLAVE_ID_USUARIO_GET = "idUsrGet"
 const CLAVE_EMAIL = "email"
 const CLAVE_ALIAS = "alias"
 const CLAVE_CONTRASENYA = "contrasenya"
@@ -69,9 +71,9 @@ const CLAVE_LISTAS = "listas"
 const CLAVE_CANCIONES = "canciones"
 
 // Constantes simbólicas de los tipos de usuario
-const USUARIO_ADMINISTRADOR = "admin"
-const USUARIO_NORMAL = "normalUser"
-const USUARIO_ARTISTA = "artista"
+export const USUARIO_ADMINISTRADOR = "admin"
+export const USUARIO_NORMAL = "normalUser"
+export const USUARIO_ARTISTA = "artista"
 
 // Constantes simbólicas para los audios
 const CLAVE_ID_AUDIO = "idAudio"
@@ -86,6 +88,7 @@ const CLAVE_FICHERO_ALTA_CALIDAD = "ficheroAltaCalidad"
 const CLAVE_FICHERO_BAJA_CALIDAD = "ficheroBajaCalidad"
 const CLAVE_PREFIJO_AUDIO = "audio"
 const CLAVE_ES_PODCAST = "esPodcast"
+const CLAVE_ES_CANCION = "esCancion"
 const CLAVE_SECOND = "second"
 const CLAVE_ID_AMIGO = "idAmigo"
 const CLAVE_IMAGEN_AUDIO = "imagenAudio"
@@ -145,14 +148,16 @@ const CONTRASENYA_CORREO_RECUPERACION = "bupkbmfyswswolsu"
 const PREFIJO_CODIGO_RECUPERACION = "codigo"
 const CLAVE_CODIGO_RECUPERACION = "codigo"
 
+export const CALIDAD_ALTA = "alta"
+export const CALIDAD_BAJA = "baja"
 
 
-export const setSong = (usuario, contrasenya, metadatos, inputNode) => {
+export const setSong = (usuario, contrasenya, metadatos, inputNodeAudio) => {
 
     let bytes;
     let base64;
 
-    let archivo = inputNode.files[0]
+    let archivo = inputNodeAudio.files[0]
     let lector = new FileReader()
 
     const promesa = new Promise((resolve, reject) => {
@@ -190,16 +195,36 @@ export const setSong = (usuario, contrasenya, metadatos, inputNode) => {
     }) 
 }
 
-export const getSong = (usuario, contrasenya, idAudio) => {
+export const getFicheroSong = (usuario, idAudio, esPodcast, calidad) => {
+
+    let esCancionString, calidadString
+
+    if(esPodcast){
+        esCancionString = "False";
+    }else{
+        esCancionString = "True";
+    }
+
+    if(calidad === CALIDAD_ALTA){
+        calidadString = "True";
+    }else{
+        calidadString = "False";
+    }
+
     return new Promise((resolve, reject) => {
-        fetch(ipBackend + "GetSong/", {
-            method : "POST",
-            body : JSON.stringify({[CLAVE_ID_USUARIO] : usuario, [CLAVE_CONTRASENYA] : contrasenya, [CLAVE_ID_AUDIO] : idAudio})
+
+        let parametros = {[CLAVE_ID_USUARIO] : usuario, [CLAVE_ID_AUDIO] : idAudio, [CLAVE_CALIDAD_AUDIO] : calidadString, [CLAVE_ES_CANCION] : esCancionString};
+        let parametrosGET = new URLSearchParams(parametros).toString();
+
+        fetch(ipBackend + "GetFicheroSong/?" + parametrosGET ,{
+            method : "GET"
         }).then((response) => response.json().then(
             data => {
 
+                console.log(data)
+
                 // Decodificamos la cadena base64 en un array de bytes
-                const byteCharacters = atob(data.idAudio.ficheroBajaCalidad);
+                const byteCharacters = atob(data.fichero);
 
                 // Creamos un array de bytes a partir de los caracteres decodificados
                 const byteNumbers = new Array(byteCharacters.length)
@@ -226,5 +251,50 @@ export const setLastSecondHeared = (usuario, contrasenya, audio, segundos) => {
                                 [CLAVE_ID_AUDIO]: audio, [CLAVE_SECOND]: segundos})
     }).then(response => {
         console.log(response)
+    })
+}
+
+export const getImageAudio = (usuario, contrasenya, audio) => {
+
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetImagenAudio/", {
+            method : "POST",
+            body : JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_ID_AUDIO]: audio})
+        }).then(response => response.json().then(
+            data => {
+                resolve(data.imagenAudio)
+            }
+        ))
+        .catch(error => reject(error))
+    })
+}
+
+export const getImagenPerfilUsr = (usuario, contrasenya, usuarioObjetivo) => {
+
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetImagenPerfilUsr/", {
+            method : "POST",
+            body : JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_ID_USUARIO_OBJETIVO]: usuarioObjetivo})
+        }).then(response => response.json().then(
+            data => {
+                resolve(data.imagenPerfil)
+            }
+        ))
+        .catch(error => reject(error))
+    })
+}
+
+export const getUser = (usuario, contrasenya, usuarioObjetivo) => {
+
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetUser/", {
+            method : "POST",
+            body : JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_ID_USUARIO_GET]: usuarioObjetivo})
+        }).then(response => response.json().then(
+            data => {
+                resolve(data)
+            }
+        ))
+        .catch(error => reject(error))
     })
 }

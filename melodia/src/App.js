@@ -12,7 +12,6 @@ import { GiDrum, GiMusicalKeyboard, GiUltrasound } from 'react-icons/gi'
 import {AiOutlineGlobal} from 'react-icons/ai'
 import {FiShare2} from 'react-icons/fi'
 import * as DjangoAPI from './Django_API';
-import * as Tone from 'tone';
 import moment from 'moment';
 import 'moment/locale/es';
 
@@ -20,9 +19,9 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-const ipBackend = "http://localhost:8081/"; // cristina
+//const ipBackend = "http://localhost:8081/"; // cristina
 //const ipBackend = "http://10.1.58.82:8081/"; // cristina
-//const ipBackend = "http://192.168.56.1:8081/"; // ismael
+const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
 const constListaNueva = "nueva";
@@ -46,28 +45,9 @@ window.cancionesLista = [];
 window.origenPasoListaRepACanciones = "";
 window.origenPasoCarpetaALista = "";
 window.idCarpeta = 0;
-window.idAudioReproduciendo = 0;
+window.idAudioReproduciendo = "idAudio:7";
 window.listaAudiosReproducir = [];
 window.dataAudio = [];
-
-//Funciones de prueba
-
-// Inicializa Tone.js
-Tone.start();
-
-//const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-const eq = new Tone.EQ3({
-  low: -200, // ganancia para frecuencias bajas
-  mid: -200, // ganancia para frecuencias medias
-  high: -200 // ganancia para frecuencias altas
-});
-
-//const reverb = new Tone.Reverb(3).toDestination();
-
-//-----------
-
-
 
 function active(elem, num){
   if(elem === num){
@@ -649,7 +629,7 @@ class Reproductor extends React.Component{
     this.altos.connect(this.state.audioCtx.destination);
 
     //this.reproductor.current.audio.current.currentTime = 10;
-    DjangoAPI.getSong(window.idUsuario, window.passwd, window.idAudioReproduciendo).then(
+    DjangoAPI.getFicheroSong(window.idUsuario, window.idAudioReproduciendo, false, DjangoAPI.CALIDAD_BAJA).then(
       audio => {
         var audioURL = URL.createObjectURL(audio);
         this.reproductor.current.audio.current.src = audioURL;
@@ -1058,39 +1038,40 @@ class PerfilUsuario extends React.Component {
   }
 
   obtenerNombre() {
-    fetch(ipBackend + "GetUser/", {
-      method: "POST",
-      body: JSON.stringify({ idUsr: window.idUsuario }),
-    })
-      .then((res) => res.json())
-      .then(
-        (result) => {
-          this.setState({
-            name: result.name,
-          });
-        },
-        (error) => {
-          console.log(error);
-        }
-      );
+
+    DjangoAPI.getUser(window.idUsuario, window.passwd, window.idUsuario).then(
+      usuario => {
+        this.setState({
+          name: usuario.alias,
+        });
+      }
+    ).catch(error => toast.error(error))
+
   }
 
   mostrarBotones() {
-    fetch(ipBackend + "GetUser/", {
-      method: "POST",
-      body: JSON.stringify({ idUsr: window.idUsuario, passwd: window.password }),
-    })
-      .then((res) => res.json())
-      .then(
-        (result) => {
+
+    DjangoAPI.getUser(window.idUsuario, window.passwd, window.idUsuario).then(
+      usuario => {
+        if(usuario.tipoUsuario === DjangoAPI.USUARIO_ARTISTA){
           this.setState({
-            esArtista: true/*result.esArtista*/,
+            esArtista: true
           });
-        },
-        (error) => {
-          console.log(error);
+        }else if(usuario.tipoUsuario === DjangoAPI.USUARIO_ADMINISTRADOR){
+          this.setState({
+            esArtista: true,
+            esAdmin : true
+          });
+        } else {
+          this.setState({
+            esArtista : false,
+            esAdmin : false
+          })
         }
-      );
+        
+      }
+    ).catch(error => toast.error(error))
+
   }
 
   render() {
@@ -1152,8 +1133,7 @@ class PerfilUsuario extends React.Component {
               <div class="text-center">
                 <h1 class="tuPerfil text-tuPerfil-50 mb-3">Tu perfil</h1>
                 <p class="display-5 fw-bolder text-white mb-4 ">
-                  {/*{this.state.name}*/}
-                  Juan
+                  {this.state.name}
                 </p>
                 <div class="d-grid gap-3 d-sm-flex justify-content-sm-center" />
                 <CalidadAudio/>
@@ -2925,6 +2905,7 @@ function enviar_cambio_contra(e){
 function editar_foto_perfil (){
   // TODO
   toast.error("Funcionalidad no implementada");
+  console.log(DjangoAPI.getImagenPerfilUsr(window.idUsuario, window.passwd, window.idUsuario))
 }
 
 function enviar_peticion_artista(){
@@ -2948,32 +2929,12 @@ function enviar_peticion_artista(){
 }
 
 function enviar_contenido_artista(){
-  /*
-  fetch(ipBackend + "SetSong/", {
-    method : "POST",
-    // Se deberá pasar como último dato de la petición un struct con los datos del audio
-    body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.password, "song" : window.idUsuario})
-  }).then(function(response){
-    console.log(response)
-    if(response.ok){
-      response.json().then(function(data){
-        window.idUsuario = data.idUsr;
-        //window.passwd = contra
-        return perfil();
-      }).catch(function(error){
-        console.error('Error al analizar la respuesta JSON:', error);
-      })
-    }
-  })
-  .catch(error => toast.error(error.message))
-  */
-
   let ficheroAudio = document.getElementById("fichero_audio");
   let metadatos = {};
 
   metadatos.nombre = (document.getElementById("nombreAudio")).value;
   metadatos.duracion = (document.getElementById("duracionAudio")).value;
-  metadatos.artista = "Juan";
+  metadatos.artista = window.usuario;
   metadatos.genero = "1";
   metadatos.numReproducciones = 0;
   metadatos.valoracion = 0;
@@ -2983,6 +2944,8 @@ function enviar_contenido_artista(){
 
 }
 
+//TODO: si da tiempo hay una función en el backend que te permite ver si un usuario está suscrito
+// si el perfil visitado es artista y estamos suscritos debe aparecer el botón de desuscribirse
 function suscribirse(){
   fetch(ipBackend + "SubscribeToArtist/", {
     method: "POST",
