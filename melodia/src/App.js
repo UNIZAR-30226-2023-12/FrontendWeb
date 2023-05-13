@@ -46,6 +46,9 @@ window.cancionesLista = [];
 window.origenPasoListaRepACanciones = "";
 window.origenPasoCarpetaALista = "";
 window.idCarpeta = 0;
+window.idAudioReproduciendo = 0;
+window.listaAudiosReproducir = [];
+window.dataAudio = [];
 
 //Funciones de prueba
 
@@ -646,12 +649,20 @@ class Reproductor extends React.Component{
     this.altos.connect(this.state.audioCtx.destination);
 
     //this.reproductor.current.audio.current.currentTime = 10;
-    DjangoAPI.getSong(window.idUsuario, window.passwd, "idAudio:7").then(
+    DjangoAPI.getSong(window.idUsuario, window.passwd, window.idAudioReproduciendo).then(
       audio => {
-        var audioURL = URL.createObjectURL(audio)
-        this.reproductor.current.audio.current.src = audioURL
+        var audioURL = URL.createObjectURL(audio);
+        this.reproductor.current.audio.current.src = audioURL;
       }
     )
+    fetch(ipBackend + "GetSong/", {
+      method : "POST",
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idAudio" : window.idAudioReproduciendo})
+    }).then((response) => response.json().then(
+        data => {
+          window.dataAudio = data;
+        }
+    )).catch(error => toast.error(error.message))
   }
 
   setBajosGain(value) {
@@ -688,7 +699,7 @@ class Reproductor extends React.Component{
     this.reproductor.current.audio.current.pause();
     let segundo = this.reproductor.current.audio.current.currentTime;
     toast.info("Guardado el tiempo: " + segundo);
-    DjangoAPI.setLastSecondHeared(window.idUsr, window.contrasenya, window.idCancion, segundo)
+    DjangoAPI.setLastSecondHeared(window.idUsr, window.contrasenya, window.idCancion, segundo);
   }
 
   share_song = () => {
@@ -758,27 +769,50 @@ class Reproductor extends React.Component{
           />
         </div>
         <div>
-          <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
+          <div className="justify-content-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
             <p>Nombre de la canción</p>
             <p> - </p>
             <p>Artista</p>
           </div>
+          <p>Valoración global: {window.dataAudio.valoracion} estrellas</p>
           <SongRating/>
         </div>
       </>
     );
   }
+  // Cris TODO cambiar el mock nombre de la cancion y artista por lo que venga de las listas de reproducción
 };
+
+function GrabarValoracion(valoracion) {
+  fetch(ipBackend + "SetValoracion/", {
+    method: "POST",
+    body: JSON.stringify({
+      "idUsr": window.idUsuario, "idAudio": window.idAudioReproduciendo, "valoracion": valoracion
+    })
+  }).then(response => {
+    if (response.ok) {
+      // ha llegado bien
+    } else {
+      toast.error("Ha habido un error al almacenar tu valoración");
+    }
+  }).catch(error => toast.error(error.message))
+}
 
 const SongRating = () => {
   const [rating, setRating] = useState(0);
+  const [rated, setRated] = useState(false);
 
   const handleRating = (value) => {
-    setRating(value);
+    if (!rated) {
+      setRating(value);
+      GrabarValoracion(rating);
+      setRated(true);
+    }
   };
 
+  // para hablar con el backend usar {rating}
   return (
-    <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
+    <div className="justify-content-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
       {[1, 2, 3, 4, 5].map((value) => (
         <Star key={value} filled={value <= rating} onClick={() => handleRating(value)} />
       ))}
