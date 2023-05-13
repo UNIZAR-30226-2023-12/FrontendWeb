@@ -19,8 +19,8 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-const ipBackend = "http://localhost:8081/"; // cristina
-//const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://localhost:8081/"; // cristina
+const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
 const constListaNueva = "nueva";
@@ -3037,11 +3037,11 @@ class BotonUltimaEscucha extends React.Component{
           window.reproductor.current.audio.current.pause()
           var audioURL = URL.createObjectURL(audio);
           window.reproductor.current.audio.current.src = audioURL;
+          window.reproductor.current.audio.current.currentTime = this.state.lastSecondHeared;
           window.reproductor.current.audio.current.load();
 
           window.reproductor.current.audio.current.addEventListener('canplay', () => {
             window.idAudioReproduciendo = this.state.lastIdAudio;
-            window.reproductor.current.audio.current.currentTime = this.state.lastSecondHeared;
             window.reproductor.current.audio.current.play();
           });
         }
