@@ -19,9 +19,8 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-//const ipBackend = "http://localhost:8081/"; // cristina
-//const ipBackend = "http://10.1.58.82:8081/"; // cristina
-const ipBackend = "http://192.168.56.1:8081/"; // ismael
+const ipBackend = "http://localhost:8081/"; // cristina
+//const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
 const constListaNueva = "nueva";
@@ -1172,6 +1171,7 @@ function FormularioArtista() {
     }
   };
 
+  // Cris TODO conectar al backend
   return (
     <div className="container-fluid --bs-body-bg h-100 d-flex align-items-center main">
       <div className="col-md-3 --bs-blue-bg"></div>
@@ -2917,7 +2917,6 @@ function enviar_peticion_artista(){
     if(response.ok){
       response.json().then(function(data){
         window.idUsuario = data.idUsr;
-        //window.passwd = contra
         return menuPrincipal();
       }).catch(function(error){
         console.error('Error al analizar la respuesta JSON:', error);
