@@ -21,10 +21,9 @@ const domNode = document.getElementById('root');
 const root = createRoot(domNode);
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/" // aws deployment
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-//const ipBackend = "http://localhost:8081/"; // cris local
+const ipBackend = "http://localhost:8081/"; // cris local
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // aws
-//const ipBackend = "http://3.83.121.162:8081/" // aws
-const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
 const constListaNueva = "nueva";
@@ -60,6 +59,7 @@ window.ultimoAudio = "idAudio:2";
 window.valoracionGeneral = 0;
 window.idsAudios = [];
 window.infoAudios = [];
+window.busquedaAnyadirCancionLista = "";
 
 //Observador que cuando window.idAudioReproduciendo cambie, se hagan cosas...
 Object.defineProperty(window, 'idAudioReproduciendo', {
@@ -81,7 +81,6 @@ Object.defineProperty(window, 'idAudioReproduciendo', {
   },
   configurable: true
 });
-
 
 function active(elem, num){
   if(elem === num){
@@ -1646,7 +1645,6 @@ class NuevaListaReproduccionContenido extends React.Component{
           response.json().then(datos => {
             // obtener los datos de la lista
             this.setState({numCanciones: datos.audio.length});
-            console.log("Cris canciones devueltas lista antigua = ", this.state.numCanciones);
             window.cancionesLista.push(datos.audio);
           }).catch(error => {
             console.error('Error al analizar la respuesta JSON:', error);
@@ -1799,52 +1797,49 @@ class AnyadirCancionListaReproduccion extends React.Component{
   constructor(props) {
     super(props);
     this.state = {
-      busqueda: "",
       buscado: false
     };
+    window.busquedaAnyadirCancionLista = "";
     window.infoAudios = [];
   }
 
-  handleSubmit = (event) => {
+  async handleSubmit(event){
     event.preventDefault();
-    console.log("Cris query:", this.state.busqueda);
     fetch(ipBackend + "GlobalSearch/", {
       method : "POST",
-      body : JSON.stringify({"query" : this.state.busqueda, "n" : 10})
+      body : JSON.stringify({"query" : window.busquedaAnyadirCancionLista, "n" : 10})
     }).then((response) => {
       if(response.ok){
         response.json().then((data) => {
-          window.idsAudios = data.audios;
+          window.idsAudios.push(...data.audios);
           this.setState({ buscado: true });
-          this.fetchDataForAudios();
+          window.idsAudios.forEach((audio) => {
+            DjangoAPI.getSong(window.idUsuario, window.passwd, audio)
+            .then((datos) =>{
+              if(response.ok){
+                let audioCustom = {
+                  id: audio,
+                  nombre: datos.nombre
+                };
+                window.infoAudios.push(audioCustom);
+              }
+            });
+          });
         }).catch(function(error){
           console.error('Error al analizar la respuesta JSON:', error);
         })
       }else{
         toast.error("El usuario o la contraseña son incorrectos")
       }
-    }).catch(error => toast.error(error.message))
+    }).catch(error => toast.error(error.message));
+    await new Promise(resolve => setTimeout(resolve, 100));
+    anyadirCancionListar();
   }
-
-  fetchDataForAudios() {
-    window.idsAudios.forEach((audio) => {
-      DjangoAPI.getSong(window.idUsuario, window.passwd, audio)
-      .then((data) =>{
-        const audioCustom = {
-          id: audio,
-          nombre: data.idAudio.nombre
-        };
-        window.infoAudios.push(audioCustom);
-      });
-    });    
-  }  
 
   handleInputChange(event) {
     this.setState({ busqueda: event.target.value });
   }
 
-  // cris aqui
-  // window.infoAudios.map((lista) => <CardNameAddSong var={lista.id} text={lista.nombre}/>)
   render(){
     return (
       <>
@@ -1862,19 +1857,14 @@ class AnyadirCancionListaReproduccion extends React.Component{
                     class="form-control"
                     id="busqueda-anyadir"
                     type="text"
-                    placeholder="Cancion X"
-                    value={this.state.busqueda}
+                    placeholder="Nombre de la canción"
+                    value={window.busquedaAnyadirCancionLista}
                     onChange={event => this.handleInputChange(event)} // Nuevo evento onChange para actualizar el estado
                   />
                   <button type="submit" class="btn btn-primary">
                     Buscar
                   </button>
                 </form>
-                {(this.state.buscado === true && window.idsAudios.length !== 0) ? (
-                  window.infoAudios.map((lista) => <CardNameAddSong idAudio={lista.id} text={lista.nombre}/>)
-                ) : (
-                  <p className="display-6 fw-bolder text-white mb-2 justify-text">No hay resultados</p>
-                )}
               </div>
             </div>
           </div>
@@ -1888,6 +1878,7 @@ class CardNameAddSong extends React.Component{
 
   constructor(props) {
     super(props);
+    console.log("Cris tarjeta id", this.props.idAudio, "texto", this.props.text)
   }
 
   render(){
@@ -1897,6 +1888,64 @@ class CardNameAddSong extends React.Component{
         <AddNoTransition onClick={() => meterCancionEnListaRep(this.props.idAudio)} />
       </div>
     )
+  }
+}
+
+class ListarCancionesAnyadirListasReproduccion extends React.Component{
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      busqueda: "",
+    };
+    console.log("Cris cosas de busqueda:", window.infoAudios);
+  }
+
+  handleSubmit = (event) => {
+    //
+  }
+
+  handleInputChange(event) {
+    anyadirCancionListaRep();
+  }
+
+  // cris aqui
+  render(){
+    return (
+      <>
+        <header class="bg-blue_7th py-5">
+          <div class="container px-5" style={{ marginTop: "3rem" }}>
+            <div class="row gx-5 justify-content-center">
+              <div class="col-lg-6">
+                <div class="text-center my-5">
+                  <h1 class="display-5 fw-bolder text-white mb-2" style={{ paddingBottom: "1rem" }}>
+                    Añadir canciones
+                  </h1>
+                </div>
+                <form className="justify-content-center" style={{display: 'flex', alignItems: 'center' }} onSubmit={event => this.handleSubmit(event)}>
+                  <input
+                    class="form-control"
+                    id="busqueda-anyadir"
+                    type="text"
+                    placeholder="Nombre de la canción"
+                    value={window.busquedaAnyadirCancionLista}
+                    onChange={event => this.handleInputChange(event)} // Nuevo evento onChange para actualizar el estado
+                  />
+                  <button type="submit" class="btn btn-primary">
+                    Buscar
+                  </button>
+                </form>
+                {(window.infoAudios.length !== 0) ? (
+                  window.infoAudios.map((lista) => <CardNameAddSong idAudio={lista.id} text={lista.nombre}/>)
+                ) : (
+                  <p className="display-6 fw-bolder text-white mb-2 justify-text">No hay resultados</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </header>
+      </>
+    );
   }
 }
 
@@ -3364,6 +3413,17 @@ function AnyadirCancionLista(){
   )
 }
 
+function AnyadirCancionListar(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <ListarCancionesAnyadirListasReproduccion/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
 function AnyadirListaCarpeta(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
@@ -3552,6 +3612,10 @@ function contenidoCarpeta(idCarpeta){
 
 function anyadirCancionListaRep(){
   root.render(<AnyadirCancionLista/>)
+}
+
+function anyadirCancionListar(){
+  root.render(<AnyadirCancionListar/>)
 }
 
 function anyadirListaCarpeta(){
