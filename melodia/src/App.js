@@ -19,7 +19,7 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-//const ipBackend = "http://localhost:8081/" // aws deployment
+//const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/" // aws deployment
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
 const ipBackend = "http://localhost:8081/"; // cris local
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // aws
@@ -656,7 +656,7 @@ class Reproductor extends React.Component{
     this.reproducir = this.reproducir.bind(this);
     this.mover = this.mover.bind(this);
     // Cris esto es solo debug, QUITALO
-    window.idAudioReproduciendo = "idAudio:1";
+    //window.idAudioReproduciendo = "idAudio:1";
     // Cris esto si que vale, NO LO QUITES
     window.valoracionGeneral = 0;
   }
@@ -1795,9 +1795,10 @@ class AnyadirCancionListaReproduccion extends React.Component{
 
   handleSubmit = (event) => {
     event.preventDefault();
+    console.log("Cris query:", this.state.busqueda);
     fetch(ipBackend + "GlobalSearch/", {
       method : "POST",
-      body : JSON.stringify({"query" : "", "n" : 10})
+      body : JSON.stringify({"query" : this.state.busqueda, "n" : 10})
     }).then((response) => {
       if(response.ok){
         response.json().then((data) => {
@@ -1830,6 +1831,7 @@ class AnyadirCancionListaReproduccion extends React.Component{
     this.setState({ busqueda: event.target.value });
   }
 
+  // cris aqui
   // window.infoAudios.map((lista) => <CardNameAddSong var={lista.id} text={lista.nombre}/>)
   render(){
     return (
@@ -1843,15 +1845,15 @@ class AnyadirCancionListaReproduccion extends React.Component{
                     Añadir canciones
                   </h1>
                 </div>
-                <form onSubmit={event => this.handleSubmit(event)}>
-                    <input
-                      class="form-control"
-                      id="busqueda-anyadir"
-                      type="text"
-                      placeholder="Cancion X"
-                      value={this.state.busqueda}
-                      onChange={event => this.handleInputChange(event)} // Nuevo evento onChange para actualizar el estado
-                    />
+                <form className="justify-content-center" style={{display: 'flex', alignItems: 'center' }} onSubmit={event => this.handleSubmit(event)}>
+                  <input
+                    class="form-control"
+                    id="busqueda-anyadir"
+                    type="text"
+                    placeholder="Cancion X"
+                    value={this.state.busqueda}
+                    onChange={event => this.handleInputChange(event)} // Nuevo evento onChange para actualizar el estado
+                  />
                   <button type="submit" class="btn btn-primary">
                     Buscar
                   </button>
@@ -1859,7 +1861,7 @@ class AnyadirCancionListaReproduccion extends React.Component{
                 {(this.state.buscado === true && window.idsAudios.length !== 0) ? (
                   window.infoAudios.map((lista) => <CardNameAddSong idAudio={lista.id} text={lista.nombre}/>)
                 ) : (
-                  <p className="display-6 fw-bolder text-white mb-2">No hay resultados</p>
+                  <p className="display-6 fw-bolder text-white mb-2 justify-text">No hay resultados</p>
                 )}
               </div>
             </div>
@@ -1870,9 +1872,6 @@ class AnyadirCancionListaReproduccion extends React.Component{
   }
 }
 
-
-// hay que pasarle un text que es el nombre de la canción
-// y también el id de la canción con "idAudio"
 class CardNameAddSong extends React.Component{
 
   constructor(props) {
@@ -1883,7 +1882,7 @@ class CardNameAddSong extends React.Component{
     return (
       <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
         <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
-        <AddNoTransition onClick={meterCancionEnListaRep(this.props.idAudio)}/>
+        <AddNoTransition onClick={() => meterCancionEnListaRep(this.props.idAudio)} />
       </div>
     )
   }

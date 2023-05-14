@@ -1,6 +1,6 @@
 version: '3.9'
 services:
-  django:
+  react:
     image: melodia/react:latest
     ports:
       - "80:80"
