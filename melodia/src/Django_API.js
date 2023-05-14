@@ -1,8 +1,9 @@
 /* eslint-disable no-unused-vars */
 import { ToastContainer, toast } from 'react-toastify';
 
-// const ipBackend = "http://127.0.0.1:8081/"; // cristina
-const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
+const ipBackend = "http://localhost:8081/"; // cris local
+//const ipBackend = "http://192.168.56.1:8081/"; // ismael
 
 const GENERO_POP = 0
 const GENERO_ROCK = 1
@@ -201,9 +202,7 @@ export const getSong = (usuario, contrasenya, idAudio) => {
             method : "POST",
             body : JSON.stringify({[CLAVE_ID_USUARIO] : usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_ID_AUDIO] : idAudio})
         }).then(response => response.json().then(data => {
-            console.log("CrisAudio:")
-            console.log(data.idAudio)
-            resolve(data.idAudio)
+            resolve(data)
         }))
         .catch(error => reject(error))
     })

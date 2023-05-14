@@ -19,7 +19,9 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // cristina
+//const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
+const ipBackend = "http://localhost:8081/"; // cris local
+//const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // cris aws
 //const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
@@ -30,7 +32,7 @@ const constCarpetaExistente = "existente";
 const nombreNuevaListaReproduccion = "Nueva lista de reproducción";
 const nombreNuevacarpeta = "Nueva carpeta";
 
-window.password = "example";
+window.passwd = "example";
 window.idUsuario = "example";
 window.email = "example";
 window.nombreNuevaListaReproduccion = "Nueva lista de reproducción";
@@ -46,7 +48,6 @@ window.origenPasoCarpetaALista = "";
 window.idCarpeta = 0;
 window.idAudioReproduciendo = "idAudio:4";
 window.listaAudiosReproducir = [];
-window.dataAudio = [];
 window.reproductor = React.createRef();
 window.ultimoAudio = "idAudio:2";
 
@@ -640,9 +641,10 @@ class Reproductor extends React.Component{
       }
     )
 
+    console.log("id audio: ", window.idUsuario);
     DjangoAPI.getSong(window.idUsuario, window.passwd, window.idAudioReproduciendo)
     .then(data =>{
-      window.dataAudio = data
+      console.log("Cris: recibo del back", data);
       this.setState({"nombreAudio" : data.nombre, "artista" : data.artista})
     })
   }
@@ -688,7 +690,6 @@ class Reproductor extends React.Component{
       method: "POST",
       body: JSON.stringify({ //TODO: cambiar idCancion por la canción escuchada en el momento concreto
         "idUsr": window.idUsuario, "contrasenya": window.passwd, "idSong": window.idCancion
-
       })
     }).then(response => {
       if (response.ok) {
@@ -756,7 +757,7 @@ class Reproductor extends React.Component{
             <p>{this.state.artista}</p>
           </div>
           <div className="justify-content-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
-            <p>Valoración global: {window.dataAudio.valoracion} estrellas</p>
+            <p>Valoración global: estrellas</p>
             <SongRating/>
           </div>
         </div>
@@ -898,6 +899,9 @@ class MenuPrincipal extends React.Component{
               <label for="busqueda">Buscar  &#128269;</label>
             </div>
           </div>
+          <div class="bg-blue_3th main" style={{"width" : "100%", "heigth" : "100%", "flex": 1, "display": "flex", "justify-content": "center", "align-items": "center"}}>
+              <ImagenInfo src="assets/girls_listening_music.jpg"/>
+          </div>
           <div style={{"width" : "100%"}}>
             <Reproductor/>
           </div>
@@ -1034,7 +1038,7 @@ class PerfilUsuario extends React.Component {
     super(props);
     this.state = {
       name: "",
-      esArtista: true,
+      esArtista: false,
       esAdmin: false,
     };
   }
@@ -1057,31 +1061,30 @@ class PerfilUsuario extends React.Component {
   }
 
   mostrarBotones() {
-
     DjangoAPI.getUser(window.idUsuario, window.passwd, window.idUsuario).then(
-      usuario => {
-        console.log("Cris redis devuelve esto: ", usuario);
+      async usuario => {
         if(usuario.tipoUsuario === DjangoAPI.USUARIO_ARTISTA){
           this.setState({
-            esArtista: true
+            esArtista: true,
+            esAdmin: false
           });
+          await new Promise(resolve => setTimeout(resolve, 100));
         }else if(usuario.tipoUsuario === DjangoAPI.USUARIO_ADMINISTRADOR){
           this.setState({
             esArtista: true,
             esAdmin : true
           });
+          await new Promise(resolve => setTimeout(resolve, 100));
         } else {
           this.setState({
-            esArtista : false,
-            esAdmin : false
-          })
+            esArtista: false,
+            esAdmin: false
+          });
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
         
       }
     ).catch(error => toast.error(error))
-
-    console.log("Cris soy artista: ", this.state.esArtista);
-
   }
 
   render() {
@@ -1182,7 +1185,6 @@ function FormularioArtista() {
     }
   };
 
-  // Cris TODO conectar al backend
   return (
     <div className="container-fluid --bs-body-bg h-100 d-flex align-items-center main">
       <div className="col-md-3 --bs-blue-bg"></div>
@@ -1191,26 +1193,28 @@ function FormularioArtista() {
           <p className="titulo-formArtista titulo-formArtista-lg mb-3 text-white">Solicitud para ascender a artista</p>
           <p className="subtitulo-formArtista fw-bolder subtitulo-formArtista subtitulo-formArtista-md mb-4 text-white">Escribe a continuación tu trayectoria musical</p>
           <p className="cuerpo-formArtist fw-light cuerpo-formArtist cuerpo-formArtist-md mb-4 text-white">Cuentanos los datos más relevantes de tu historia en la música</p>
-          <div>
-            <textarea
-              value={text}
-              onChange={handleChange}
-              maxLength={5000}
-              cols={85}
-              rows={7}
-              style={{ height: '100px' }}
-            />
-            <p><span style={{color: 'white', width: ''}}>{text.length}/5000 caracteres</span></p>
-          </div>
-          <div className="text-center">
-            <p className="subtitulo-formArtista fw-bolder subtitulo-formArtista subtitulo-formArtista-md mb-4 text-white">
-              Sube una demo musical, una canción o un fragmento de podcast originales
-            </p>
-            <div className="d-flex justify-content-center mb-4">
-              <input id="fichero_audio" class="subcuerpo-formArtista fw-normal text-white" type="file" accept=".wav,.mp3"/>
+          <form onSubmit={enviar_peticion_artista(text)}>
+            <div>
+              <textarea
+                value={text}
+                onChange={handleChange}
+                maxLength={5000}
+                cols={85}
+                rows={7}
+                style={{ height: '100px' }}
+              />
+              <p><span style={{color: 'white', width: ''}}>{text.length}/5000 caracteres</span></p>
             </div>
-            <ButtonCommit onClick={enviar_peticion_artista} id="" text="Enviar solicitud"/>
-          </div>
+            <div className="text-center">
+              <p className="subtitulo-formArtista fw-bolder subtitulo-formArtista subtitulo-formArtista-md mb-4 text-white">
+                Sube una demo musical, una canción o un fragmento de podcast originales
+              </p>
+              <div className="d-flex justify-content-center mb-4">
+                <input id="fichero_audio" className="subcuerpo-formArtista fw-normal text-white" type="file" accept=".wav,.mp3"/>
+              </div>
+              <button type="submit" className="btn btn-primary">Enviar solicitud</button>
+              </div>
+          </form>
       </div>
       </div>
     </div>
@@ -2334,7 +2338,6 @@ class CardNameFolderPlaylist extends React.Component{
   }
 }
 
-// Cris: tienes que venir a esta función
 class ListasFavoritos extends React.Component{
 
   constructor(props) {
@@ -2919,10 +2922,10 @@ function editar_foto_perfil (){
   console.log(DjangoAPI.getImagenPerfilUsr(window.idUsuario, window.passwd, window.idUsuario))
 }
 
-function enviar_peticion_artista(){
+function enviar_peticion_artista(text){
   fetch(ipBackend + "AskAdminToBeArtist/", {
     method : "POST",
-    body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.password})
+    body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "mensaje": text})
   }).then(function(response){
     console.log(response)
     if(response.ok){
@@ -2935,7 +2938,7 @@ function enviar_peticion_artista(){
     }
   })
   .catch(error => toast.error(error.message))
-
+  return menuPrincipal();
 }
 
 function enviar_contenido_artista(){
