@@ -21,9 +21,9 @@ const domNode = document.getElementById('root');
 const root = createRoot(domNode);
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/" // aws deployment
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-const ipBackend = "http://localhost:8081/"; // cris local
+//const ipBackend = "http://localhost:8081/"; // cris local
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // aws
-//const ipBackend = "http://192.168.56.1:8081/"; // ismael
+const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
 const constListaNueva = "nueva";
@@ -1805,16 +1805,17 @@ class AnyadirCancionListaReproduccion extends React.Component{
 
   async handleSubmit(event){
     event.preventDefault();
-    fetch(ipBackend + "GlobalSearch/", {
+    await fetch(ipBackend + "GlobalSearch/", {
       method : "POST",
       body : JSON.stringify({"query" : window.busquedaAnyadirCancionLista, "n" : 10})
-    }).then((response) => {
+    }).then(async (response) => {
       if(response.ok){
-        response.json().then((data) => {
+        await response.json().then(async (data) => {
           window.idsAudios.push(...data.audios);
           this.setState({ buscado: true });
-          window.idsAudios.forEach((audio) => {
-            DjangoAPI.getSong(window.idUsuario, window.passwd, audio)
+          await Promise.all(
+          window.idsAudios.map(async (audio) => {
+            await DjangoAPI.getSong(window.idUsuario, window.passwd, audio)
             .then((datos) =>{
               if(response.ok){
                 let audioCustom = {
@@ -1824,15 +1825,16 @@ class AnyadirCancionListaReproduccion extends React.Component{
                 window.infoAudios.push(audioCustom);
               }
             });
-          });
+          }))          
         }).catch(function(error){
           console.error('Error al analizar la respuesta JSON:', error);
         })
       }else{
         toast.error("El usuario o la contraseña son incorrectos")
       }
-    }).catch(error => toast.error(error.message));
-    await new Promise(resolve => setTimeout(resolve, 100));
+    }).catch(error => {
+      toast.error(error.message)
+    });
     anyadirCancionListar();
   }
 
