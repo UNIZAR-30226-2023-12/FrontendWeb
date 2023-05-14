@@ -21,10 +21,10 @@ const domNode = document.getElementById('root');
 const root = createRoot(domNode);
 //const ipBackend = "http://localhost:8081/" // aws deployment
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-//const ipBackend = "http://localhost:8081/"; // cris local
+const ipBackend = "http://localhost:8081/"; // cris local
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // aws
 //const ipBackend = "http://3.83.121.162:8081/" // aws
-const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
 const constListaNueva = "nueva";
@@ -56,6 +56,9 @@ window.player = React.createRef();
 window.reproductor = React.createRef();
 window.menuPrincipal = React.createRef();
 window.ultimoAudio = "idAudio:2";
+window.valoracionGeneral = 0;
+window.idsAudios = [];
+window.infoAudios = [];
 
 //Observador que cuando window.idAudioReproduciendo cambie, se hagan cosas...
 Object.defineProperty(window, 'idAudioReproduciendo', {
@@ -597,6 +600,7 @@ class Shuffle_Button extends React.Component{
 function randomIntFromInterval(min, max) { // min and max included 
   return Math.floor(Math.random() * (max - min + 1) + min)
 }
+
 class Reproductor extends React.Component{
 
   constructor(props){
@@ -614,7 +618,8 @@ class Reproductor extends React.Component{
                   'showEqualizer' : false,
                   'repeatButton' : {},
                   'nombreAudio' : "Nombre Audio",
-                  'artista' : "Nombre Artista"
+                  'artista' : "Nombre Artista",
+                  'valoracion' : 0
                 }
     
     //Configuracion de ecualizacion de los bajos
@@ -650,6 +655,10 @@ class Reproductor extends React.Component{
 
     this.reproducir = this.reproducir.bind(this);
     this.mover = this.mover.bind(this);
+    // Cris esto es solo debug, QUITALO
+    window.idAudioReproduciendo = "idAudio:1";
+    // Cris esto si que vale, NO LO QUITES
+    window.valoracionGeneral = 0;
   }
 
   componentDidMount(){
@@ -674,11 +683,16 @@ class Reproductor extends React.Component{
       }
     )
 
-    console.log("id audio: ", window._idAudioReproduciendo);
     DjangoAPI.getSong(window.idUsuario, window.passwd, window._idAudioReproduciendo)
-    .then(data =>{
-      console.log("Cris: recibo del back", data);
-      this.setState({"nombreAudio" : data.nombre, "artista" : data.artista})
+    .then(async (data) =>{
+      this.setState({"nombreAudio" : data.idAudio.nombre});
+      window.valoracionGeneral = data.idAudio.val;
+      await new Promise(resolve => setTimeout(resolve, 100));
+      DjangoAPI.getUser(window.idUsuario, window.passwd, data.idAudio.artista)
+      .then(async (datos) => {
+        this.setState({"artista" : datos.alias});
+        await new Promise(resolve => setTimeout(resolve, 100));
+      })
     })
   }
 
@@ -808,20 +822,23 @@ class Reproductor extends React.Component{
           />
         </div>
         <div>
-          <div className="justify-content-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
-            <p>{this.state.nombreAudio}</p>
-            <p> - </p>
-            <p>{this.state.artista}</p>
+          <div className="justify-content-center text-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
+            <p className="display-7 mb-2">{this.state.nombreAudio}</p>
+            <p className="display-7 mb-2"> - </p>
+            <p className="display-7 mb-2">{this.state.artista}</p>
           </div>
-          <div className="justify-content-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
-            <p>Valoración global: estrellas</p>
+          <div className="justify-content-center text-center" style={{alignItems: 'center', "background-color": "#ffffff"}}>
+            <p className="display-7 mb-2">Valoración global </p>
+            <SongRated rating={window.valoracionGeneral}/>
+          </div>
+          <div className="justify-content-center text-center" style={{alignItems: 'center', "background-color": "#ffffff"}}>
+            <p className="display-7 mb-2">Tu valoración </p>
             <SongRating/>
           </div>
         </div>
       </>
     );
   }
-  // Cris TODO cambiar el mock nombre de la cancion y artista por lo que venga de las listas de reproducción
 };
 
 function GrabarValoracion(valoracion) {
@@ -832,7 +849,12 @@ function GrabarValoracion(valoracion) {
     })
   }).then(response => {
     if (response.ok) {
-      // ha llegado bien
+      DjangoAPI.getSong(window.idUsuario, window.passwd, window.idAudioReproduciendo)
+      .then(async (data) =>{
+        // el backend devuelve valoracion 0 porque si :)
+        window.valoracionGeneral = data.idAudio.val;
+        await new Promise(resolve => setTimeout(resolve, 100));
+      });
     } else {
       toast.error("Ha habido un error al almacenar tu valoración");
     }
@@ -851,11 +873,20 @@ const SongRating = () => {
     }
   };
 
-  // para hablar con el backend usar {rating}
   return (
     <div className="justify-content-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
       {[1, 2, 3, 4, 5].map((value) => (
         <Star key={value} filled={value <= rating} onClick={() => handleRating(value)} />
+      ))}
+    </div>
+  );
+};
+
+const SongRated = ({rating}) => {
+  return (
+    <div className="justify-content-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
+      {[1, 2, 3, 4, 5].map((value) => (
+        <Star key={value} filled={value <= rating} />
       ))}
     </div>
   );
@@ -1489,7 +1520,6 @@ class ListasReproduccion extends React.Component{
     }).then(response => {
       if(response.ok){
         response.json().then((data) =>{
-          console.log("Cris respuesta: ", data)
           if (data.listas.length > 0){
             data.listas.forEach((lista) => {
               fetch(ipBackend + "GetLista/", {
@@ -1604,9 +1634,8 @@ class NuevaListaReproduccionContenido extends React.Component{
           response.json().then(datos => {
             // obtener los datos de la lista
             this.setState({numCanciones: datos.audio.length});
-            console.log("Cris valores devueltos lista antigua = ", this.state.numCanciones);
-            window.cancionesLista.push(datos.audio); // no va a funcionar, es solamente para que compile
-            // hay que sacar el numero de canciones de la lista
+            console.log("Cris canciones devueltas lista antigua = ", this.state.numCanciones);
+            window.cancionesLista.push(datos.audio);
           }).catch(error => {
             console.error('Error al analizar la respuesta JSON:', error);
           })
@@ -1757,18 +1786,24 @@ class AnyadirCancionListaReproduccion extends React.Component{
 
   constructor(props) {
     super(props);
-    this.state = {listas: "", nombreLista: ""};
+    this.state = {
+      busqueda: "",
+      buscado: false
+    };
+    window.infoAudios = [];
   }
 
-  componentDidMount() {
+  handleSubmit = (event) => {
+    event.preventDefault();
     fetch(ipBackend + "GlobalSearch/", {
-      method : "GET",
+      method : "POST",
       body : JSON.stringify({"query" : "", "n" : 10})
-    }).then(function(response){
+    }).then((response) => {
       if(response.ok){
-        response.json().then(function(data){
-          this.state.listas = data.listas;
-          console.log("Cris: resultado busqueda: ", data);
+        response.json().then((data) => {
+          window.idsAudios = data.audios;
+          this.setState({ buscado: true });
+          this.fetchDataForAudios();
         }).catch(function(error){
           console.error('Error al analizar la respuesta JSON:', error);
         })
@@ -1778,28 +1813,60 @@ class AnyadirCancionListaReproduccion extends React.Component{
     }).catch(error => toast.error(error.message))
   }
 
-  // cuando la busqueda este hecha, usar esto CardNameAddSong para mostrar el nombre y un icono de añadir.
-  // ejemplo exitoso de uso con CardNamePlaylist
+  fetchDataForAudios() {
+    window.idsAudios.forEach((audio) => {
+      DjangoAPI.getSong(window.idUsuario, window.passwd, audio)
+      .then((data) =>{
+        const audioCustom = {
+          id: audio,
+          nombre: data.idAudio.nombre
+        };
+        window.infoAudios.push(audioCustom);
+      });
+    });    
+  }  
+
+  handleInputChange(event) {
+    this.setState({ busqueda: event.target.value });
+  }
+
+  // window.infoAudios.map((lista) => <CardNameAddSong var={lista.id} text={lista.nombre}/>)
   render(){
     return (
       <>
-        <header class="bg-blue_7th py-5" >
-          <div class="container px-5" style={{"margin-top" : "3rem"}}>
+        <header class="bg-blue_7th py-5">
+          <div class="container px-5" style={{ marginTop: "3rem" }}>
             <div class="row gx-5 justify-content-center">
               <div class="col-lg-6">
                 <div class="text-center my-5">
-                  <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1rem"}}>Añadir canciones</h1>
+                  <h1 class="display-5 fw-bolder text-white mb-2" style={{ paddingBottom: "1rem" }}>
+                    Añadir canciones
+                  </h1>
                 </div>
-                <div class="form-floating mb-3">
-                <input class="form-control" id="busqueda-anyadir" type="text" placeholder="Cancion X"/>
-                <label for="busqueda">Buscar  &#128269;</label>
-              </div>
+                <form onSubmit={event => this.handleSubmit(event)}>
+                    <input
+                      class="form-control"
+                      id="busqueda-anyadir"
+                      type="text"
+                      placeholder="Cancion X"
+                      value={this.state.busqueda}
+                      onChange={event => this.handleInputChange(event)} // Nuevo evento onChange para actualizar el estado
+                    />
+                  <button type="submit" class="btn btn-primary">
+                    Buscar
+                  </button>
+                </form>
+                {(this.state.buscado === true && window.idsAudios.length !== 0) ? (
+                  window.infoAudios.map((lista) => <CardNameAddSong idAudio={lista.id} text={lista.nombre}/>)
+                ) : (
+                  <p className="display-6 fw-bolder text-white mb-2">No hay resultados</p>
+                )}
               </div>
             </div>
           </div>
         </header>
       </>
-    )
+    );
   }
 }
 
