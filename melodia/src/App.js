@@ -37,6 +37,7 @@ const nombreNuevacarpeta = "Nueva carpeta";
 window.passwd = "example";
 window.idUsuario = "example";
 window.email = "example";
+window.alias = "alias";
 window.nombreNuevaListaReproduccion = "Nueva lista de reproducción";
 window.nombreNuevaCarpeta = "Nueva carpeta";
 window.nombreNuevaListaGlobal = "Nueva lista global";
@@ -3105,7 +3106,6 @@ function enviar_contenido_artista(){
 
   metadatos.nombre = (document.getElementById("nombreAudio")).value;
   metadatos.duracion = (document.getElementById("duracionAudio")).value;
-  metadatos.artista = window.usuario;
   metadatos.genero = "1";
   metadatos.numReproducciones = 0;
   metadatos.valoracion = 0;
@@ -3119,7 +3119,10 @@ function enviar_contenido_artista(){
     if(ficheroImagen.files.length === 0) {
       toast.warning("Debes asignarle una imagen a tu audio")
     } else {
-      DjangoAPI.setSong(window.idUsuario, window.passwd, metadatos, ficheroAudio)
+      DjangoAPI.getUser(window.idUsuario, window.passwd, window.idUsuario).then(usuario => {
+        metadatos.artista = usuario.alias
+        DjangoAPI.setSong(window.idUsuario, window.passwd, metadatos, ficheroAudio)
+      })
       DjangoAPI.setImagenAudio(window.idUsuario, window.passwd, "idAudio:8" , ficheroImagen)
     }
   }
