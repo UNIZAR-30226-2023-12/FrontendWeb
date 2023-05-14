@@ -1799,6 +1799,7 @@ class AnyadirCancionListaReproduccion extends React.Component{
       buscado: false
     };
     window.busquedaAnyadirCancionLista = "";
+    window.idsAudios = [];
     window.infoAudios = [];
   }
 
@@ -1831,7 +1832,7 @@ class AnyadirCancionListaReproduccion extends React.Component{
         toast.error("El usuario o la contraseña son incorrectos")
       }
     }).catch(error => toast.error(error.message));
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 200));
     anyadirCancionListar();
   }
 
@@ -1897,7 +1898,6 @@ class ListarCancionesAnyadirListasReproduccion extends React.Component{
     this.state = {
       busqueda: "",
     };
-    console.log("Cris cosas de busqueda:", window.infoAudios);
   }
 
   handleSubmit = (event) => {
@@ -1908,7 +1908,6 @@ class ListarCancionesAnyadirListasReproduccion extends React.Component{
     anyadirCancionListaRep();
   }
 
-  // cris aqui
   render(){
     return (
       <>
@@ -1935,9 +1934,9 @@ class ListarCancionesAnyadirListasReproduccion extends React.Component{
                   </button>
                 </form>
                 {(window.infoAudios.length !== 0) ? (
-                  window.infoAudios.map((lista) => <CardNameAddSong idAudio={lista.id} text={lista.nombre}/>)
+                  window.infoAudios.map((audio) => <CardNameAddSong idAudio={audio.id} text={audio.nombre}/>)
                 ) : (
-                  <p className="display-6 fw-bolder text-white mb-2 justify-text">No hay resultados</p>
+                  <p className="display-6 fw-bolder text-white mb-2" style={{alignItems: 'center'}}>No hay resultados</p>
                 )}
               </div>
             </div>
