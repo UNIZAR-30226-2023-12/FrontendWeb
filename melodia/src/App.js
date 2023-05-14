@@ -21,10 +21,10 @@ const domNode = document.getElementById('root');
 const root = createRoot(domNode);
 //const ipBackend = "http://localhost:8081/" // aws deployment
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-const ipBackend = "http://localhost:8081/"; // cris local
+//const ipBackend = "http://localhost:8081/"; // cris local
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // aws
 //const ipBackend = "http://3.83.121.162:8081/" // aws
-//const ipBackend = "http://192.168.56.1:8081/"; // ismael
+const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
 const constListaNueva = "nueva";
@@ -48,7 +48,7 @@ window.cancionesLista = [];
 window.origenPasoListaRepACanciones = "";
 window.origenPasoCarpetaALista = "";
 window.idCarpeta = 0;
-window._idAudioReproduciendo = "idAudio:8";
+window._idAudioReproduciendo = "idAudio:5";
 window.listaAudiosReproducir = [];
 window.ultimoSegundo = 0;
 
@@ -72,6 +72,7 @@ Object.defineProperty(window, 'idAudioReproduciendo', {
     window.player.reproducir(newValue, window.ultimoSegundo).then(() => {
       window.ultimoSegundo = 0;
     })
+    window.player.actualizarInfo(newValue);
 
   },
   get: function() {
@@ -655,8 +656,8 @@ class Reproductor extends React.Component{
 
     this.reproducir = this.reproducir.bind(this);
     this.mover = this.mover.bind(this);
-    // Cris esto es solo debug, QUITALO
-    window.idAudioReproduciendo = "idAudio:1";
+    this.actualizarInfo = this.actualizarInfo.bind(this);
+
     // Cris esto si que vale, NO LO QUITES
     window.valoracionGeneral = 0;
   }
@@ -675,7 +676,6 @@ class Reproductor extends React.Component{
 
     window.reproductor = this.reproductor;
     
-    //this.reproductor.current.audio.current.currentTime = 10;
     DjangoAPI.getFicheroSong(window.idUsuario, window._idAudioReproduciendo, false, DjangoAPI.CALIDAD_BAJA).then(
       audio => {
         var audioURL = URL.createObjectURL(audio);
@@ -694,6 +694,8 @@ class Reproductor extends React.Component{
         await new Promise(resolve => setTimeout(resolve, 100));
       })
     })
+
+    this.actualizarInfo(window._idAudioReproduciendo)
   }
 
   reproducir(audio, ultimoSegundo) {
@@ -713,6 +715,14 @@ class Reproductor extends React.Component{
           resolve();
         }
       ).catch(error => reject(error))
+    })
+  }
+
+  actualizarInfo(audio){
+    DjangoAPI.getSong(window.idUsuario, window.passwd, audio).then(audio => {
+      console.log(audio)
+      this.setState({"nombreAudio" : audio.nombre, "artista" : audio.artista, "valoracion" : audio.valoracion})
+      toast.info("Estas escuchando " + audio.nombre + " de " + audio.artista)
     })
   }
 
@@ -829,7 +839,7 @@ class Reproductor extends React.Component{
           </div>
           <div className="justify-content-center text-center" style={{alignItems: 'center', "background-color": "#ffffff"}}>
             <p className="display-7 mb-2">Valoración global </p>
-            <SongRated rating={window.valoracionGeneral}/>
+            <SongRated rating={this.state.valoracion}/>
           </div>
           <div className="justify-content-center text-center" style={{alignItems: 'center', "background-color": "#ffffff"}}>
             <p className="display-7 mb-2">Tu valoración </p>
