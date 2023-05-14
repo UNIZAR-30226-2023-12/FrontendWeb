@@ -19,9 +19,9 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-const ipBackend = "http://localhost:8081/" // aws deployment
+//const ipBackend = "http://localhost:8081/" // aws deployment
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-//const ipBackend = "http://localhost:8081/"; // cris local
+const ipBackend = "http://localhost:8081/"; // cris local
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // aws
 // const ipBackend = "http://3.83.121.162:8081/" // aws
 //const ipBackend = "http://192.168.56.1:8081/"; // ismael
@@ -589,7 +589,8 @@ class Reproductor extends React.Component{
                   'showEqualizer' : false,
                   'repeatButton' : {},
                   'nombreAudio' : "Nombre Audio",
-                  'artista' : "Nombre Artista"
+                  'artista' : "Nombre Artista",
+                  'valoracion' : 0
                 }
     
     //Configuracion de ecualizacion de los bajos
@@ -622,6 +623,8 @@ class Reproductor extends React.Component{
       default:
         this.state.audioSrc = 'ost/Gangsters_Delight.mp3';
     }
+    // Cris esto es solo debug, QUITALO
+    window.idAudioReproduciendo = "idAudio:1";
   }
 
   componentDidMount(){
@@ -643,11 +646,17 @@ class Reproductor extends React.Component{
       }
     )
 
-    console.log("id audio: ", window.idAudioReproduciendo);
     DjangoAPI.getSong(window.idUsuario, window.passwd, window.idAudioReproduciendo)
-    .then(data =>{
-      console.log("Cris: recibo del back", data);
-      this.setState({"nombreAudio" : data.nombre, "artista" : data.artista})
+    .then(async (data) =>{
+      this.setState({"nombreAudio" : data.idAudio.nombre, "valoracion" : data.idAudio.val})
+      await new Promise(resolve => setTimeout(resolve, 100));
+      DjangoAPI.getUser(window.idUsuario, window.passwd, data.idAudio.artista)
+      .then(async (datos) => {
+        // Cris TODO comprobar los datos que se obtienen aqui
+        console.log("Cris: recibo esta información del artista:", datos);
+        this.setState({"artista" : datos.nombre});
+        await new Promise(resolve => setTimeout(resolve, 100));
+      })
     })
   }
 
@@ -759,14 +768,13 @@ class Reproductor extends React.Component{
             <p>{this.state.artista}</p>
           </div>
           <div className="justify-content-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
-            <p>Valoración global: estrellas</p>
+            <p>Valoración global: {this.state.valoracion} estrellas</p>
             <SongRating/>
           </div>
         </div>
       </>
     );
   }
-  // Cris TODO cambiar el mock nombre de la cancion y artista por lo que venga de las listas de reproducción
 };
 
 function GrabarValoracion(valoracion) {
