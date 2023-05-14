@@ -19,9 +19,11 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
+const ipBackend = "http://localhost:8081/" // aws deployment
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-const ipBackend = "http://localhost:8081/"; // cris local
-//const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // cris aws
+//const ipBackend = "http://localhost:8081/"; // cris local
+//const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // aws
+// const ipBackend = "http://3.83.121.162:8081/" // aws
 //const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
@@ -641,7 +643,7 @@ class Reproductor extends React.Component{
       }
     )
 
-    console.log("id audio: ", window.idUsuario);
+    console.log("id audio: ", window.idAudioReproduciendo);
     DjangoAPI.getSong(window.idUsuario, window.passwd, window.idAudioReproduciendo)
     .then(data =>{
       console.log("Cris: recibo del back", data);
