@@ -2,8 +2,8 @@
 import { ToastContainer, toast } from 'react-toastify';
 
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-const ipBackend = "http://localhost:8081/"; // cris local
-//const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://localhost:8081/"; // cris local
+const ipBackend = "http://192.168.56.1:8081/"; // ismael
 
 const GENERO_POP = 0
 const GENERO_ROCK = 1
@@ -183,9 +183,8 @@ export const setSong = (usuario, contrasenya, metadatos, inputNodeAudio) => {
             method: "POST",
             body: JSON.stringify({ [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, 
             [CLAVE_NOMBRE_AUDIO] : metadatos.nombre, [CLAVE_ARTISTA_AUDIO] : metadatos.artista, genero : metadatos.genero,
-            [CLAVE_CALIDAD_AUDIO] : "baja", [CLAVE_NUMERO_REPRODUCCIONES] : metadatos.numReproducciones, [CLAVE_VALORACION_AUDIO] : metadatos.valoracion,
-            [CLAVE_FICHERO_ALTA_CALIDAD] : " ", [CLAVE_PREFIJO_AUDIO] : base64, "longitud" : metadatos.duracion, [CLAVE_IMAGEN_AUDIO] : " ",
-            [CLAVE_ES_PODCAST] : metadatos.esPodcast}),
+            [CLAVE_CALIDAD_AUDIO] : metadatos.calidad, [CLAVE_NUMERO_REPRODUCCIONES] : metadatos.numReproducciones, [CLAVE_VALORACION_AUDIO] : metadatos.valoracion,
+            [CLAVE_PREFIJO_AUDIO] : base64, "longitud" : metadatos.duracion, [CLAVE_ES_PODCAST] : metadatos.esPodcast}),
         }).then(response => {
             if(response.ok){
                 toast.success("Cancion publicada con éxito!!")
@@ -202,7 +201,7 @@ export const getSong = (usuario, contrasenya, idAudio) => {
             method : "POST",
             body : JSON.stringify({[CLAVE_ID_USUARIO] : usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_ID_AUDIO] : idAudio})
         }).then(response => response.json().then(data => {
-            resolve(data)
+            resolve(data.idAudio)
         }))
         .catch(error => reject(error))
     })
@@ -250,6 +249,70 @@ export const getFicheroSong = (usuario, idAudio, esPodcast, calidad) => {
                 resolve(blob);
             }
         )).catch(error => reject(error))
+    })
+}
+
+export const setImagenAudio = (usuario, contrasenya, idAudio, inputNodeImage) => {
+    let imagenBase64;
+
+    // Leer archivo de imagen y convertirlo a base64
+    let archivoImagen = inputNodeImage.files[0]
+    let lectorImagen = new FileReader()
+
+    const promesaImagen = new Promise((resolve, reject) => {
+        lectorImagen.onload = function(evento) {
+          let bytes = evento.target.result;
+          imagenBase64 = btoa(
+            new Uint8Array(bytes)
+              .reduce((datos, byte) => datos + String.fromCharCode(byte), '')
+          );
+          resolve();
+        };
+    
+        lectorImagen.onerror = function(evento) {
+          reject(evento);
+        }
+    
+        lectorImagen.readAsArrayBuffer(archivoImagen);
+    });
+
+    promesaImagen.then(() => {
+        fetch(ipBackend + "SetImagenAudio/", {
+            method : "POST",
+            body : JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_ID_AUDIO] : idAudio, [CLAVE_IMAGEN_AUDIO] : imagenBase64})
+        }).then(response => {
+            if(response.ok){
+                toast.success("Imagen adjuntada con éxito!!")
+            }else{
+                toast.error("Hubo un error al colocar la imagen")
+            }
+        })
+    })
+}
+
+export const getImagenAudio = (usuario, contrasenya, idAudio) => {
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetImagenAudio/",{
+            method : "POST",
+            body : JSON.stringify({[CLAVE_ID_USUARIO] : usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_ID_AUDIO] : idAudio})
+        }).then(response => response.json().then(data => {
+
+            // Decodificamos la cadena base64 en un array de bytes
+            const byteCharacters = atob(data.imagenAudio);
+
+            // Creamos un array de bytes a partir de los caracteres decodificados
+            const byteNumbers = new Array(byteCharacters.length)
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i)
+            }
+            const byteArray = new Uint8Array(byteNumbers)
+
+            // Creamos un objeto Blob a partir del array de bytes
+            const blob = new Blob([byteArray], { type: 'image/*' })
+
+            resolve(blob);
+        }))
+        .catch(error => reject(error))
     })
 }
 

@@ -19,12 +19,12 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-const ipBackend = "http://localhost:8081/" // aws deployment
+//const ipBackend = "http://localhost:8081/" // aws deployment
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
 //const ipBackend = "http://localhost:8081/"; // cris local
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // aws
-// const ipBackend = "http://3.83.121.162:8081/" // aws
-//const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://3.83.121.162:8081/" // aws
+const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
 const constListaNueva = "nueva";
@@ -48,10 +48,35 @@ window.cancionesLista = [];
 window.origenPasoListaRepACanciones = "";
 window.origenPasoCarpetaALista = "";
 window.idCarpeta = 0;
-window.idAudioReproduciendo = "idAudio:4";
+window._idAudioReproduciendo = "idAudio:8";
 window.listaAudiosReproducir = [];
+window.ultimoSegundo = 0;
+
+window.player = React.createRef();
 window.reproductor = React.createRef();
+window.menuPrincipal = React.createRef();
 window.ultimoAudio = "idAudio:2";
+
+//Observador que cuando window.idAudioReproduciendo cambie, se hagan cosas...
+Object.defineProperty(window, 'idAudioReproduciendo', {
+  set: function(newValue) {
+    // Realiza acciones cuando se establece el nuevo valor de idAudioReproduciendo
+    console.log('Se ha cambiado el valor de idAudioReproduciendo a:', newValue);
+    // Ejecuta otras acciones aquí
+
+    window._idAudioReproduciendo = newValue; // Actualiza la variable _idAudioReproduciendo
+    window.menuPrincipal.current.cambiarImagen();
+    window.player.reproducir(newValue, window.ultimoSegundo).then(() => {
+      window.ultimoSegundo = 0;
+    })
+
+  },
+  get: function() {
+    return this._idAudioReproduciendo;
+  },
+  configurable: true
+});
+
 
 function active(elem, num){
   if(elem === num){
@@ -622,9 +647,14 @@ class Reproductor extends React.Component{
       default:
         this.state.audioSrc = 'ost/Gangsters_Delight.mp3';
     }
+
+    this.reproducir = this.reproducir.bind(this);
+    this.mover = this.mover.bind(this);
   }
 
   componentDidMount(){
+    window.player = this;
+
     const audioElement = document.querySelector('[src="' + this.state.audioSrc + '"]');
     const sourceNode = this.state.audioCtx.createMediaElementSource(audioElement);
     
@@ -635,20 +665,45 @@ class Reproductor extends React.Component{
     this.altos.connect(this.state.audioCtx.destination);
 
     window.reproductor = this.reproductor;
+    
     //this.reproductor.current.audio.current.currentTime = 10;
-    DjangoAPI.getFicheroSong(window.idUsuario, window.idAudioReproduciendo, false, DjangoAPI.CALIDAD_BAJA).then(
+    DjangoAPI.getFicheroSong(window.idUsuario, window._idAudioReproduciendo, false, DjangoAPI.CALIDAD_BAJA).then(
       audio => {
         var audioURL = URL.createObjectURL(audio);
         this.reproductor.current.audio.current.src = audioURL;
       }
     )
 
-    console.log("id audio: ", window.idAudioReproduciendo);
-    DjangoAPI.getSong(window.idUsuario, window.passwd, window.idAudioReproduciendo)
+    console.log("id audio: ", window._idAudioReproduciendo);
+    DjangoAPI.getSong(window.idUsuario, window.passwd, window._idAudioReproduciendo)
     .then(data =>{
       console.log("Cris: recibo del back", data);
       this.setState({"nombreAudio" : data.nombre, "artista" : data.artista})
     })
+  }
+
+  reproducir(audio, ultimoSegundo) {
+    return new Promise((resolve, reject) => {
+      DjangoAPI.getFicheroSong(window.idUsuario, audio, false, DjangoAPI.CALIDAD_BAJA).then(
+        audio => {
+          this.reproductor.current.audio.current.pause()
+          var audioURL = URL.createObjectURL(audio);
+          this.reproductor.current.audio.current.src = audioURL;
+          this.reproductor.current.audio.current.currentTime = ultimoSegundo;
+          this.reproductor.current.audio.current.load();
+          
+          window.reproductor.current.audio.current.addEventListener('canplay', () => {
+            window.reproductor.current.audio.current.play();
+          });
+
+          resolve();
+        }
+      ).catch(error => reject(error))
+    })
+  }
+
+  mover(segundo) {
+    this.reproductor.current.audio.current.currentTime = segundo;
   }
 
   setBajosGain(value) {
@@ -684,7 +739,7 @@ class Reproductor extends React.Component{
     this.reproductor.current.audio.current.pause();
     let segundo = this.reproductor.current.audio.current.currentTime;
     toast.info("Guardado el tiempo: " + segundo);
-    DjangoAPI.setLastSecondHeared(window.idUsuario, window.passwd, window.idAudioReproduciendo, segundo);
+    DjangoAPI.setLastSecondHeared(window.idUsuario, window.passwd, window._idAudioReproduciendo, segundo);
   }
 
   share_song = () => {
@@ -773,7 +828,7 @@ function GrabarValoracion(valoracion) {
   fetch(ipBackend + "SetValoracion/", {
     method: "POST",
     body: JSON.stringify({
-      "idUsr": window.idUsuario, "idAudio": window.idAudioReproduciendo, "valoracion": valoracion
+      "idUsr": window.idUsuario, "idAudio": window._idAudioReproduciendo, "valoracion": valoracion
     })
   }).then(response => {
     if (response.ok) {
@@ -817,7 +872,7 @@ const Star = ({ filled, onClick }) => {
 
 const randomSong = () => {
   DjangoAPI.getRecomendedAudio(window.idUsuario, window.passwd).then(idAudio => {
-    window.idAudioReproduciendo = idAudio
+    window._idAudioReproduciendo = idAudio
   })
 }
 
@@ -828,7 +883,30 @@ class MenuPrincipal extends React.Component{
       name: "",
       esArtista: false,
       esAdmin: true,
+      urlImage: "assets/girls_listening_music.jpg"
     };
+
+    this.cambiarImagen = this.cambiarImagen.bind(this); // enlazar el método con "this"
+  }
+
+  componentDidMount() {
+    DjangoAPI.getImagenAudio(window.idUsuario, window.passwd, window._idAudioReproduciendo).then(
+      imagen => {
+        let imagenURL = URL.createObjectURL(imagen);
+        this.setState({urlImage : imagenURL})
+      }
+    )
+  }
+
+  cambiarImagen() {
+    console.log("Hola desde Cambiar Imagen")
+
+    DjangoAPI.getImagenAudio(window.idUsuario, window.passwd, window._idAudioReproduciendo).then(
+      imagen => {
+        let imagenURL = URL.createObjectURL(imagen);
+        this.setState({urlImage : imagenURL})
+      }
+    )
   }
 
   mostrarCancionesPropias() {
@@ -902,7 +980,7 @@ class MenuPrincipal extends React.Component{
             </div>
           </div>
           <div class="bg-blue_3th main" style={{"width" : "100%", "heigth" : "100%", "flex": 1, "display": "flex", "justify-content": "center", "align-items": "center"}}>
-              <ImagenInfo src="assets/girls_listening_music.jpg"/>
+              <ImagenInfo src={this.state.urlImage}/>
           </div>
           <div style={{"width" : "100%"}}>
             <Reproductor/>
@@ -1377,7 +1455,7 @@ class NuevaCancion extends React.Component{
                 Sube la imagen asociada a tu audio
               </p>
               <div className="justify-content-center mb-4">
-                <input class="input-formArtista text-white" type="file"  name="image" accept="image/*" />
+                <input id="fichero_imagen" class="input-formArtista text-white" type="file"  name="image" accept="image/*" />
               </div>
               <p className="cuerpo-formArtista fw-bolder subtitulo-formArtista subtitulo-formArtista-md mb-4 text-white">
                 Sube el archivo de audio a añadir en tu perfil de artista
@@ -2945,6 +3023,7 @@ function enviar_peticion_artista(text){
 
 function enviar_contenido_artista(){
   let ficheroAudio = document.getElementById("fichero_audio");
+  let ficheroImagen = document.getElementById("fichero_imagen");
   let metadatos = {};
 
   metadatos.nombre = (document.getElementById("nombreAudio")).value;
@@ -2954,9 +3033,19 @@ function enviar_contenido_artista(){
   metadatos.numReproducciones = 0;
   metadatos.valoracion = 0;
   metadatos.esPodcast = 0;
+  metadatos.calidad = DjangoAPI.CALIDAD_BAJA
 
-  DjangoAPI.setSong(window.idUsuario, window.passwd, metadatos, ficheroAudio)
-
+  if (ficheroAudio.files.length === 0) {
+    toast.warning("Debes subir al menos un fichero de audio")
+  } else {
+    // Se ha seleccionado al menos un archivo
+    if(ficheroImagen.files.length === 0) {
+      toast.warning("Debes asignarle una imagen a tu audio")
+    } else {
+      DjangoAPI.setSong(window.idUsuario, window.passwd, metadatos, ficheroAudio)
+      DjangoAPI.setImagenAudio(window.idUsuario, window.passwd, "idAudio:8" , ficheroImagen)
+    }
+  }
 }
 
 //TODO: si da tiempo hay una función en el backend que te permite ver si un usuario está suscrito
@@ -3026,7 +3115,7 @@ class BotonUltimaEscucha extends React.Component{
       DjangoAPI.getUser(window.idUsuario, window.passwd, window.idUsuario).then(usuario => {
         DjangoAPI.getLastSecondHeared(window.idUsuario, window.passwd, usuario.idUltimoAudio).then(
           segundo => {
-            console.log(segundo)
+            console.log(segundo, usuario.idUltimoAudio)
             this.setState({"lastIdAudio" : usuario.idUltimoAudio, "lastSecondHeared" : segundo})
             resolve(parseFloat(segundo) !== 0)
           }
@@ -3039,24 +3128,13 @@ class BotonUltimaEscucha extends React.Component{
 
   recuperarSegundo = () => {
 
-    if(window.idAudioReproduciendo !== this.state.lastIdAudio){
-      DjangoAPI.getFicheroSong(window.idUsuario, this.state.lastIdAudio, false, DjangoAPI.CALIDAD_BAJA).then(
-        audio => {
-          window.reproductor.current.audio.current.pause()
-          var audioURL = URL.createObjectURL(audio);
-          window.reproductor.current.audio.current.src = audioURL;
-          window.reproductor.current.audio.current.currentTime = this.state.lastSecondHeared;
-          window.reproductor.current.audio.current.load();
+    console.log(window.player)
 
-          window.reproductor.current.audio.current.addEventListener('canplay', () => {
-            window.idAudioReproduciendo = this.state.lastIdAudio;
-            window.reproductor.current.audio.current.play();
-          });
-        }
-      ).catch(error => console.log(error))
-
+    if(window._idAudioReproduciendo !== this.state.lastIdAudio){
+      window.ultimoSegundo = this.state.lastSecondHeared;
+      window.idAudioReproduciendo = this.state.lastIdAudio;
     }else{
-      window.reproductor.current.audio.current.currentTime = this.state.lastSecondHeared;
+      window.player.mover(this.state.lastSecondHeared)
     }
   }
 
@@ -3297,7 +3375,7 @@ function Menu(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
-      <MenuPrincipal/>
+      <MenuPrincipal ref={window.menuPrincipal}/>
       <Footer/>
       <ToastContainer/>
     </div>
