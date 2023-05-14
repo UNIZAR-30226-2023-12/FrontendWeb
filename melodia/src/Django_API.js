@@ -2,8 +2,8 @@
 import { ToastContainer, toast } from 'react-toastify';
 
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-const ipBackend = "http://localhost:8081/"; // cris local
-//const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://localhost:8081/"; // cris local
+const ipBackend = "http://192.168.56.1:8081/"; // ismael
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/" // aws deployment
 
 const GENERO_POP = 0
@@ -156,9 +156,6 @@ export const CALIDAD_BAJA = "baja"
 
 export const setSong = (usuario, contrasenya, metadatos, inputNodeAudio) => {
 
-    let bytes;
-    let base64;
-
     let archivo = inputNodeAudio.files[0]
     let lector = new FileReader()
 
@@ -179,7 +176,13 @@ export const setSong = (usuario, contrasenya, metadatos, inputNodeAudio) => {
         lector.readAsArrayBuffer(archivo);
     });
     
-    promesa.then( (base64) => {
+    return promesa.then( (base64) => {
+
+        console.log(JSON.stringify({ [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, 
+            [CLAVE_NOMBRE_AUDIO] : metadatos.nombre, [CLAVE_ARTISTA_AUDIO] : metadatos.artista, genero : metadatos.genero,
+            [CLAVE_CALIDAD_AUDIO] : metadatos.calidad, [CLAVE_NUMERO_REPRODUCCIONES] : metadatos.numReproducciones, [CLAVE_VALORACION_AUDIO] : metadatos.valoracion,
+            [CLAVE_PREFIJO_AUDIO] : base64, "longitud" : metadatos.duracion, [CLAVE_ES_PODCAST] : metadatos.esPodcast}))
+
         fetch(ipBackend + "SetSong/", {
             method: "POST",
             body: JSON.stringify({ [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, 
@@ -324,7 +327,7 @@ export const getRecomendedAudio = (usuario, contrasenya) => {
             body : JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya})
         }).then(response => response.json().then(data => {
             console.log(data)
-            resolve(data)
+            resolve(data.idAudio)
         })).catch(error => reject(error))
     })
 }

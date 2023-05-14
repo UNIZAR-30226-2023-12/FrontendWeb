@@ -48,7 +48,7 @@ window.cancionesLista = [];
 window.origenPasoListaRepACanciones = "";
 window.origenPasoCarpetaALista = "";
 window.idCarpeta = 0;
-window._idAudioReproduciendo = "idAudio:5";
+window._idAudioReproduciendo = "idAudio:2";
 window.listaAudiosReproducir = [];
 window.ultimoSegundo = 0;
 
@@ -720,9 +720,10 @@ class Reproductor extends React.Component{
 
   actualizarInfo(audio){
     DjangoAPI.getSong(window.idUsuario, window.passwd, audio).then(audio => {
-      console.log(audio)
-      this.setState({"nombreAudio" : audio.nombre, "artista" : audio.artista, "valoracion" : audio.valoracion})
-      toast.info("Estas escuchando " + audio.nombre + " de " + audio.artista)
+      DjangoAPI.getUser(window.idUsuario, window.passwd, audio.artista).then(artista => {
+        this.setState({"nombreAudio" : audio.nombre, "artista" : artista.alias, "valoracion" : audio.valoracion})
+        toast.info("Estas escuchando " + audio.nombre + " de " + artista.alias)
+      })
     })
   }
 
@@ -913,7 +914,7 @@ const Star = ({ filled, onClick }) => {
 
 const randomSong = () => {
   DjangoAPI.getRecomendedAudio(window.idUsuario, window.passwd).then(idAudio => {
-    window._idAudioReproduciendo = idAudio
+    window.idAudioReproduciendo = idAudio;
   })
 }
 
@@ -3168,9 +3169,10 @@ function enviar_contenido_artista(){
     } else {
       DjangoAPI.getUser(window.idUsuario, window.passwd, window.idUsuario).then(usuario => {
         metadatos.artista = usuario.alias
-        DjangoAPI.setSong(window.idUsuario, window.passwd, metadatos, ficheroAudio)
+        DjangoAPI.setSong(window.idUsuario, window.passwd, metadatos, ficheroAudio).then(() => {
+          DjangoAPI.setImagenAudio(window.idUsuario, window.passwd, "idAudio:3" , ficheroImagen)
+        })
       })
-      DjangoAPI.setImagenAudio(window.idUsuario, window.passwd, "idAudio:8" , ficheroImagen)
     }
   }
 }
