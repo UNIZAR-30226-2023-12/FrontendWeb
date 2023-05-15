@@ -20,10 +20,9 @@ import { createRoot } from 'react-dom/client';
 
 const domNode = document.getElementById('root');
 const root = createRoot(domNode);
-//const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/" // aws deployment
+//const ipBackend = "http://ec2-18-206-199-169.compute-1.amazonaws.com:8081/" // aws deployment
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
 const ipBackend = "http://localhost:8081/"; // cris local
-//const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // aws
 //const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
@@ -67,6 +66,7 @@ window.sortKeyListas = "tematica";
 window.recargarLista = true;
 
 window.idsCarpeta = [];
+window.infoListas = [];
 
 //Observador que cuando window.idAudioReproduciendo cambie, se hagan cosas...
 Object.defineProperty(window, 'idAudioReproduciendo', {
@@ -565,7 +565,7 @@ class RightArrowNoTransition extends React.Component{
   CambiarPantalla = () => {
     window.origenPasoListaRepACanciones = constListaExistente;
     window.nombreNuevaListaReproduccion = this.props.text;
-    contenidoListaDeReproduccion(this.props.var);
+    contenidoListaDeReproduccion(this.props.idLista);
   }  
 
   render(){
@@ -576,9 +576,9 @@ class RightArrowNoTransition extends React.Component{
 class RightArrowNoTransitionCarpeta extends React.Component{
 
   CambiarPantalla = () => {
-    window.origenPasoCarpetaALista = constListaExistente;
+    window.origenPasoCarpetaALista = constCarpetaExistente;
     window.nombreNuevaCarpeta = this.props.text;
-    contenidoCarpeta(this.props.var);
+    contenidoCarpeta(this.props.folderKey);
   }  
 
   render(){
@@ -1632,7 +1632,7 @@ class ListasReproduccion extends React.Component{
             {(this.state.listasReproduccion.length === 0) ? (
               <p className="display-6 fw-bolder text-white mb-2">No tienes listas de reproducción</p>
             ) : (
-                this.state.listasReproduccion.map((lista) => <CardNamePlaylist var={lista.id} text={lista.nombre}/>)
+                this.state.listasReproduccion.map((lista) => <CardNamePlaylist idLista={lista.id} text={lista.nombre}/>)
             )}
           </div>
         </div>
@@ -1652,7 +1652,7 @@ class CardNamePlaylist extends React.Component{
       <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
         <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
         <span className="separator"> </span>
-        <RightArrowNoTransition var={this.props.var} text={this.props.text}/>
+        <RightArrowNoTransition idLista={this.props.idLista} text={this.props.text}/>
       </div>
     )
   }
@@ -1677,7 +1677,6 @@ class NuevaListaReproduccionContenido extends React.Component{
           response.json().then(data => {
             // Lista creada
             window.idLista = data.idLista;
-            
           }).catch(error => {
             console.error('Error al analizar la respuesta JSON:', error);
           })
@@ -1831,7 +1830,7 @@ class ListaReproduccionContenido extends React.Component{
                     <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
                       {window.cancionesLista.map((lista) =>
                         (<CardNameListaSong
-                          key={lista.id}
+                          idAudio={lista.id}
                           text={lista.nombre}
                           tematica={lista.tematica}
                           artista={lista.artista}
@@ -1856,7 +1855,7 @@ class CardNameListaSong extends React.Component{
   }
 
   mandarAudioAReproductor = (idAudio) => {
-    window._idAudioReproduciendo = this.props.key;
+    window._idAudioReproduciendo = this.props.idAudio;
     menuPrincipal();
   }
 
@@ -2039,7 +2038,6 @@ class ListarCancionesAnyadirListasReproduccion extends React.Component{
     this.state = {
       busqueda: "",
     };
-    console.log("longitud lista", window.infoAudios.length);
   }
 
   handleSubmit = (event) => {
@@ -2109,7 +2107,7 @@ async function meterCancionEnListaRep(idAudio){
     }
   }).catch(error => toast.error(error.message));
   if(funciona === true){
-    toast.success("Canción añadida");
+    toast.success("Canción añadida a la lista");
   }
 }
 
@@ -2336,42 +2334,77 @@ class Carpetas extends React.Component{
       carpetas: []
     };
     window.idsCarpeta = [];
+    window.infoListas = [];
   }
 
-  componentDidMount() {
-      fetch(ipBackend + "GetFoldersUsr/", {
-          method : "POST",
-          body : JSON.stringify({"idUsr" : window.idUsuario, "idUsrGet" : window.idUsuario, "contrasenya" : window.passwd})
-      }).then(response => {
-          if(response.ok){
-          response.json().then((data) =>{
-              if (data.idCarpeta.length > 0){
-              data.idCarpeta.forEach((carpeta) => {
-                  fetch(ipBackend + "GetFolder/", {
-                  method : "POST",
-                  body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idCarpeta" : carpeta})
-                  }).then((response) => {
+  componentDidMount() {;
+    this.pedirInfo();
+  }
+
+  async pedirInfo(){
+    await fetch(ipBackend + "GetFoldersUsr/", {
+      method : "POST",
+      body : JSON.stringify({"idUsr" : window.idUsuario, "idUsrGet" : window.idUsuario, "contrasenya" : window.passwd})
+    }).then(async (response) => {
+        if(response.ok){
+          await response.json().then(async (data) =>{
+            if (data.idCarpeta.length > 0){
+              window.idsCarpetas = data.idCarpeta;
+              await data.idCarpeta.forEach(async (carpeta) => {
+                  await fetch(ipBackend + "GetFolder/", {
+                    method : "POST",
+                    body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idCarpeta" : carpeta})
+                  }).then(async (response) => {
                       if(response.ok){
-                      response.json().then((datos) => {
+                        await response.json().then(async (datos) => {
                           const carpetaCustom = {
-                          id: carpeta,
-                          nombre: datos.nombreCarpeta
+                            id: carpeta,
+                            nombre: datos.nombreCarpeta
                           };
-                          this.setState({ carpetas: [...this.state.carpetas, carpetaCustom] });
+                          await window.infoListas.push(carpetaCustom);
+                          await new Promise((resolve) => setTimeout(resolve, 100));
                       })
                       } else{
-                      toast.warning("No se ha podido recuperar la información de tus carpetas")
+                        toast.warning("No se ha podido recuperar la información de tus carpetas")
                       }
                   }).catch(error => toast.error(error.message))
               })
-              }
-          }).catch((error) => {
-              console.error('Error al analizar la respuesta JSON:', error);
-          })
-          }else{
-          toast.error("El usuario o la contraseña son incorrectos")
-          }
-      }).catch(error => toast.error(error.message))
+              await new Promise((resolve) => setTimeout(resolve, 100));
+              misCarpetas2();
+            }
+        }).catch((error) => {
+            console.error('Error al analizar la respuesta JSON:', error);
+        })
+        }else{
+        toast.error("El usuario o la contraseña son incorrectos")
+        }
+    }).catch(error => toast.error(error.message));
+  }
+  
+  render(){
+    return (
+      <>
+        <div className="bg-blue_7th" >
+          <div className="text-center my-5 justify-content-center row gx-5">
+            <h1 className="display-5 fw-bolder text-white mb-2">Mis carpetas</h1>
+          </div>
+          <div className="text-center my-5 justify-content-center row gx-5">
+            <div className="d-flex justify-content-center">
+              <ButtonOnClick onClick={menuPrincipal} id="" text="Volver al menú"/>
+              <ButtonOnClick onClick={nuevaCarpeta} id="" text="Crear nueva carpeta"/>
+            </div>
+          </div>
+        </div>
+      </>
+    )
+  }
+}
+
+class Carpetas2 extends React.Component{
+  constructor(props) {
+    super(props);
+    // cris aqui
+    console.log("Cris info", window.infoListas);
   }
   
   render(){
@@ -2388,10 +2421,10 @@ class Carpetas extends React.Component{
             </div>
           </div>
           <div className="text-center my-5 justify-content-center row gx-5" style={{display: 'flex', alignItems: 'center' }}>
-            {(this.state.carpetas.length === 0) ? (
+            {(window.infoListas.length === 0) ? (
               <p className="display-6 fw-bolder text-white mb-2">No tienes carpetas</p>
             ) : (
-                this.state.carpetas.map((lista) => <CardNameFolder var={lista.id} text={lista.nombre}/>)
+                window.infoListas.map((lista) => <CardNameFolder folderKey={lista.id} text={lista.nombre}/>)
             )}
           </div>
         </div>
@@ -2410,7 +2443,7 @@ class CardNameFolder extends React.Component{
       return (
       <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
           <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
-          <RightArrowNoTransitionCarpeta var={this.props.var} text={this.props.text}/>
+          <RightArrowNoTransitionCarpeta folderKey={this.props.folderKey} text={this.props.text}/>
       </div>
       )
   }
@@ -2421,7 +2454,7 @@ class NuevaCarpetaContenido extends React.Component{
   constructor(props) {
     super(props);
     window.listasCarpeta = [];
-    window.idsCarpeta = [];
+    console.log("Cris idCarpeta", window.idCarpeta);
   }
 
   componentDidMount() {
@@ -2619,8 +2652,6 @@ class CardNameCarpetaLista extends React.Component{
         <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
           <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
             <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
-            <span className="separator"> </span>
-            <RightArrowNoTransition var={this.props.key} text={this.props.text}/>
           </div>
         </div>
       </>
@@ -2628,25 +2659,15 @@ class CardNameCarpetaLista extends React.Component{
   }
 }
 
-const FolderSortSelector = ({ onChange }) => {
-  return (
-    <select onChange={onChange}>
-      <option value="tematica">Temática</option>
-      <option value="titulo">Título</option>
-      <option value="artista">Artista</option>
-      <option value="idioma">Idioma</option>
-    </select>
-  );
-};
-
 class AnyadirListaReproduccionCarpeta extends React.Component{
 
   constructor(props) {
-  super(props);
-  this.state = {
-    listasReproduccion: []
-  };
-}
+    super(props);
+    this.state = {
+      listasReproduccion: []
+    };
+  }
+
   componentDidMount() {
       fetch(ipBackend + "GetListasUsr/", {
       method : "POST",
@@ -2701,9 +2722,6 @@ class AnyadirListaReproduccionCarpeta extends React.Component{
                   ) : (
                       this.state.listasReproduccion.map((lista) => <CardNameFolderPlaylist id={lista.id} text={lista.nombre}/>)
                   )}
-                </div>
-                <div className="justify-content-center text-center">
-                  <ButtonOnClick onClick={contenidoCarpeta} text="Volver a la carpeta"/>
                 </div>
               </div>
             </div>
@@ -2799,7 +2817,6 @@ class ListasFavoritos extends React.Component{
                               // obtener los datos de la lista
                               window.idLista = lista;
                               this.setState({numCanciones: datos.audio.length});
-                              console.log("Cris valores devueltos lista favoritos = ", this.state.numCanciones);
                               window.cancionesLista.push(datos.audio);
                               // hay que sacar el numero de canciones de la lista
                             }).catch(error => {
@@ -3740,18 +3757,6 @@ function PlayLists(){
   )
 }
 
-// si se restaura habra que cambiarlo a ListasReproduccion2
-function PlayLists2(){
-  return(
-    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
-      <BarraNavegacionApp/>
-      <ListasReproduccion/>
-      <Footer/>
-      <ToastContainer/>
-    </div>
-  )
-}
-
 function PlayListContenido(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
@@ -3856,6 +3861,17 @@ function Folders(){
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
       <Carpetas/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
+function Folders2(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <Carpetas2/>
       <Footer/>
       <ToastContainer/>
     </div>
@@ -4024,10 +4040,6 @@ function misListasDeReproduccion(){
   root.render(<PlayLists/>)
 }
 
-function misListasDeReproduccion2(){
-  root.render(<PlayLists2/>)
-}
-
 function nuevaListaDeReproduccion(){
   window.origenPasoListaRepACanciones = constListaNueva;
   root.render(<PlayListContenido/>)
@@ -4053,9 +4065,8 @@ function contenidoListaDeReproduccion(indice){
 }
 
 function contenidoCarpeta(idCarpeta){
-  window.origenPasoCarpetaALista = constCarpetaExistente;
   window.idCarpeta = idCarpeta;
-  root.render(<CarpetaContenido/>)
+  root.render(<CarpetaContenido/>);
 }
 
 function anyadirCancionListaRep(){
@@ -4072,6 +4083,10 @@ function anyadirListaCarpeta(){
 
 function misCarpetas(){
   root.render(<Folders/>)
+}
+
+function misCarpetas2(){
+  root.render(<Folders2/>)
 }
 
 function amigos(){
