@@ -864,7 +864,7 @@ class Reproductor extends React.Component{
           </div>
           <div className="justify-content-center text-center" style={{alignItems: 'center', "background-color": "#ffffff"}}>
             <p className="display-7 mb-2">Tu valoración </p>
-            <SongRating rating={this.state.valoracion}/>
+            <SongRating/>
           </div>
         </div>
       </>
@@ -880,13 +880,18 @@ function GrabarValoracion(valoracion) {
   }).then(response => {
     if (response.ok) {
       toast.success("Tu valoración se ha almacenado con éxito");
-      // getvaloracionmedia?
-      DjangoAPI.getSong(window.idUsuario, window.passwd, window._idAudioReproduciendo)
-      .then(async (data) =>{
-        // el backend devuelve valoracion 0 porque si :)
-        window.valoracionGeneral = data.val;
-        await new Promise(resolve => setTimeout(resolve, 100));
-      });
+      fetch(ipBackend + "GetValoracionMedia/", {
+        method: "POST",
+        body: JSON.stringify({"idAudio": window._idAudioReproduciendo})
+      }).then(response => {
+        if (response.ok) {
+          response.json().then(data => {
+            console.log("Cris valoracion obtenida", data.valoracion);
+            window.valoracionGeneral = Math.round(data.valoracion);
+          })
+          //await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }).catch(error => toast.error(error.message))
     } else {
       toast.error("Ha habido un error al almacenar tu valoración");
     }
@@ -3554,6 +3559,10 @@ function enviar_cambio_contra(e){
 function editar_foto_perfil (){
   // TODO
   toast.error("Funcionalidad no implementada");
+
+  DjangoAPI.getRecomendedAudio(window.idUsuario, window.passwd).then(data => {
+    console.log(data)
+  })
 }
 
 function enviar_peticion_artista(text){

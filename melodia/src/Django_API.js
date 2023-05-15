@@ -336,8 +336,7 @@ export const getRecomendedAudio = (usuario, contrasenya) => {
             method : "POST",
             body : JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya})
         }).then(response => response.json().then(data => {
-            console.log(data)
-            resolve(data)
+            resolve(data.idAudio)
         })).catch(error => reject(error))
     })
 }
