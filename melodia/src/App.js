@@ -49,7 +49,7 @@ window.cancionesLista = [];
 window.origenPasoListaRepACanciones = "";
 window.origenPasoCarpetaALista = "";
 window.idCarpeta = 0;
-window._idAudioReproduciendo = "idAudio:3";
+window._idAudioReproduciendo = "idAudio:1";
 window.listaAudiosReproducir = [];
 window.ultimoSegundo = 0;
 
@@ -64,6 +64,8 @@ window.idsAudios = [];
 window.infoAudios = [];
 window.busquedaAnyadirCancionLista = "";
 window.idsCanciones = [];
+window.cambiadoOrdenCanciones = false;
+window.sortKeyListas = "tematica";
 
 //Observador que cuando window.idAudioReproduciendo cambie, se hagan cosas...
 Object.defineProperty(window, 'idAudioReproduciendo', {
@@ -854,12 +856,11 @@ class Reproductor extends React.Component{
 function GrabarValoracion(valoracion) {
   fetch(ipBackend + "SetValoracion/", {
     method: "POST",
-    body: JSON.stringify({
-      "idUsr": window.idUsuario, "idAudio": window._idAudioReproduciendo, "valoracion": valoracion
-    })
+    body: JSON.stringify({"idUsr": window.idUsuario, "idAudio": window._idAudioReproduciendo, "valoracion": valoracion})
   }).then(response => {
     if (response.ok) {
-      DjangoAPI.getSong(window.idUsuario, window.passwd, window.idAudioReproduciendo)
+      console.log("PAULA",valoracion);
+      DjangoAPI.getSong(window.idUsuario, window.passwd, window._idAudioReproduciendo)
       .then(async (data) =>{
         // el backend devuelve valoracion 0 porque si :)
         window.valoracionGeneral = data.idAudio.val;
@@ -977,7 +978,7 @@ class MenuPrincipal extends React.Component{
             <p></p>
             <ButtonOnClick id="" onClick={randomSong} text="Random"/>
             <p></p>
-            <ButtonOnClick onClick={perfilOtroUsuario} id="" text="Social"/>
+            <ButtonOnClick onClick={amigos} id="" text="Social"/>
           </ButtonGroup>
           <p style={{ marginBottom: '10px' }}><br/></p>
           {esArtista ? <ButtonOnClick onClick={misCanciones} id="" text="Mis Canciones"/> : null}
@@ -1086,21 +1087,71 @@ class ListaTopDiario extends React.Component {
   componentDidMount(){
     fetch(ipBackend + "GetTopReproducciones/", {
       method: "POST",
-      body: JSON.stringify({ "n": "10", "esPodcast": "TRUE"}) // TODO: ver como se llama en backend y la finalidad del parámetro
+      body: JSON.stringify({ "n": "10", "esPodcast": "TRUE"})
     })
-    .then(response => {
+    .then(response => { // Se devuelve un array con 10 idAudio
       if (response.ok) {
-        response.json().then(function(data){
-          console.log(data);
+        response.json().then(data => {
+          for (let i = 0; i < data.topAudios.length; i++) {
+            const audio = data.topAudios[i];
+            console.log("PAULA " + audio);
+            fetch(ipBackend + "GetSong/", {
+              method: "POST",
+              body: JSON.stringify({ "idUsr":window.idUsuario, "contrasenya":window.passwd, "idAudio":audio })
+            })
+            .then(response => {
+              if (response.ok) {
+                return response.json().then(dataCancion => {
+                  const cancion = dataCancion.idAudio.nombre; // Asumiendo que la respuesta del backend tiene un campo 'cancion'
+                  console.log("PAULA ", cancion);
+                  switch (i) {
+                    case 0:
+                      this.setState({ top1: cancion });
+                      console.log("PAULA" , cancion);
+                      break;
+                    case 1:
+                      this.setState({ top2: cancion });
+                      break;
+                    case 2:
+                      this.setState({ top3: cancion });
+                      break;
+                    case 3:
+                      this.setState({ top4: cancion });
+                      break;
+                    case 4:
+                      this.setState({ top5: cancion });
+                      break;
+                    case 5:
+                      this.setState({ top6: cancion });
+                      break;
+                    case 6:
+                      this.setState({ top7: cancion });
+                      break;
+                    case 7:
+                      this.setState({ top8: cancion });
+                      break;
+                    case 8:
+                      this.setState({ top9: cancion });
+                      break;
+                    case 9:
+                      this.setState({ top10: cancion });
+                      break;
+                    default:
+                      break;
+                  }
+                })
+              } else {
+                throw new Error(`Error al obtener la canción para el elemento ${i+1}`);
+              }
+            })
+            .catch(error => toast.error("Error en el for" + error.message));
+          }
         })
+      } else {
+        toast.error("Error al obtener el top diario");
       }
-      throw new Error("Error al obtener el minutaje semanal");
     })
-    .then(data => {
-      const top = new Set(data.topAudios); // TODO: comprobar como se llama la respuesta en el backend
-      this.setState({top1: top});
-    })
-    .catch(error => toast.error(error.message))
+    .catch(error => toast.error("Error el procesar el top diario" + error.message));
   }
 
   render(){
@@ -1111,16 +1162,16 @@ class ListaTopDiario extends React.Component {
           <h1 className="display-5 fw-bolder text-white mb-2">Estadísticas de reproducciones globales</h1>
         </div>
         <div className="text-center my-5 justify-content-center row gx-5">
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 1 { top1}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 2  {top2}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 3  {top3}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 4  {top4}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 5  {top5}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 6  {top6}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 7  {top7}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 8  {top8}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 9  {top9}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 10 {top10}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 1 { top1 }</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 2  { top2 }</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 3  { top3 }</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 4  { top4 }</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 5  { top5 }</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 6  { top6 }</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 7  { top7 }</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 8  { top8 }</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 9  { top9 }</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">TOP 10 { top10 }</p>
         </div>
       </div>
     )
@@ -1584,8 +1635,7 @@ class NuevaListaReproduccionContenido extends React.Component{
     window.idsCanciones = [];
     this.state = {
       sortKey: 'tematica',
-      numCanciones: 0,
-      idsCanciones: []
+      numCanciones: 0
     };
   }
 
@@ -1664,26 +1714,8 @@ class NuevaListaReproduccionContenido extends React.Component{
       }
     }).catch(error => toast.error(error.message))
     window.origenPasoListaRepACanciones = "";
+    cancionesListaDeReproduccion();
   }
-
-  handleSortChange = (value) => {
-    this.setState({ sortKey: value });
-    console.log("Se ha cambiado el valor de la ordenación");
-  };
-
-  sortSongs = () => {
-    console.log("Se ha reordenado el array");
-    if (this.state.sortKey === "tematica"){
-      window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.tematica.localeCompare(b.tematica))];
-    } else if (this.state.sortKey === "titulo") {
-      window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.nombre.localeCompare(b.nombre))];
-    } else if (this.state.sortKey === "artista") {
-      window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.artista.localeCompare(b.artista))];
-    } else if (this.state.sortKey === "idioma") {
-      window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.idioma.localeCompare(b.idioma))];
-    }
-    console.log("Se ha reordenado el array");
-  };
 
   render(){
     return (
@@ -1700,21 +1732,86 @@ class NuevaListaReproduccionContenido extends React.Component{
                 <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
                   <ButtonOnClick onClick={misListasDeReproduccion} id="" text="Volver atrás"/>
                   <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
-                  {(this.state.numCanciones > 0 &&
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+      </>
+    )
+  }
+}
+
+class ListaReproduccionContenido extends React.Component{
+
+  constructor(props) {
+    super(props);
+    window.sortKeyListas = "tematica";
+  }
+
+  async handleSortChange(value) {
+    // cris aqui
+    //console.log("Cris holiii", window.cancionesLista.sort((a, b) => this.reordenarNombre(a, b)));
+    window.sortKeyListas = value;
+    console.log("Cris sortKey:", this.state.sortKey);
+    if (this.state.sortKey === "tematica"){
+      await window.cancionesLista.sort((a, b) => a.tematica.localeCompare(b.tematica));
+    } else if (this.state.sortKey === "titulo") {
+      await window.cancionesLista.sort((a, b) => this.reordenarNombre(a, b));
+    } else if (this.state.sortKey === "artista") {
+      await window.cancionesLista.sort((a, b) => a.artista.localeCompare(b.artista));
+    } else if (this.state.sortKey === "idioma") {
+      await window.cancionesLista.sort((a, b) => a.idioma.localeCompare(b.idioma));
+    }
+    console.log("Cris lista reordenada:", window.cancionesLista);
+    cancionesListaDeReproduccion();
+  };
+
+  reordenarNombre(a, b) {
+    /*
+    console.log("Cris", a.nombre.localCompare(b.nombre));
+    a.nombre.localeCompare(b.nombre);
+    */
+    if (a.nombre < b.nombre) {
+      return -1;
+    }
+    if (a.nombre > b.nombre) {
+      return 1;
+    }
+    return 0;
+  }
+
+  render(){
+    return (
+      <>
+        <header class="bg-blue_7th py-5" >
+          <div class="container px-5" style={{"margin-top" : "3rem"}}>
+            <div class="row gx-5 justify-content-center">
+              <div class="col-lg-6">
+                <div class="text-center my-5">
+                  <FormularioRenombre
+                    nombre={window.nombreNuevaListaReproduccion}
+                  />
+                </div>
+                <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                  <ButtonOnClick onClick={misListasDeReproduccion} id="" text="Volver atrás"/>
+                  <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
+                  {(window.cancionesLista.length > 0 &&
                     <ShuffleButtonNoTransition class="rhap_repeat-button rhap_button-clear" onClick={reproduccionAleatoria}/>
                   )}
                   
                 </div>
                 <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
                 {this.state.numCanciones === 0 ? (
-                  <p className="display-6 fw-bolder text-white mb-2">Esta lista no contiene ninguna canción</p>
+                  <span className="separator"> </span>
                 ) : (
                   <>
-                    <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
-                      <div className="left-align">
+                    <div class="my-5" style={{"margin-bottom": "20px"}}>
+                      <div className="right-align">
                         <PlaylistSortSelector onChange={this.handleSortChange}/>
                       </div>
-                      <span className="separator"> </span>
+                    </div>
+                    <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
                       {window.cancionesLista.map((lista) =>
                         (<CardNameListaSong
                           key={lista.id}
@@ -1741,6 +1838,11 @@ class CardNameListaSong extends React.Component{
     super(props);
   }
 
+  mandarAudioAReproductor = (idAudio) => {
+    window._idAudioReproduciendo = this.props.key;
+    menuPrincipal();
+  }
+
   render(){
     return (
       <>
@@ -1754,19 +1856,12 @@ class CardNameListaSong extends React.Component{
             <span className="separator"> </span>
             <p className="display-6 fw-bolder text-white mb-2">{this.props.idioma}</p>
             <span className="separator"> </span>
-            <PlayNoTransition onClick={mandarAudioAReproductor(this.props.key)}/>
+            <ButtonCommit onClick={this.mandarAudioAReproductor} text={String.fromCharCode(9658)} />
           </div>
         </div>
       </>
     )
   }
-}
-
-const mandarAudioAReproductor = (idAudio) => {
-  // cris aqui
-  console.log("lasjkd");
-  window._idAudioReproduciendo = idAudio;
-  //menuPrincipal();
 }
 
 const PlaylistSortSelector = ({ onChange }) => {
@@ -1925,7 +2020,7 @@ class CardNameAddSong extends React.Component{
     return (
       <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
         <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
-        <AddNoTransition onClick={meterCancionEnListaRep(this.props.idAudio)} />
+        <ButtonCommit onClick={() => meterCancionEnListaRep(this.props.idAudio)} text={String.fromCharCode(43)} />
       </div>
     )
   }
@@ -1938,14 +2033,16 @@ class ListarCancionesAnyadirListasReproduccion extends React.Component{
     this.state = {
       busqueda: "",
     };
+    console.log("longitud lista", window.infoAudios.length);
   }
 
   handleSubmit = (event) => {
-    //
+    //anyadirCancionListaRep();
   }
 
   handleInputChange(event) {
     anyadirCancionListaRep();
+    //window.busquedaAnyadirCancionLista = event.target.value;
   }
 
   render(){
@@ -1973,7 +2070,7 @@ class ListarCancionesAnyadirListasReproduccion extends React.Component{
                     Buscar
                   </button>
                 </form>
-                {(window.infoAudios.length !== 0) ? (
+                {(window.infoAudios.length > 0) ? (
                   window.infoAudios.map((audio) => <CardNameAddSong idAudio={audio.id} text={audio.nombre}/>)
                 ) : (
                   <p className="display-6 fw-bolder text-white mb-2 text-center" style={{alignItems: 'center'}}>No hay resultados</p>
@@ -2195,25 +2292,28 @@ class CrearListaGlobal extends React.Component{
   }
 }
 
-function meterCancionEnListaRep(idAudio){
+async function meterCancionEnListaRep(idAudio){
 
-  fetch(ipBackend + "SetSongLista/", {
-            method : "POST",
-            body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista": window.idLista, "idAudio": idAudio})
-          }).then(response =>{
-            if(response.ok){
-              response.json().then(datos => {
-                toast.done("Canción añadida");
-                window.cancionesLista.push(datos.canciones); // no va a funcionar, es solamente para que compile
-              }).catch(error => {
-                console.error('Error al analizar la respuesta JSON:', error);
-              })
-            }else{
-              toast.error("Ha habido un error, no se ha podido añadir la canción a la lista")
-            }
-          }).catch(error => toast.error(error.message))
-  
-  contenidoListaDeReproduccion();
+  let funciona = false;
+  await fetch(ipBackend + "SetSongLista/", {
+    method : "POST",
+    body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista": window.idLista, "idAudio": idAudio})
+  }).then(async response =>{
+    if(response.ok){
+      await response.json().then(async datos => {
+        funciona = true;
+        window.cancionesLista.push(datos.canciones); // no va a funcionar, es solamente para que compile
+      }).catch(error => {
+        console.error('Error al analizar la respuesta JSON:', error);
+      })
+    }else{
+      toast.error("Ha habido un error, no se ha podido añadir la canción a la lista")
+    }
+  }).catch(error => toast.error(error.message));
+  console.log("Cris: valor de funciona", funciona);
+  if(funciona === true){
+    toast.success("Canción añadida");
+  }
 }
 
 class Carpetas extends React.Component{
@@ -2691,6 +2791,55 @@ class ListasFavoritos extends React.Component{
         </div>
       </>
     )
+  }
+}
+
+class ListaAmigos extends React.Component{
+  constructor(props) {
+    super(props);
+    this.state = {
+      amigos: []
+    };
+  }
+
+  componentDidMount() {
+    fetch(ipBackend + "GetFriends/", {
+      method: "POST",
+      body: JSON.stringify({ "idUsr": window.idUsuario, "contrasenya": window.passwd })
+    })
+      .then(response => {
+        if (response.ok) {
+          return response.json().then(data => {
+            console.log("PAULA", data);
+            this.setState({ amigos: data });
+          })
+        }
+        throw new Error("Error al obtener los amigos");
+      }).catch(error => toast.error(error.message));
+  }
+  
+  render(){
+    {amigos.map(amigo => (
+      <div key={amigo}>
+        <p>{amigo}</p>
+      </div>
+    ))}
+    
+    return (
+      <div className="container-fluid --bs-body-bg h-100 d-flex align-items-center main">
+        <div className="col-md-3 --bs-blue-bg"></div>
+        <div className="col-md-6 --bs-blue-bg d-flex justify-content-center">
+          <div className="text-center">
+            <p className="titulo-formArtista titulo-formArtista-lg mb-3 text-white">Tus Amigos</p>
+            <div className="d-flex flex-column align-items-center">
+              <label for="idAmigo">Usuario</label>
+              <input class="form-control" id="idAmigo" type="text" placeholder="Introduce el código de amistad"/>
+              <ButtonOnClick onClick={enviar_solicitud_amistad} id="" text="Enviar petición de amistad"/>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 }
 
@@ -3305,18 +3454,18 @@ function suscribirse(){
 }
 
 function enviar_solicitud_amistad(){
+  let amigo = (document.getElementById("idAmigo")).value
+  
   fetch(ipBackend + "AskFriend/", {
     method: "POST",
-    body: JSON.stringify({ // TODO: conseguir el id del usuario al que se le quiere enviar la solicitud, del que estamos viendo el perfil
-      "idUsr": window.idUsuario, "contrasenya": window.passwd, "idAmigo": "idAmigo"
-    })
+    body: JSON.stringify({ "idUsr": window.idUsuario, "contrasenya": window.passwd, "idAmigo": amigo})
   }).then(response => {
     if (response.ok) {
       response.json().then(data => {
-        // Mostrar mensaje de éxito
-        if (data === 1) {
+        if (data === 200) {
           toast.success("Solicitud de amistad enviada con éxito");
-        } else {
+        } 
+        else {
           toast.info("Ya has enviado una solicitud de amistad a este usuario");
         }
       }).catch(error => {
@@ -3493,6 +3642,17 @@ function PlayListContenido(){
   )
 }
 
+function PlayListContenidoListar(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <ListaReproduccionContenido/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
 function CarpetaContenido(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
@@ -3575,6 +3735,17 @@ function Favs(){
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
       <ListasFavoritos/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
+function Friends(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <ListaAmigos/>
       <Footer/>
       <ToastContainer/>
     </div>
@@ -3696,6 +3867,10 @@ function nuevaListaDeReproduccion(){
   root.render(<PlayListContenido/>)
 }
 
+function cancionesListaDeReproduccion(){
+  root.render(<PlayListContenidoListar/>)
+}
+
 function nuevaCarpeta(){
   window.origenPasoCarpetaALista = constCarpetaNueva;
   root.render(<CarpetaContenido/>)
@@ -3726,6 +3901,10 @@ function anyadirListaCarpeta(){
 
 function misCarpetas(){
   root.render(<Folders/>)
+}
+
+function amigos(){
+  root.render(<Friends/>)
 }
 
 function misCanciones(){
