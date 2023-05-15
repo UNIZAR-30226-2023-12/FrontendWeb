@@ -2,9 +2,10 @@
 import { ToastContainer, toast } from 'react-toastify';
 
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-const ipBackend = "http://localhost:8081/"; // cris local
-//const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://localhost:8081/"; // cris local
+const ipBackend = "http://192.168.56.1:8081/"; // ismael
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/" // aws deployment
+//const ipBackend = "http://ec2-44-204-175-208.compute-1.amazonaws.com:8081/"; // aws  definitivo
 
 const GENERO_POP = 0
 const GENERO_ROCK = 1
@@ -467,5 +468,22 @@ export const getValoracion = (usuario, idAudio) => {
         }).then(response => response.json().then(resultado => {
             resolve(parseFloat(resultado.valoracion))
         })).catch(error => reject (error))
+    })
+}
+
+export const getValoracionMedia = (idAudio) => {
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetValoracionMedia/", {
+            method: "POST",
+            body: JSON.stringify({[CLAVE_ID_AUDIO]: idAudio})
+          }).then(response => {
+            if (response.ok) {
+              response.json().then(data => {
+                console.log("Cris valoracion obtenida", data.valoracion);
+                resolve(Math.round(data.valoracion));
+              })
+              //await new Promise(resolve => setTimeout(resolve, 100));
+            }
+          }).catch(error => reject(error))
     })
 }

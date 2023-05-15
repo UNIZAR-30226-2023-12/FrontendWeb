@@ -22,9 +22,11 @@ const domNode = document.getElementById('root');
 const root = createRoot(domNode);
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/" // aws deployment
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-const ipBackend = "http://localhost:8081/"; // cris local
+//const ipBackend = "http://localhost:8081/"; // cris local
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // aws
-//const ipBackend = "http://192.168.56.1:8081/"; // ismael
+const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://ec2-44-204-175-208.compute-1.amazonaws.com:8081/"; // aws definitivo
+
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
 const constListaNueva = "nueva";
@@ -626,6 +628,8 @@ class Reproductor extends React.Component{
     this.reproductor = React.createRef()
     this.repeatButton = React.createRef()
     this.shuffleButton = React.createRef()
+
+    this.barraValoracion = React.createRef()
     
     this.state = {'audioSrc' : '', 
                   'audioCtx' : new AudioContext(),
@@ -738,16 +742,16 @@ class Reproductor extends React.Component{
     })
   }
 
-  actualizarInfo(audio){
-    DjangoAPI.getSong(window.idUsuario, window.passwd, audio).then(audio => {
+  actualizarInfo(idAudio){
+    DjangoAPI.getSong(window.idUsuario, window.passwd, idAudio).then(audio => {
       DjangoAPI.getUser(window.idUsuario, window.passwd, audio.artista).then(artista => {
         this.setState({"nombreAudio" : audio.nombre, "artista" : artista.alias, "valoracion" : 1})
         toast.info("Estas escuchando " + audio.nombre + " de " + artista.alias)
 
-        //TODO:Backend arreglar getValoracion
-        DjangoAPI.getValoracion(window.idUsuario, audio).then(valoracion => {
-          console.log(valoracion)
+        DjangoAPI.getValoracionMedia(idAudio).then(valoracion => {
+          this.barraValoracion.current.setState({rating : valoracion})
         })
+
       })
     })
   }
@@ -859,7 +863,7 @@ class Reproductor extends React.Component{
           </div>
           <div className="justify-content-center text-center" style={{alignItems: 'center', "background-color": "#ffffff"}}>
             <p className="display-7 mb-2">Valoración global </p>
-            <SongRated rating={window.valoracionGeneral}/>
+            <SongRated ref={this.barraValoracion} />
           </div>
           <div className="justify-content-center text-center" style={{alignItems: 'center', "background-color": "#ffffff"}}>
             <p className="display-7 mb-2">Tu valoración </p>
@@ -915,18 +919,28 @@ const SongRating = () => {
         <Star key={value} filled={value <= rating} onClick={() => handleRating(value)} />
       ))}
     </div>
-  );
+  ); 
 };
 
-const SongRated = ({rating}) => {
-  return (
-    <div className="justify-content-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
-      {[1, 2, 3, 4, 5].map((value) => (
-        <Star key={value} filled={value <= rating} />
-      ))}
-    </div>
-  );
-};
+class SongRated extends React.Component{
+
+  constructor(props){
+    super(props);
+    this.state = {
+      rating : 0
+    }
+  }
+
+  render() {
+    return (
+      <div className="justify-content-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
+        {[1, 2, 3, 4, 5].map((value) => (
+          <Star key={value} filled={value <= this.state.rating} />
+        ))}
+      </div>
+    );
+  }
+}
 
 const Star = ({ filled, onClick }) => {
   const starStyle = {
