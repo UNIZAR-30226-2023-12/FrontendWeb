@@ -177,27 +177,31 @@ export const setSong = (usuario, contrasenya, metadatos, inputNodeAudio) => {
         lector.readAsArrayBuffer(archivo);
     });
     
-    return promesa.then( (base64) => {
+    return new Promise((resolve, reject) => {
+        promesa.then( (base64) => {
 
-        console.log(JSON.stringify({ [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, 
-            [CLAVE_NOMBRE_AUDIO] : metadatos.nombre, [CLAVE_ARTISTA_AUDIO] : metadatos.artista, genero : metadatos.genero,
-            [CLAVE_CALIDAD_AUDIO] : metadatos.calidad, [CLAVE_NUMERO_REPRODUCCIONES] : metadatos.numReproducciones, [CLAVE_VALORACION_AUDIO] : metadatos.valoracion,
-            [CLAVE_PREFIJO_AUDIO] : base64, "longitud" : metadatos.duracion, [CLAVE_ES_PODCAST] : metadatos.esPodcast}))
-
-        fetch(ipBackend + "SetSong/", {
-            method: "POST",
-            body: JSON.stringify({ [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, 
-            [CLAVE_NOMBRE_AUDIO] : metadatos.nombre, [CLAVE_ARTISTA_AUDIO] : metadatos.artista, genero : metadatos.genero,
-            [CLAVE_CALIDAD_AUDIO] : metadatos.calidad, [CLAVE_NUMERO_REPRODUCCIONES] : metadatos.numReproducciones, [CLAVE_VALORACION_AUDIO] : metadatos.valoracion,
-            [CLAVE_PREFIJO_AUDIO] : base64, "longitud" : metadatos.duracion, [CLAVE_ES_PODCAST] : metadatos.esPodcast}),
-        }).then(response => {
-            if(response.ok){
-                toast.success("Cancion publicada con éxito!!")
-            }else{
-                toast.error("Hubo un error al publicar la canción")
-            }
-        })
-    }) 
+            console.log(JSON.stringify({ [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, 
+                [CLAVE_NOMBRE_AUDIO] : metadatos.nombre, [CLAVE_ARTISTA_AUDIO] : metadatos.artista, genero : metadatos.genero,
+                [CLAVE_CALIDAD_AUDIO] : metadatos.calidad, [CLAVE_NUMERO_REPRODUCCIONES] : metadatos.numReproducciones, [CLAVE_VALORACION_AUDIO] : metadatos.valoracion,
+                [CLAVE_PREFIJO_AUDIO] : base64, "longitud" : metadatos.duracion, [CLAVE_ES_PODCAST] : metadatos.esPodcast}))
+    
+            fetch(ipBackend + "SetSong/", {
+                method: "POST",
+                body: JSON.stringify({ [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, 
+                [CLAVE_NOMBRE_AUDIO] : metadatos.nombre, [CLAVE_ARTISTA_AUDIO] : metadatos.artista, genero : metadatos.genero,
+                [CLAVE_CALIDAD_AUDIO] : metadatos.calidad, [CLAVE_NUMERO_REPRODUCCIONES] : metadatos.numReproducciones, [CLAVE_VALORACION_AUDIO] : metadatos.valoracion,
+                [CLAVE_PREFIJO_AUDIO] : base64, "longitud" : metadatos.duracion, [CLAVE_ES_PODCAST] : metadatos.esPodcast}),
+            }).then(response => {
+                if(response.ok){
+                    toast.success("Cancion publicada con éxito!!")
+                    response.json().then(data => {resolve(data.idAudio)})
+                }else{
+                    toast.error("Hubo un error al publicar la canción")
+                }
+            })
+            .catch(error => reject(error))
+        }) 
+    })
 }
 
 export const getSong = (usuario, contrasenya, idAudio) => {
@@ -241,6 +245,16 @@ export const getFicheroSong = (usuario, idAudio, esPodcast, calidad) => {
                 // Decodificamos la cadena base64 en un array de bytes
                 const byteCharacters = atob(data.fichero);
 
+                // Comprobamos si es un fichero mp3 o wav
+                let blobType;
+                if (byteCharacters.slice(0, 3) === "ID3") {
+                    blobType = 'audio/mp3';
+                } else if (byteCharacters.slice(0, 4) === "RIFF") {
+                    blobType = 'audio/wav';
+                } else {
+                    throw new Error('Tipo de archivo desconocido');
+                }
+
                 // Creamos un array de bytes a partir de los caracteres decodificados
                 const byteNumbers = new Array(byteCharacters.length)
                 for (let i = 0; i < byteCharacters.length; i++) {
@@ -250,7 +264,7 @@ export const getFicheroSong = (usuario, idAudio, esPodcast, calidad) => {
 
                 //TODO: Soportar no solo mp3 sino tambien wav
                 // Creamos un objeto Blob a partir del array de bytes
-                const blob = new Blob([byteArray], { type: 'audio/mp3' })
+                const blob = new Blob([byteArray], { type: blobType })
 
                 resolve(blob);
             }

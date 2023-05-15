@@ -12,6 +12,7 @@ import { GiDrum, GiMusicalKeyboard, GiUltrasound } from 'react-icons/gi'
 import {AiOutlineGlobal} from 'react-icons/ai'
 import {FiShare2} from 'react-icons/fi'
 import * as DjangoAPI from './Django_API';
+import * as DjangoErr from './Django_Err';
 import moment from 'moment';
 import 'moment/locale/es';
 
@@ -48,7 +49,7 @@ window.cancionesLista = [];
 window.origenPasoListaRepACanciones = "";
 window.origenPasoCarpetaALista = "";
 window.idCarpeta = 0;
-window._idAudioReproduciendo = "idAudio:2";
+window._idAudioReproduciendo = "idAudio:3";
 window.listaAudiosReproducir = [];
 window.ultimoSegundo = 0;
 
@@ -223,7 +224,7 @@ class EnviarCorreoRecuperacion extends React.Component {
     window.email = document.getElementById("mailRecuperacion").value;
     // TODO: debe invocar al backend para mandar el correo, función fuera de frontAPI, nombre inventado :)
     // TODO: ver como pasar los parámetros a la función
-    fetch(ipBackend + "EnviarCodigoEmail/", {
+    fetch(ipBackend + "GenerateRandomCodeUsr/", {
       method: "POST",
       body: JSON.stringify({ email: mailRecuperacion }),
     })
@@ -291,6 +292,7 @@ class EnviarCorreoRecuperacion extends React.Component {
                     className="btn btn-primary_blue_4th btn-lg px-4 me-sm-3"
                     id="submitButton"
                     type="submit"
+                    onClick={this.enviar_codigo_recuperacion}
                   >
                     Mandar código validación
                   </button>
@@ -318,7 +320,7 @@ class FormularioCambiarContrasena extends React.Component{
                       <h1 class="display-5 fw-bolder text-white mb-2" style={{"padding-bottom" : "1 rem"}}>Recuperar contraseña</h1>
                           <form id="contactForm" style={{"margin" : "auto", "max-width" : "20rem", "width" : "100%", "align-self": "center"}} onSubmit={enviar_cambio_contra}>
                               <div class="form-floating mb-3">
-                                  <input class="form-control" id="email" type="text" placeholder="Introduce el código de verificación enviado a tu correo"/>
+                                  <input class="form-control" id="codigo" type="text" placeholder="Introduce el código de verificación enviado a tu correo"/>
                                   <label for="name">Codigo</label>
                               </div>
                               <div class="form-floating mb-3">
@@ -326,10 +328,10 @@ class FormularioCambiarContrasena extends React.Component{
                                   <label for="passwd">Nueva contraseña</label>
                               </div>
                               <div class="form-floating mb-3">
-                                  <input class="form-control" id="passwd" type="password2" placeholder="Repite la nueva contraseña"/>
+                                  <input class="form-control" id="passwd2" type="password" placeholder="Repite la nueva contraseña"/>
                                   <label for="passwd2">Repetir nueva contraseña</label>
                               </div>
-                              <button class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" id="submitButton" type="submit" >Recuperar contraseña</button>
+                              <button class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" id="submitButton" type="submit" onClick={enviar_cambio_contra}>Recuperar contraseña</button>
                           </form>
                           <p></p>
                           <p class="fw-normal fst-italic text-warning fs-5" id="error_input"></p>
@@ -934,7 +936,8 @@ class MenuPrincipal extends React.Component{
     DjangoAPI.getUser(window.idUsuario, window.passwd, window.idUsuario).then(usuario => {
       if(usuario.tipoUsuario === DjangoAPI.USUARIO_ARTISTA){
         this.setState({esArtista : true});
-      }else if(usuario.tipoUsuario === DjangoAPI.USUARIO_ADMINISTRADOR){
+      }
+      else if(usuario.tipoUsuario === DjangoAPI.USUARIO_ADMINISTRADOR){
         this.setState({esAdmin : true})
       }
     })
@@ -1078,17 +1081,19 @@ class ListaTopDiario extends React.Component {
   componentDidMount(){
     fetch(ipBackend + "GetTopReproducciones/", {
       method: "POST",
-      body: JSON.stringify({ "n": "10", "esPodcast": "FALSE"}) // TODO: ver como se llama en backend y la finalidad del parámetro
+      body: JSON.stringify({ "n": "10", "esPodcast": "TRUE"}) // TODO: ver como se llama en backend y la finalidad del parámetro
     })
     .then(response => {
       if (response.ok) {
-        return response.json();
+        response.json().then(function(data){
+          console.log(data);
+        })
       }
       throw new Error("Error al obtener el minutaje semanal");
     })
     .then(data => {
       const top = new Set(data.topAudios); // TODO: comprobar como se llama la respuesta en el backend
-      this.setState({top: top1});
+      this.setState({top1: top});
     })
     .catch(error => toast.error(error.message))
   }
@@ -3116,27 +3121,34 @@ function enviar_cambio_contra(e){
   let textBox = document.getElementById("error_input")
 
   if (code === "" || contra === "" || contra2 === ""){
-      toast.warning("Complete todos los campos para iniciar sesión");
-      
-      return false;
+    toast.warning("Complete todos los campos para iniciar sesión");
+    return false;
   }
 
   if (contra !== contra2){
     toast.warning("Las contraseñas no coinciden");
+    return false;
   }
 
-  fetch(ipBackend + "SetContrasenyaUsr/", {
+  fetch(ipBackend + "RecuperarContrasenya/", {
     method : "POST",
-    body : JSON.stringify({"email" : window.email, "contrasenya" : contra, "codigo" : code})
+    body : JSON.stringify({"email" : window.email, "codigo" : code, "contrasenya" : contra})
   }).then(function(response){
     if(response.ok){
       response.json().then(function(data){
+      console.log(data);
+      if (200 !== data.code){
+        toast.error("El código es incorrecto");
+      }
+      else{
         return menuPrincipal();
-      }).catch(function(error){
-        console.error('Error al analizar la respuesta JSON:', error);
-      })
-    }else{
-      toast.error("El código es incorrecto")
+      }
+    }).catch(function(error){
+      console.error('Error al analizar la respuesta JSON:', error);
+    })
+    }
+    else{
+      toast.error("Ha habido un problema en la función");
     }
   }).catch(error => toast.error(error.message))
 }
@@ -3190,8 +3202,8 @@ function enviar_contenido_artista(){
     } else {
       DjangoAPI.getUser(window.idUsuario, window.passwd, window.idUsuario).then(usuario => {
         metadatos.artista = usuario.alias
-        DjangoAPI.setSong(window.idUsuario, window.passwd, metadatos, ficheroAudio).then(() => {
-          DjangoAPI.setImagenAudio(window.idUsuario, window.passwd, "idAudio:3" , ficheroImagen)
+        DjangoAPI.setSong(window.idUsuario, window.passwd, metadatos, ficheroAudio).then((idAudio) => {
+          DjangoAPI.setImagenAudio(window.idUsuario, window.passwd, idAudio , ficheroImagen)
         })
       })
     }
