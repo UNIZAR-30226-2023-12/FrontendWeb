@@ -22,9 +22,9 @@ const domNode = document.getElementById('root');
 const root = createRoot(domNode);
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/" // aws deployment
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-const ipBackend = "http://localhost:8081/"; // cris local
+//const ipBackend = "http://localhost:8081/"; // cris local
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // aws
-//const ipBackend = "http://192.168.56.1:8081/"; // ismael
+const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
 const constListaNueva = "nueva";
@@ -227,8 +227,7 @@ class EnviarCorreoRecuperacion extends React.Component {
     event.preventDefault(); // evita que la página se recargue
     const mailRecuperacion = document.getElementById("mailRecuperacion").value;
     window.email = document.getElementById("mailRecuperacion").value;
-    // TODO: debe invocar al backend para mandar el correo, función fuera de frontAPI, nombre inventado :)
-    // TODO: ver como pasar los parámetros a la función
+
     fetch(ipBackend + "GenerateRandomCodeUsr/", {
       method: "POST",
       body: JSON.stringify({ email: mailRecuperacion }),
@@ -313,9 +312,6 @@ class EnviarCorreoRecuperacion extends React.Component {
 
 
 class FormularioCambiarContrasena extends React.Component{
-  // TODO: falta implementar el formulario: introducir código verificación, contraseña nueva y confirmar contraseña nueva
-  //       se debe comprobar que el código de verificación es correcto y que las contraseñas coinciden
-  //       si todos se cumple se envía la nueva contraseña al backend
   render(){
     return(
       <header class="bg-blue_7th py-5 main" style={{"align-self" : "center"}}>
@@ -504,7 +500,7 @@ class DownArrowNoTransition extends React.Component{
 class PlayNoTransition extends React.Component{
 
   render(){
-    return(<MdPlayArrow class="rhap_repeat-button rhap_button-clear" onClick={this.onClick} style={this.props.style}/>)
+    return(<MdPlayArrow class="rhap_repeat-button rhap_button-clear" onClick={this.props.onClick} style={this.props.style}/>)
   }
 }
 
@@ -700,6 +696,10 @@ class Reproductor extends React.Component{
       audio => {
         var audioURL = URL.createObjectURL(audio);
         this.reproductor.current.audio.current.src = audioURL;
+
+        this.reproductor.current.audio.current.addEventListener('canplay', () => {
+          this.reproductor.current.audio.current.play();
+        });
       }
     )
 
@@ -741,8 +741,13 @@ class Reproductor extends React.Component{
   actualizarInfo(audio){
     DjangoAPI.getSong(window.idUsuario, window.passwd, audio).then(audio => {
       DjangoAPI.getUser(window.idUsuario, window.passwd, audio.artista).then(artista => {
-        this.setState({"nombreAudio" : audio.nombre, "artista" : artista.alias, "valoracion" : audio.valoracion})
+        this.setState({"nombreAudio" : audio.nombre, "artista" : artista.alias, "valoracion" : 1})
         toast.info("Estas escuchando " + audio.nombre + " de " + artista.alias)
+
+        //TODO:Backend arreglar getValoracion
+        DjangoAPI.getValoracion(window.idUsuario, audio).then(valoracion => {
+          console.log(valoracion)
+        })
       })
     })
   }
@@ -854,11 +859,11 @@ class Reproductor extends React.Component{
           </div>
           <div className="justify-content-center text-center" style={{alignItems: 'center', "background-color": "#ffffff"}}>
             <p className="display-7 mb-2">Valoración global </p>
-            <SongRated rating={this.state.valoracion}/>
+            <SongRated rating={window.valoracionGeneral}/>
           </div>
           <div className="justify-content-center text-center" style={{alignItems: 'center', "background-color": "#ffffff"}}>
             <p className="display-7 mb-2">Tu valoración </p>
-            <SongRating/>
+            <SongRating rating={this.state.valoracion}/>
           </div>
         </div>
       </>
@@ -867,6 +872,7 @@ class Reproductor extends React.Component{
 };
 
 function GrabarValoracion(valoracion) {
+  console.log(valoracion)
   fetch(ipBackend + "SetValoracion/", {
     method: "POST",
     body: JSON.stringify({"idUsr": window.idUsuario, "idAudio": window._idAudioReproduciendo, "valoracion": valoracion})
@@ -1200,12 +1206,18 @@ class PerfilUsuario extends React.Component {
       name: "",
       esArtista: false,
       esAdmin: false,
+      urlFotoPerfil: "assets/boy_listening_music.jpg"
     };
   }
 
   componentDidMount() {
     this.mostrarBotones();
     this.obtenerNombre();
+
+    DjangoAPI.getImagenPerfilUsr(window.idUsuario, window.passwd, window.idUsuario).then(imagen => {
+      let urlImagen = URL.createObjectURL(imagen);
+      this.setState({urlFotoPerfil : urlImagen});
+    })
   }
 
   obtenerNombre() {
@@ -1266,7 +1278,7 @@ class PerfilUsuario extends React.Component {
                   <li class="mb-2">
                     {/*TODO cambiar la imagen de perfil por la del usuario real, hacer llamada al backend*/}
                     <img
-                      src="assets/boy_listening_music.jpg"
+                      src={this.state.urlFotoPerfil}
                       width="100%"
                       style={{ borderRadius: "50%" }}
                     />
@@ -3223,7 +3235,7 @@ class ResultadosBusquedaGlobal extends React.Component{
   constructor(props) {
     super(props);
     this.state = {
-      "listaResultados" : ["Resultado 1", "Resultado 2", "..."]
+      "listaResultados" : []
     }
 
     if(this.props.listaResultados !== undefined){
@@ -3231,17 +3243,26 @@ class ResultadosBusquedaGlobal extends React.Component{
     }
   }
 
+  lanzarReproductor(idAudio){
+  
+    window._idAudioReproduciendo = idAudio;
+    return menuPrincipal();
+
+  }
+
   render(){
     return(
       <div class="bg-blue_7th py-5 main" style={{display : "flex", flexDirection : "column"}}>
-        {this.state.listaResultados.map(resultado => {
-          return (
-            <div style={{display : "flex", justifyContent : "center"}}>
-              <h4 class="text-center text-white mb-2 my-3" key={resultado.nombre}>{resultado.nombre}</h4>
-              <PlayNoTransition/>
-            </div>
-          )
-        })}
+        {
+          this.state.listaResultados.map(resultado => {
+            return (
+              <div style={{display : "flex", justifyContent : "center", alignItems : "center"}}>
+                <h4 class="text-center text-white my-2" key={resultado.nombre}>{resultado.nombre}</h4>
+                <PlayNoTransition onClick={() => this.lanzarReproductor(resultado.idAudio)}/>
+              </div>
+            )
+          })
+        }
       </div>
     )
   }
@@ -3411,9 +3432,6 @@ function enviar_cambio_contra(e){
 function editar_foto_perfil (){
   // TODO
   toast.error("Funcionalidad no implementada");
-  DjangoAPI.getImagenPerfilUsr(window.idUsuario, window.passwd, window.idUsuario).then(data => {
-    console.log(data)
-  })
 }
 
 function enviar_peticion_artista(text){

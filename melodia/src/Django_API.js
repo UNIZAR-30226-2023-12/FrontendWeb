@@ -2,8 +2,8 @@
 import { ToastContainer, toast } from 'react-toastify';
 
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-const ipBackend = "http://localhost:8081/"; // cris local
-//const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://localhost:8081/"; // cris local
+const ipBackend = "http://192.168.56.1:8081/"; // ismael
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/" // aws deployment
 
 const GENERO_POP = 0
@@ -179,11 +179,6 @@ export const setSong = (usuario, contrasenya, metadatos, inputNodeAudio) => {
     
     return new Promise((resolve, reject) => {
         promesa.then( (base64) => {
-
-            console.log(JSON.stringify({ [CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, 
-                [CLAVE_NOMBRE_AUDIO] : metadatos.nombre, [CLAVE_ARTISTA_AUDIO] : metadatos.artista, genero : metadatos.genero,
-                [CLAVE_CALIDAD_AUDIO] : metadatos.calidad, [CLAVE_NUMERO_REPRODUCCIONES] : metadatos.numReproducciones, [CLAVE_VALORACION_AUDIO] : metadatos.valoracion,
-                [CLAVE_PREFIJO_AUDIO] : base64, "longitud" : metadatos.duracion, [CLAVE_ES_PODCAST] : metadatos.esPodcast}))
     
             fetch(ipBackend + "SetSong/", {
                 method: "POST",
@@ -262,7 +257,6 @@ export const getFicheroSong = (usuario, idAudio, esPodcast, calidad) => {
                 }
                 const byteArray = new Uint8Array(byteNumbers)
 
-                //TODO: Soportar no solo mp3 sino tambien wav
                 // Creamos un objeto Blob a partir del array de bytes
                 const blob = new Blob([byteArray], { type: blobType })
 
@@ -343,7 +337,7 @@ export const getRecomendedAudio = (usuario, contrasenya) => {
             body : JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya})
         }).then(response => response.json().then(data => {
             console.log(data)
-            resolve(data.idAudio)
+            resolve(data)
         })).catch(error => reject(error))
     })
 }
@@ -396,8 +390,20 @@ export const getImagenPerfilUsr = (usuario, contrasenya, usuarioObjetivo) => {
             body : JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_ID_USUARIO_OBJETIVO]: usuarioObjetivo})
         }).then(response => response.json().then(
             data => {
-                console.log(data)
-                resolve(data.imagenPerfil)
+                // Decodificamos la cadena base64 en un array de bytes
+                const byteCharacters = atob(data.imagenPerfil);
+
+                // Creamos un array de bytes a partir de los caracteres decodificados
+                const byteNumbers = new Array(byteCharacters.length)
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i)
+                }
+                const byteArray = new Uint8Array(byteNumbers)
+
+                // Creamos un objeto Blob a partir del array de bytes
+                const blob = new Blob([byteArray], { type: 'image/*' })
+
+                resolve(blob);
             }
         ))
         .catch(error => reject(error))
@@ -450,6 +456,17 @@ export const globalSearch = (query, numResultados) => {
             body: JSON.stringify({ [CLAVE_QUERY] : query, [CLAVE_N] : numResultados})
         }).then(response => response.json().then(resultado => {
             resolve(resultado)
+        })).catch(error => reject (error))
+    })
+}
+
+export const getValoracion = (usuario, idAudio) => {
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetValoracion/", {
+            method: "POST",
+            body: JSON.stringify({ [CLAVE_ID_USUARIO] : usuario, [CLAVE_ID_AUDIO] : idAudio})
+        }).then(response => response.json().then(resultado => {
+            resolve(parseFloat(resultado.valoracion))
         })).catch(error => reject (error))
     })
 }
