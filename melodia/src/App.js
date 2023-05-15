@@ -22,9 +22,9 @@ const domNode = document.getElementById('root');
 const root = createRoot(domNode);
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/" // aws deployment
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-const ipBackend = "http://localhost:8081/"; // cris local
+//const ipBackend = "http://localhost:8081/"; // cris local
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // aws
-//const ipBackend = "http://192.168.56.1:8081/"; // ismael
+const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
 const constListaNueva = "nueva";
@@ -393,8 +393,21 @@ class FormularioRegistro extends React.Component {
 }
 
 class Button extends React.Component{
+  constructor(props){
+    super(props)
+
+    this.state = {"class" : "btn btn-primary_blue_4th btn-lg px-4 me-sm-3"};
+  }
+
+  componentDidMount(){
+    console.log(this.props.class)
+    if(this.props.class !== undefined){
+      this.setState({"class" : this.props.class})
+    }
+  }
+
   render(){
-    return (<a class="btn btn-primary_blue_4th btn-lg px-4 me-sm-3" href="#!" id={this.props.id} style={this.props.style} onClick={this.props.onClick}>{this.props.text}</a>)
+    return (<a class={this.state.class} href="#!" id={this.props.id} style={this.props.style} onClick={this.props.onClick}>{this.props.text}</a>)
   }
 }
 
@@ -491,7 +504,7 @@ class DownArrowNoTransition extends React.Component{
 class PlayNoTransition extends React.Component{
 
   render(){
-    return(<MdPlayArrow class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
+    return(<MdPlayArrow class="rhap_repeat-button rhap_button-clear" onClick={this.onClick} style={this.props.style}/>)
   }
 }
 
@@ -987,9 +1000,11 @@ class MenuPrincipal extends React.Component{
         </div>
         <div style={{"display" : "flex", "flex-direction" : "column", "flex" : "1"}}>
           <div class="bg-blue_3th main" style={{"width" : "100%", "heigth" : "100%", "flex": 1 }}>
-            <div class="form-floating mb-3">
+            <div class="form-floating mb-3" style={{"display" : "flex"}}>
               <input class="form-control" id="busqueda" type="text" placeholder="Cancion X"/>
               <label for="busqueda">Buscar  &#128269;</label>
+              <Button class="btn btn-primary_blue_6th btn-lg mg-1" onClick={busquedaGlobal} style={{"margin-right" : "0.5rem"}} text="&#128270;"/>
+              <Button class="btn btn-primary_blue_6th btn-lg " text="&#127808;"/>
             </div>
           </div>
           <div class="bg-blue_3th main" style={{"width" : "100%", "heigth" : "100%", "flex": 1, "display": "flex", "justify-content": "center", "align-items": "center"}}>
@@ -3211,6 +3226,35 @@ class UsuarioExtra extends React.Component{
   }
 }
 
+class ResultadosBusquedaGlobal extends React.Component{
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      "listaResultados" : ["Resultado 1", "Resultado 2", "..."]
+    }
+
+    if(this.props.listaResultados !== undefined){
+      this.state.listaResultados = this.props.listaResultados
+    }
+  }
+
+  render(){
+    return(
+      <div class="bg-blue_7th py-5 main" style={{display : "flex", flexDirection : "column"}}>
+        {this.state.listaResultados.map(resultado => {
+          return (
+            <div style={{display : "flex", justifyContent : "center"}}>
+              <h4 class="text-center text-white mb-2 my-3" key={resultado.nombre}>{resultado.nombre}</h4>
+              <PlayNoTransition/>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+}
+
 /** 
  * Clase que genera el footer básico de Mussa Enterprise
 */
@@ -3807,6 +3851,36 @@ function ProfileOtherUser(){
   )
 }
 
+function BusquedaGlobal(){
+
+  let view = React.createRef();
+  let busqueda = (document.getElementById("busqueda")).value
+  let lista = new Array()
+  DjangoAPI.globalSearch(busqueda, 10).then(resultado => {
+    
+    resultado.audios.map(async (idAudio) => {
+      await DjangoAPI.getSong(window.idUsuario, window.passwd, idAudio)
+      .then((datos) =>{
+          let pair = {
+            "nombre" : datos.nombre,
+            "idAudio" : idAudio
+          } 
+          lista.push(pair);
+      });
+      view.current.setState({"listaResultados" : lista})
+    })
+  })
+
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <ResultadosBusquedaGlobal ref={view}/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
 function App() {
 
   return (
@@ -3937,6 +4011,10 @@ function reproduccionAleatoria(){
 
 function perfilOtroUsuario(){
   root.render(<ProfileOtherUser/>)
+}
+
+function busquedaGlobal(){
+  root.render(<BusquedaGlobal/>)
 }
 
 export default App;

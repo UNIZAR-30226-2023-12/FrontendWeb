@@ -2,8 +2,8 @@
 import { ToastContainer, toast } from 'react-toastify';
 
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-const ipBackend = "http://localhost:8081/"; // cris local
-//const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://localhost:8081/"; // cris local
+const ipBackend = "http://192.168.56.1:8081/"; // ismael
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/" // aws deployment
 
 const GENERO_POP = 0
@@ -440,5 +440,16 @@ export const getLinkAudio = (usuario, contrasenya, audio) => {
             resolve(data.linkAudio)
         }))
         .catch(error => reject(error))
+    })
+}
+
+export const globalSearch = (query, numResultados) => {
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GlobalSearch/", {
+            method: "POST",
+            body: JSON.stringify({ [CLAVE_QUERY] : query, [CLAVE_N] : numResultados})
+        }).then(response => response.json().then(resultado => {
+            resolve(resultado)
+        })).catch(error => reject (error))
     })
 }
