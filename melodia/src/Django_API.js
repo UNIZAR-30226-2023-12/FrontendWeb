@@ -336,8 +336,7 @@ export const getRecomendedAudio = (usuario, contrasenya) => {
             method : "POST",
             body : JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya})
         }).then(response => response.json().then(data => {
-            console.log(data)
-            resolve(data)
+            resolve(data.idAudio)
         })).catch(error => reject(error))
     })
 }
@@ -468,5 +467,22 @@ export const getValoracion = (usuario, idAudio) => {
         }).then(response => response.json().then(resultado => {
             resolve(parseFloat(resultado.valoracion))
         })).catch(error => reject (error))
+    })
+}
+
+export const getValoracionMedia = (idAudio) => {
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetValoracionMedia/", {
+            method: "POST",
+            body: JSON.stringify({[CLAVE_ID_AUDIO]: idAudio})
+          }).then(response => {
+            if (response.ok) {
+              response.json().then(data => {
+                console.log("Cris valoracion obtenida", data.valoracion);
+                resolve(Math.round(data.valoracion));
+              })
+              //await new Promise(resolve => setTimeout(resolve, 100));
+            }
+          }).catch(error => reject(error))
     })
 }

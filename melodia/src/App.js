@@ -626,6 +626,8 @@ class Reproductor extends React.Component{
     this.reproductor = React.createRef()
     this.repeatButton = React.createRef()
     this.shuffleButton = React.createRef()
+
+    this.barraValoracion = React.createRef()
     
     this.state = {'audioSrc' : '', 
                   'audioCtx' : new AudioContext(),
@@ -738,16 +740,16 @@ class Reproductor extends React.Component{
     })
   }
 
-  actualizarInfo(audio){
-    DjangoAPI.getSong(window.idUsuario, window.passwd, audio).then(audio => {
+  actualizarInfo(idAudio){
+    DjangoAPI.getSong(window.idUsuario, window.passwd, idAudio).then(audio => {
       DjangoAPI.getUser(window.idUsuario, window.passwd, audio.artista).then(artista => {
         this.setState({"nombreAudio" : audio.nombre, "artista" : artista.alias, "valoracion" : 1})
         toast.info("Estas escuchando " + audio.nombre + " de " + artista.alias)
 
-        //TODO:Backend arreglar getValoracion
-        DjangoAPI.getValoracion(window.idUsuario, audio).then(valoracion => {
-          console.log(valoracion)
+        DjangoAPI.getValoracionMedia(idAudio).then(valoracion => {
+          this.barraValoracion.current.setState({rating : valoracion})
         })
+
       })
     })
   }
@@ -859,11 +861,11 @@ class Reproductor extends React.Component{
           </div>
           <div className="justify-content-center text-center" style={{alignItems: 'center', "background-color": "#ffffff"}}>
             <p className="display-7 mb-2">Valoración global </p>
-            <SongRated rating={window.valoracionGeneral}/>
+            <SongRated ref={this.barraValoracion} />
           </div>
           <div className="justify-content-center text-center" style={{alignItems: 'center', "background-color": "#ffffff"}}>
             <p className="display-7 mb-2">Tu valoración </p>
-            <SongRating rating={this.state.valoracion}/>
+            <SongRating/>
           </div>
         </div>
       </>
@@ -879,13 +881,18 @@ function GrabarValoracion(valoracion) {
   }).then(response => {
     if (response.ok) {
       toast.success("Tu valoración se ha almacenado con éxito");
-      // getvaloracionmedia?
-      DjangoAPI.getSong(window.idUsuario, window.passwd, window._idAudioReproduciendo)
-      .then(async (data) =>{
-        // el backend devuelve valoracion 0 porque si :)
-        window.valoracionGeneral = data.val;
-        await new Promise(resolve => setTimeout(resolve, 100));
-      });
+      fetch(ipBackend + "GetValoracionMedia/", {
+        method: "POST",
+        body: JSON.stringify({"idAudio": window._idAudioReproduciendo})
+      }).then(response => {
+        if (response.ok) {
+          response.json().then(data => {
+            console.log("Cris valoracion obtenida", data.valoracion);
+            window.valoracionGeneral = Math.round(data.valoracion);
+          })
+          //await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }).catch(error => toast.error(error.message))
     } else {
       toast.error("Ha habido un error al almacenar tu valoración");
     }
@@ -910,18 +917,28 @@ const SongRating = () => {
         <Star key={value} filled={value <= rating} onClick={() => handleRating(value)} />
       ))}
     </div>
-  );
+  ); 
 };
 
-const SongRated = ({rating}) => {
-  return (
-    <div className="justify-content-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
-      {[1, 2, 3, 4, 5].map((value) => (
-        <Star key={value} filled={value <= rating} />
-      ))}
-    </div>
-  );
-};
+class SongRated extends React.Component{
+
+  constructor(props){
+    super(props);
+    this.state = {
+      rating : 0
+    }
+  }
+
+  render() {
+    return (
+      <div className="justify-content-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
+        {[1, 2, 3, 4, 5].map((value) => (
+          <Star key={value} filled={value <= this.state.rating} />
+        ))}
+      </div>
+    );
+  }
+}
 
 const Star = ({ filled, onClick }) => {
   const starStyle = {
@@ -3504,6 +3521,10 @@ function enviar_cambio_contra(e){
 function editar_foto_perfil (){
   // TODO
   toast.error("Funcionalidad no implementada");
+
+  DjangoAPI.getRecomendedAudio(window.idUsuario, window.passwd).then(data => {
+    console.log(data)
+  })
 }
 
 function enviar_peticion_artista(text){
