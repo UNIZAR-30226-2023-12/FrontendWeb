@@ -41,6 +41,7 @@ const PREFIJO_LISTA_GLOBAL_PODCASTS = "listaGlobalPodcasts"
 const CLAVE_CONTADOR_USUARIOS = "contadorUsuarios"
 const CLAVE_ID_USUARIO = "idUsr"
 const CLAVE_ID_USUARIO_OBJETIVO = "idUsr2"
+const CLAVE_ID_USUARIO_ARTISTA = "idUsrArtista"
 const CLAVE_ID_USUARIO_GET = "idUsrGet"
 const CLAVE_EMAIL = "email"
 const CLAVE_ALIAS = "alias"
@@ -247,6 +248,7 @@ export const getFicheroSong = (usuario, idAudio, esPodcast, calidad) => {
                 }
                 const byteArray = new Uint8Array(byteNumbers)
 
+                //TODO: Soportar no solo mp3 sino tambien wav
                 // Creamos un objeto Blob a partir del array de bytes
                 const blob = new Blob([byteArray], { type: 'audio/mp3' })
 
@@ -380,6 +382,7 @@ export const getImagenPerfilUsr = (usuario, contrasenya, usuarioObjetivo) => {
             body : JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_ID_USUARIO_OBJETIVO]: usuarioObjetivo})
         }).then(response => response.json().then(
             data => {
+                console.log(data)
                 resolve(data.imagenPerfil)
             }
         ))
@@ -398,6 +401,30 @@ export const getUser = (usuario, contrasenya, usuarioObjetivo) => {
                 resolve(data);
             }
         ))
+        .catch(error => reject(error))
+    })
+}
+
+export const getSongsArtist = (usuario, contrasenya, artista) => {
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetSongsArtist/", {
+            method: "POST",
+            body: JSON.stringify({ [CLAVE_ID_USUARIO] : usuario, [CLAVE_CONTRASENYA] : contrasenya, [CLAVE_ID_USUARIO_ARTISTA] : artista})
+        }).then((response) => response.json().then(listSongs => {
+            resolve(listSongs.canciones)
+        }))
+        .catch(error => reject(error))
+    })
+}
+
+export const getLinkAudio = (usuario, contrasenya, audio) => {
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetLinkAudio/", {
+            method: "POST",
+            body: JSON.stringify({ [CLAVE_ID_USUARIO] : usuario, [CLAVE_CONTRASENYA] : contrasenya, [CLAVE_ID_AUDIO] : audio})
+        }).then((response) => response.json().then(data => {
+            resolve(data.linkAudio)
+        }))
         .catch(error => reject(error))
     })
 }
