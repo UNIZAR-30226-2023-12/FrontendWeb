@@ -173,6 +173,11 @@ p {
   margin-bottom: 1rem;
 }
 
+.separator {
+  margin: 0 10px; /* Espacio horizontal entre elementos */
+}
+
+
 abbr[title],
 abbr[data-bs-original-title] {
   -webkit-text-decoration: underline dotted;

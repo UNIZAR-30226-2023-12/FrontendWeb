@@ -22,9 +22,9 @@ const domNode = document.getElementById('root');
 const root = createRoot(domNode);
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/" // aws deployment
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-//const ipBackend = "http://localhost:8081/"; // cris local
+const ipBackend = "http://localhost:8081/"; // cris local
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // aws
-const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://192.168.56.1:8081/"; // ismael
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
 const constListaNueva = "nueva";
@@ -57,10 +57,13 @@ window.player = React.createRef();
 window.reproductor = React.createRef();
 window.menuPrincipal = React.createRef();
 window.ultimoAudio = "idAudio:2";
+
+
 window.valoracionGeneral = 0;
 window.idsAudios = [];
 window.infoAudios = [];
 window.busquedaAnyadirCancionLista = "";
+window.idsCanciones = [];
 
 //Observador que cuando window.idAudioReproduciendo cambie, se hagan cosas...
 Object.defineProperty(window, 'idAudioReproduciendo', {
@@ -829,7 +832,9 @@ class Reproductor extends React.Component{
         <div>
           <div className="justify-content-center text-center" style={{display: 'flex', alignItems: 'center', "background-color": "#ffffff"}}>
             <p className="display-7 mb-2">{this.state.nombreAudio}</p>
+            <span className="separator"> </span>
             <p className="display-7 mb-2"> - </p>
+            <span className="separator"> </span>
             <p className="display-7 mb-2">{this.state.artista}</p>
           </div>
           <div className="justify-content-center text-center" style={{alignItems: 'center', "background-color": "#ffffff"}}>
@@ -1576,9 +1581,11 @@ class NuevaListaReproduccionContenido extends React.Component{
   constructor(props) {
     super(props);
     window.cancionesLista = [];
+    window.idsCanciones = [];
     this.state = {
       sortKey: 'tematica',
-      numCanciones: 0
+      numCanciones: 0,
+      idsCanciones: []
     };
   }
 
@@ -1604,41 +1611,78 @@ class NuevaListaReproduccionContenido extends React.Component{
       }).catch(error => toast.error(error.message))
     } else if (window.origenPasoListaRepACanciones === constListaExistente) {
       // la lista ya existe, solo hay que coger sus canciones
-      fetch(ipBackend + "GetAudiosLista/", {
-        method : "POST",
-        body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista": window.idLista})
-      }).then(response =>{
-        if(response.ok){
-          response.json().then(datos => {
-            // obtener los datos de la lista
-            this.setState({numCanciones: datos.audio.length});
-            window.cancionesLista.push(datos.audio);
-          }).catch(error => {
-            console.error('Error al analizar la respuesta JSON:', error);
-          })
-        }else{
-          toast.error("Ha habido un error")
-        }
-      }).catch(error => toast.error(error.message))
-      window.origenPasoListaRepACanciones = "";
+      this.pedirDatosLista();
     }
+  }
+
+  async pedirDatosLista(){
+    await fetch(ipBackend + "GetAudiosLista/", {
+      method : "POST",
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista": window.idLista})
+    }).then(async (response) =>{
+      if(response.ok){
+        await response.json().then(async (datos) => {
+          // obtener los datos de la lista
+          this.setState({numCanciones: datos.length});
+          window.idsCanciones.push(...datos.audio);
+          await Promise.all(
+            window.idsCanciones.map(async (id) => {
+              await DjangoAPI.getSong(window.idUsuario, window.passwd, id)
+              .then(async (datoss) =>{
+                if(response.ok){
+                  let tematica = "";
+                  if (datoss.esPodcast === "0"){
+                    tematica = "canción";
+                  } else {
+                    tematica = "podcast";
+                  }
+                  let artista = "";
+                  await DjangoAPI.getUser(window.idUsuario, window.passwd, datoss.artista)
+                  .then((datitos) => {
+                    if (response.ok){
+                      artista = datitos.alias;
+                    }
+                  }
+                  )
+                  let audioCustom = {
+                    id: id,
+                    nombre: datoss.nombre,
+                    tematica: tematica,
+                    artista: artista,
+                    idioma: "desconocido"
+                  };
+                  window.cancionesLista.push(audioCustom);
+                }
+              });
+            })
+          )
+        }).catch(error => {
+          console.error('Error al analizar la respuesta JSON:', error);
+        })
+      }else{
+        toast.error("Ha habido un error")
+      }
+    }).catch(error => toast.error(error.message))
+    window.origenPasoListaRepACanciones = "";
   }
 
   handleSortChange = (value) => {
     this.setState({ sortKey: value });
+    console.log("Se ha cambiado el valor de la ordenación");
   };
 
   sortSongs = () => {
-
+    console.log("Se ha reordenado el array");
     if (this.state.sortKey === "tematica"){
       window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.tematica.localeCompare(b.tematica))];
     } else if (this.state.sortKey === "titulo") {
-      window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.titulo.localeCompare(b.titulo))];
+      window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.nombre.localeCompare(b.nombre))];
     } else if (this.state.sortKey === "artista") {
       window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.artista.localeCompare(b.artista))];
     } else if (this.state.sortKey === "idioma") {
       window.cancionesLista = [...window.cancionesLista.sort((a, b) => a.idioma.localeCompare(b.idioma))];
     }
+    console.log("Se ha reordenado el array");
   };
 
   render(){
@@ -1656,7 +1700,7 @@ class NuevaListaReproduccionContenido extends React.Component{
                 <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
                   <ButtonOnClick onClick={misListasDeReproduccion} id="" text="Volver atrás"/>
                   <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
-                  {(this.state.numCanciones !== 0 &&
+                  {(this.state.numCanciones > 0 &&
                     <ShuffleButtonNoTransition class="rhap_repeat-button rhap_button-clear" onClick={reproduccionAleatoria}/>
                   )}
                   
@@ -1666,8 +1710,19 @@ class NuevaListaReproduccionContenido extends React.Component{
                   <p className="display-6 fw-bolder text-white mb-2">Esta lista no contiene ninguna canción</p>
                 ) : (
                   <>
-                    <PlaylistSortSelector onChange={this.handleSortChange}/>
-                    {window.cancionesLista.map((lista) => (<CardNameListaSong var={lista.id} text={lista.nombre}/>))}
+                    <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                      <div className="left-align">
+                        <PlaylistSortSelector onChange={this.handleSortChange}/>
+                      </div>
+                      <span className="separator"> </span>
+                      {window.cancionesLista.map((lista) =>
+                        (<CardNameListaSong
+                          key={lista.id}
+                          text={lista.nombre}
+                          tematica={lista.tematica}
+                          artista={lista.artista}
+                          idioma={lista.idioma}/>))}
+                    </div>
                   </>
                 )}
                 </div>
@@ -1688,14 +1743,30 @@ class CardNameListaSong extends React.Component{
 
   render(){
     return (
-      <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
-        <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
-        <UpArrowNoTransition/>
-        <DownArrowNoTransition/>
-        <PlayNoTransition/>
-      </div>
+      <>
+        <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+          <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
+            <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
+            <span className="separator"> </span>
+            <p className="display-6 fw-bolder text-white mb-2">{this.props.artista}</p>
+            <span className="separator"> </span>
+            <p className="display-6 fw-bolder text-white mb-2">{this.props.tematica}</p>
+            <span className="separator"> </span>
+            <p className="display-6 fw-bolder text-white mb-2">{this.props.idioma}</p>
+            <span className="separator"> </span>
+            <PlayNoTransition onClick={mandarAudioAReproductor(this.props.key)}/>
+          </div>
+        </div>
+      </>
     )
   }
+}
+
+const mandarAudioAReproductor = (idAudio) => {
+  // cris aqui
+  console.log("lasjkd");
+  window._idAudioReproduciendo = idAudio;
+  //menuPrincipal();
 }
 
 const PlaylistSortSelector = ({ onChange }) => {
@@ -1807,7 +1878,7 @@ class AnyadirCancionListaReproduccion extends React.Component{
   }
 
   handleInputChange(event) {
-    this.setState({ busqueda: event.target.value });
+    window.busquedaAnyadirCancionLista = event.target.value;
   }
 
   render(){
@@ -1848,14 +1919,13 @@ class CardNameAddSong extends React.Component{
 
   constructor(props) {
     super(props);
-    console.log("Cris tarjeta id", this.props.idAudio, "texto", this.props.text)
   }
 
   render(){
     return (
       <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
         <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
-        <AddNoTransition onClick={() => meterCancionEnListaRep(this.props.idAudio)} />
+        <AddNoTransition onClick={meterCancionEnListaRep(this.props.idAudio)} />
       </div>
     )
   }
@@ -1906,7 +1976,7 @@ class ListarCancionesAnyadirListasReproduccion extends React.Component{
                 {(window.infoAudios.length !== 0) ? (
                   window.infoAudios.map((audio) => <CardNameAddSong idAudio={audio.id} text={audio.nombre}/>)
                 ) : (
-                  <p className="display-6 fw-bolder text-white mb-2" style={{alignItems: 'center'}}>No hay resultados</p>
+                  <p className="display-6 fw-bolder text-white mb-2 text-center" style={{alignItems: 'center'}}>No hay resultados</p>
                 )}
               </div>
             </div>
@@ -2133,13 +2203,13 @@ function meterCancionEnListaRep(idAudio){
           }).then(response =>{
             if(response.ok){
               response.json().then(datos => {
-                // obtener los datos de la lista
+                toast.done("Canción añadida");
                 window.cancionesLista.push(datos.canciones); // no va a funcionar, es solamente para que compile
               }).catch(error => {
                 console.error('Error al analizar la respuesta JSON:', error);
               })
             }else{
-              toast.error("Ha habido un error, la respuesta de GetLista no es ok")
+              toast.error("Ha habido un error, no se ha podido añadir la canción a la lista")
             }
           }).catch(error => toast.error(error.message))
   
