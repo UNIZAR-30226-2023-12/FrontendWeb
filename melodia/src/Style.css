@@ -3117,6 +3117,17 @@ textarea.form-control-lg {
   opacity: 0.65;
 }
 
+.btn-primary_blue_6th {
+  color: #fff;
+  background-color: #040697;
+  border-color: #040697;
+}
+.btn-primary_blue_6th:hover {
+  color: #fff;
+  background-color: #0520D3;
+  border-color: #0520D3;
+}
+
 .btn-primary_blue_4th {
   color: #fff;
   background-color: #2355F2;
