@@ -43,7 +43,7 @@ window.nombreNuevaListaGlobal = "Nueva lista global";
 window.idsLista = [];
 window.idLista = 0;
 window.hayListasReproduccion = 0;
-window.calidad = "baja";
+window.calidad = DjangoAPI.CALIDAD_BAJA;
 window.cancionesLista = [];
 window.origenPasoListaRepACanciones = "";
 window.origenPasoCarpetaALista = "";
@@ -528,7 +528,7 @@ class AddNoTransitionCarpeta extends React.Component{
       body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista" :this.idLista, "idCarpeta" : window.idCarpeta})
     }).then((response) => {
         if(response.ok){
-          // todo bien y correcto
+          //bien y correcto
         } else{
           toast.warning("No se ha podido recuperar la información de tus listas de reproduccion")
         }
@@ -679,7 +679,7 @@ class Reproductor extends React.Component{
 
     window.reproductor = this.reproductor;
     
-    DjangoAPI.getFicheroSong(window.idUsuario, window._idAudioReproduciendo, false, DjangoAPI.CALIDAD_BAJA).then(
+    DjangoAPI.getFicheroSong(window.idUsuario, window._idAudioReproduciendo, false, window.calidad).then(
       audio => {
         var audioURL = URL.createObjectURL(audio);
         this.reproductor.current.audio.current.src = audioURL;
@@ -771,25 +771,17 @@ class Reproductor extends React.Component{
   }
 
   share_song = () => {
-    fetch(ipBackend + "GetLinkCancion/", {
-      method: "POST",
-      body: JSON.stringify({ //TODO: cambiar idCancion por la canción escuchada en el momento concreto
-        "idUsr": window.idUsuario, "contrasenya": window.passwd, "idSong": window.idCancion
-      })
-    }).then(response => {
-      if (response.ok) {
-        response.text().then(data => {
-          // Copiar enlace al portapapeles
-          navigator.clipboard.writeText(data);
-          // Mostrar mensaje de éxito
-          toast.info("Enlace a la canción copiado en el portapapeles");
-        }).catch(error => {
-          console.error('Error al analizar la respuesta de texto:', error);
-        })
-      } else {
-        toast.error("Ha habido un error");
-      }
-    }).catch(error => toast.error(error.message))
+
+    DjangoAPI.getLinkAudio(window.idUsuario, window.passwd, window.idAudioReproduciendo).then(link => {
+      // Copiar enlace al portapapeles
+      navigator.clipboard.writeText(link);
+      // Mostrar mensaje de éxito
+      toast.info("Enlace a la canción copiado en el portapapeles");
+    })
+    .catch(() => {
+      toast.error("Ha habido un error");
+    })
+    
   }
   
   render(){
@@ -929,7 +921,7 @@ class MenuPrincipal extends React.Component{
     this.state = {
       name: "",
       esArtista: false,
-      esAdmin: true,
+      esAdmin: false,
       urlImage: "assets/girls_listening_music.jpg"
     };
 
@@ -943,53 +935,23 @@ class MenuPrincipal extends React.Component{
         this.setState({urlImage : imagenURL})
       }
     )
+
+    DjangoAPI.getUser(window.idUsuario, window.passwd, window.idUsuario).then(usuario => {
+      if(usuario.tipoUsuario === DjangoAPI.USUARIO_ARTISTA){
+        this.setState({esArtista : true});
+      }else if(usuario.tipoUsuario === DjangoAPI.USUARIO_ADMINISTRADOR){
+        this.setState({esAdmin : true})
+      }
+    })
   }
 
   cambiarImagen() {
-    console.log("Hola desde Cambiar Imagen")
-
     DjangoAPI.getImagenAudio(window.idUsuario, window.passwd, window._idAudioReproduciendo).then(
       imagen => {
         let imagenURL = URL.createObjectURL(imagen);
         this.setState({urlImage : imagenURL})
       }
     )
-  }
-
-  mostrarCancionesPropias() {
-    fetch(ipBackend + "GetUser/", {
-      method: "POST",
-      body: JSON.stringify({ idUsr: window.idUsuario, passwd: window.password }),
-    })
-      .then((res) => res.json())
-      .then(
-        (result) => {
-          this.setState({
-            esArtista: false/*result.esArtista*/,
-          });
-        },
-        (error) => {
-          console.log(error);
-        }
-      );
-  }
-
-  mostrarListasGlobales(){
-    fetch(ipBackend + "GetUser/", {
-      method: "POST",
-      body:JSON.stringify({idUsr: window.idUsuario, passwd:window.password}),
-    })
-    .then((res) => res.json())
-    .then(
-      (result) => {
-        this.setState({
-          esAdmin : true /*result.esAdmin*/,
-        });
-      },
-      (error) => {
-        console.log(error);
-      }
-    );
   }
 
   render(){
@@ -1039,13 +1001,13 @@ class MenuPrincipal extends React.Component{
 }
 
 function CalidadAudio() {
-  const [calidad, setCalidad] = useState(window.calidad || "baja");
+  const [calidad, setCalidad] = useState(window.calidad || DjangoAPI.CALIDAD_BAJA);
   const [cambios, setCambios] = useState(false);
 
   const handleChange = (event) => {
     setCalidad(event.target.value);
     setCambios(true);
-    if (event.target.value === "alta") {
+    if (event.target.value === DjangoAPI.CALIDAD_ALTA) {
       toast.warning("La reproducción en alta calidad puede conllevar mayor gasto de datos móviles.");
       toast.warning("No todas las canciones están disponibles en alta calidad.");
     }
@@ -1057,11 +1019,11 @@ function CalidadAudio() {
     // Al darle a guardar se deberán subir los cambios a la base de datos
     setCambios(false);
     toast.info(`La calidad del audio se ha guardado como ${calidad}.`);
-    if (window.calidad === "alta") { // Anteriormente estaba en alta y queremos cambiar a baja
-      window.calidad = "baja";
+    if (window.calidad === DjangoAPI.CALIDAD_ALTA) { // Anteriormente estaba en alta y queremos cambiar a baja
+      window.calidad = DjangoAPI.CALIDAD_BAJA;
     }
     else {
-      window.calidad = "alta"; // Anteriormente estaba en baja y queremos cambiar a alta
+      window.calidad = DjangoAPI.CALIDAD_ALTA; // Anteriormente estaba en baja y queremos cambiar a alta
     }
   };
 
@@ -1073,8 +1035,8 @@ function CalidadAudio() {
           <input
             type="radio"
             name="calidad"
-            value="baja"
-            checked={calidad === "baja"}
+            value={DjangoAPI.CALIDAD_BAJA}
+            checked={calidad === DjangoAPI.CALIDAD_BAJA}
             onChange={handleChange}
           />
           Baja calidad
@@ -1085,8 +1047,8 @@ function CalidadAudio() {
           <input
             type="radio"
             name="calidad"
-            value="alta"
-            checked={calidad === "alta"}
+            value={DjangoAPI.CALIDAD_ALTA}
+            checked={calidad === DjangoAPI.CALIDAD_ALTA}
             onChange={handleChange}
           />
           Alta calidad
@@ -1105,15 +1067,15 @@ class ListaTopDiario extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      top1: "Despacito", // Primera canción del top diario
-      top2: "Los pollitos",
-      top3: "Hola amigo",
+      top1: "Canción 1", // Primera canción del top diario
+      top2: "Canción 2",
+      top3: "Canción 3",
       top4: "Canción 4",
       top5: "Canción 5",
       top6: "Canción 6",
       top7: "Canción 7",
       top8: "Canción 8",
-      top9: " Cacnión 9",
+      top9: " Canción 9",
       top10: "Canción 10", // Última canción del top diario
     }
   }
@@ -1130,8 +1092,8 @@ class ListaTopDiario extends React.Component {
       throw new Error("Error al obtener el minutaje semanal");
     })
     .then(data => {
-      const top1 = new Set(data.topAudios); // TODO: comprobar como se lla backend
-      this.setState({top1: top1});
+      const top = new Set(data.topAudios); // TODO: comprobar como se llama la respuesta en el backend
+      this.setState({top: top1});
     })
     .catch(error => toast.error(error.message))
   }
@@ -2760,26 +2722,23 @@ class CancionesArtista extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      songs: new Set()
+      songs: new Array()
     };
   }
 
   componentDidMount() {
-    fetch(ipBackend + "GetSongsArtist/", {
-      method: "POST",
-      body: JSON.stringify({ "idUsr": window.idUsuario })
-    })
-      .then(response => {
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error("Error al obtener las canciones");
-      })
-      .then(data => {
-        const newSongs = new Set(data.canciones);
-        this.setState({ songs: newSongs });
-      })
-      .catch(error => toast.error(error.message));
+    DjangoAPI.getSongsArtist(window.idUsuario, window.passwd, window.idUsuario).then(
+      async (listaIdAudios) => {
+        const listaSongs = await Promise.all(listaIdAudios.map(idAudio =>
+          DjangoAPI.getSong(window.idUsuario, window.passwd, idAudio).then(
+            audio => audio.nombre
+          )
+        ));
+
+        console.log(listaSongs)
+        this.setState({ songs : listaSongs });
+      }
+    )
   }
 
   render() {
@@ -2788,13 +2747,9 @@ class CancionesArtista extends React.Component {
         <h1 className="CancionesArtista text-tuPerfil-50 mb-3">
           Canciones publicadas
         </h1>
-        <div>
-          {Array.from(this.state.songs).map(song => (
-            <p key={song}>{song}</p>
+          {this.state.songs.map(song => (
+            <h4 class="text-center text-white mb-2 my-3" key={song}>{song}</h4>
           ))}
-           <div>
-        </div>
-        </div>
       </div>
     );
   }
@@ -2810,9 +2765,33 @@ class MinutajeSemanal extends React.Component{
   }
 
   componentDidMount() {
-    fetch(ipBackend + "GetTotRepTime(String idUsr, String contrasenya/", {
+    let diaDeLaSemana = moment().locale('es').format('dddd');
+    let dia = 0;
+    if (diaDeLaSemana === "lunes"){
+      dia = 0;
+    }
+    else if (diaDeLaSemana === "martes"){
+      dia = 1;
+    }
+    else if (diaDeLaSemana === "miercoles"){
+      dia = 2;
+    }
+    else if (diaDeLaSemana === "jueves"){
+      dia = 3;
+    }
+    else if (diaDeLaSemana === "viernes"){
+      dia = 4;
+    }
+    else if (diaDeLaSemana === "sabado"){
+      dia = 5;
+    }
+    else if (diaDeLaSemana === "domingo"){
+      dia = 6
+    }
+
+    fetch(ipBackend + "GetTotRepTime/", {
       method: "POST",
-      body: JSON.stringify({ "idUsr": window.idUsuario, "contrasenya": window.passwd })
+      body: JSON.stringify({ "idUsr": window.idUsuario, "contrasenya": window.passwd, "dia": dia })
     })
     .then(response => {
       if (response.ok) {
@@ -2821,8 +2800,7 @@ class MinutajeSemanal extends React.Component{
       throw new Error("Error al obtener el minutaje semanal");
     })
     .then(data => {
-      const segundosReproducidos = new Set(data.segs); //TODO: ver como se llama el resultado en el backend
-      this.setState({ segundosReproducidos: segundosReproducidos});
+      this.setState({ segundosReproducidos: data.second});
     })
     .catch(error => toast.error(error.message));
   }
@@ -2848,55 +2826,94 @@ class MinutajeSemanal extends React.Component{
   }
 }
 
-// TODO: ver como obtener del backend el historico semanal para cada día de la semana que se guarda
 class HistoricoSemanal extends React.Component{
   constructor(props) {
     super(props);
     this.state = {
-      segundosReproducidos1: 0, // Día actual
-      segundosReproducidos2: 10, // Día anterior
-      segundosReproducidos3: 20, 
-      segundosReproducidos4: 30,
-      segundosReproducidos5: 40,
-      segundosReproducidos6: 50,
-      segundosReproducidos7: 60, // Hace una semana, último día del historico
+      segundosLunes: 10,
+      segundosMartes: 20,
+      segundosMiercoles: 30, 
+      segundosJueves: 40,
+      segundosViernes: 50,
+      segundosSabado: 60,
+      segundosDomingo: 70,
     };
   }
 
   componentDidMount() {
-    fetch(ipBackend + "GetTotRepTime/", {
-      method: "POST",
-      body: JSON.stringify({ "idUsr": window.idUsuario, "contrasenya": window.passwd })
-    })
-    .then(response => {
-      if (response.ok) {
-        return response.json();
-      }
-      throw new Error("Error al obtener el minutaje semanal");
-    })
-    .then(data => {
-      const segundosReproducidos1 = new Set(data.segs); //TODO: ver como se llama el resultado en el backend
-      this.setState({ segundosReproducidos1: segundosReproducidos1});
-    })
-    .catch(error => toast.error(error.message));
-  }
+    const diasDeLaSemana = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
+    const promesas = [];
+    let segundosLunes = 0;
+    let segundosMartes = 0;
+    let segundosMiercoles = 0;
+    let segundosJueves = 0;
+    let segundosViernes = 0;
+    let segundosSabado = 0;
+    let segundosDomingo = 0;
   
+    for (let i = 0; i < 7; i++) {
+      promesas.push(
+        fetch(ipBackend + "GetTotRepTime/", {
+          method: "POST",
+          body: JSON.stringify({ "idUsr": window.idUsuario, "contrasenya": window.passwd, "dia": i})
+        })
+        .then(response => {
+          if (response.ok) {
+            return response.json();
+          }
+          throw new Error(`Error al obtener el minutaje semanal para el día ${diasDeLaSemana[i]}`);
+        })
+        .then(data => {
+          if (i === 0){
+            segundosLunes = data.second;
+          }
+          else if (i === 1){
+            segundosMartes = data.second;
+          }
+          else if (i === 2){
+            segundosMiercoles = data.second;
+          }
+          else if (i === 3){
+            segundosJueves = data.second;
+          }
+          else if (i === 4){
+            segundosViernes = data.second;
+          }
+          else if (i === 5){
+            segundosSabado = data.second;
+          }
+          else if (i === 6){
+            segundosDomingo = data.second;
+          }
+        })
+      );
+    }
+    
+    Promise.all(promesas)
+      .then(() => {
+        this.setState({
+          segundosLunes: segundosLunes,
+          segundosMartes: segundosMartes,
+          segundosMiercoles: segundosMiercoles,
+          segundosJueves: segundosJueves,
+          segundosViernes: segundosViernes,
+          segundosSabado: segundosSabado,
+          segundosDomingo: segundosDomingo
+        });
+      })
+      .catch(error => toast.error(error.message));
+  }
+    
   render(){
-    const diaDeLaSemana1 = moment().locale('es').format('dddd');
-    const diaDeLaSemana2 = moment().locale('es').subtract(1, 'days').format('dddd');
-    const diaDeLaSemana3 = moment().locale('es').subtract(2, 'days').format('dddd');
-    const diaDeLaSemana4 = moment().locale('es').subtract(3, 'days').format('dddd');
-    const diaDeLaSemana5 = moment().locale('es').subtract(4, 'days').format('dddd');
-    const diaDeLaSemana6 = moment().locale('es').subtract(5, 'days').format('dddd');
-    const diaDeLaSemana7 = moment().locale('es').subtract(6, 'days').format('dddd');
+    const diaDeLaSemana = moment().locale('es').format('dddd');
 
-    const { segundosReproducidos1 } = this.state;
-    const { segundosReproducidos2 } = this.state;
-    const { segundosReproducidos3 } = this.state;
-    const { segundosReproducidos4 } = this.state;
-    const { segundosReproducidos5 } = this.state;
-    const { segundosReproducidos6 } = this.state;
-    const { segundosReproducidos7 } = this.state;
+     const { segundosLunes } = this.state;
+    const { segundosMartes } = this.state;
+    const { segundosMiercoles } = this.state;
+    const { segundosJueves } = this.state;
+    const { segundosViernes } = this.state;
+    const { segundosSabado } = this.state;
+    const { segundosDomingo } = this.state;
 
     return(
       <div className="bg-blue_7th" >
@@ -2904,14 +2921,14 @@ class HistoricoSemanal extends React.Component{
           <h1 className="display-5 fw-bolder text-white mb-2">Estadísticas de reproducciones globales</h1>
         </div>
         <div className="text-center my-5 justify-content-center row gx-5">
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">Hasta ahora se han reproducido{' '} 
-                      {segundosReproducidos1} segundos de audio el {diaDeLaSemana1}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos2} segundos de audio el {diaDeLaSemana2}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos3} segundos de audio el {diaDeLaSemana3}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos4} segundos de audio el {diaDeLaSemana4}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos5} segundos de audio el {diaDeLaSemana5}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos6} segundos de audio el {diaDeLaSemana6}</p>
-          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosReproducidos7} segundos de audio el {diaDeLaSemana7}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white text-bald">Estadísticas de los últimos 7 días a día {diaDeLaSemana}</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosLunes} segundos de audio el lunes</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosMartes} segundos de audio el martes</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosMiercoles} segundos de audio el miércoles</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosJueves} segundos de audio el jueves</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosViernes} segundos de audio el viernes</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosSabado} segundos de audio el sábado</p>
+          <p className="subtitulo-formArtista subtitulo-formArtista-lg mb-3 text-white">Se han reproducido {segundosDomingo} segundos de audio el domingo</p>
         </div>
       </div>
     );
@@ -3197,7 +3214,9 @@ function enviar_cambio_contra(e){
 function editar_foto_perfil (){
   // TODO
   toast.error("Funcionalidad no implementada");
-  console.log(DjangoAPI.getImagenPerfilUsr(window.idUsuario, window.passwd, window.idUsuario))
+  DjangoAPI.getImagenPerfilUsr(window.idUsuario, window.passwd, window.idUsuario).then(data => {
+    console.log(data)
+  })
 }
 
 function enviar_peticion_artista(text){
