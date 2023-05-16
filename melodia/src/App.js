@@ -7,7 +7,7 @@ import styled from "styled-components"
 import H5AudioPlayer, { RHAP_UI } from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
 import { BsSliders2Vertical, BsBarChartLineFill, BsFillHeartFill } from 'react-icons/bs';
-import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat, MdArrowUpward, MdArrowDownward, MdArrowForward, MdWatchLater, MdPlayArrow, MdAdd} from 'react-icons/md'
+import { MdShuffleOn, MdOutlineShuffle, MdRepeatOn, MdRepeat, MdArrowUpward, MdArrowDownward, MdArrowForward, MdWatchLater, MdPlayArrow, MdAdd, MdOutlinePlaylistPlay} from 'react-icons/md'
 import { GiDrum, GiMusicalKeyboard, GiUltrasound } from 'react-icons/gi'
 import {AiOutlineGlobal} from 'react-icons/ai'
 import {FiShare2} from 'react-icons/fi'
@@ -30,6 +30,8 @@ const constListaNueva = "nueva";
 const constListaExistente = "existente";
 const constCarpetaNueva = "nueva";
 const constCarpetaExistente = "existente";
+const origenReproduccionShuffle = "shuffle";
+const origenReproduccionOrden = "ordenado";
 
 window.passwd = "example";
 window.idUsuario = "example";
@@ -67,6 +69,7 @@ window.recargarLista = true;
 
 window.idsCarpeta = [];
 window.infoListas = [];
+window.origenReproduccion = "";
 
 //Observador que cuando window.idAudioReproduciendo cambie, se hagan cosas...
 Object.defineProperty(window, 'idAudioReproduciendo', {
@@ -479,8 +482,25 @@ class Repeat_Button extends React.Component{
 
 class ShuffleButtonNoTransition extends React.Component{
 
+  mandarAudioAReproductor = () => {
+    window.origenReproduccion = origenReproduccionShuffle;
+    menuPrincipal();
+  }
+
   render(){
-    return(<MdOutlineShuffle class="rhap_repeat-button rhap_button-clear" onClick={this.onClick}/>)
+    return(<MdOutlineShuffle class="rhap_repeat-button rhap_button-clear" onClick={this.mandarAudioAReproductor}/>)
+  }
+}
+
+class RectoNoTransition extends React.Component{
+
+  mandarAudioAReproductor = () => {
+    window.origenReproduccion = origenReproduccionOrden;
+    menuPrincipal();
+  }
+
+  render(){
+    return(<MdOutlinePlaylistPlay class="rhap_repeat-button rhap_button-clear" onClick={this.mandarAudioAReproductor}/>)
   }
 }
 
@@ -524,8 +544,6 @@ class HeartNoTransition extends React.Component{
               toast.error("Ha habido un error, la respuesta de GetLista no es ok")
             }
           }).catch(error => toast.error(error.message))
-  
-  // contenidoListaDeReproduccion();
 }
 
   render(){
@@ -619,7 +637,6 @@ function randomIntFromInterval(min, max) { // min and max included
 }
 
 class Reproductor extends React.Component{
-
   constructor(props){
     super(props)
 
@@ -638,7 +655,8 @@ class Reproductor extends React.Component{
                   'repeatButton' : {},
                   'nombreAudio' : "Nombre Audio",
                   'artista' : "Nombre Artista",
-                  'valoracion' : 0
+                  'valoracion' : 0,
+                  'punteroAudioReproduciendo' : this.props.punteroAudioReproduciendo
                 }
     
     //Configuracion de ecualizacion de los bajos
@@ -676,7 +694,6 @@ class Reproductor extends React.Component{
     this.mover = this.mover.bind(this);
     this.actualizarInfo = this.actualizarInfo.bind(this);
 
-    // Cris esto si que vale, NO LO QUITES
     window.valoracionGeneral = 0;
   }
 
@@ -794,6 +811,33 @@ class Reproductor extends React.Component{
     DjangoAPI.setLastSecondHeared(window.idUsuario, window.passwd, window._idAudioReproduciendo, segundo);
   }
 
+  ir_al_siguiente = () => {
+    if (this.props.listaIdsAudios.length - 1 < this.state.punteroAudioReproduciendo){
+      // caso normal, podemos incrementar sin preocuparnos
+      window._idAudioReproduciendo = this.props.listaIdsAudios[this.state.punteroAudioReproduciendo + 1];
+      this.setState({punteroAudioReproduciendo: this.state.punteroAudioReproduciendo + 1});
+      this.reproducir(window._idAudioReproduciendo, 0);
+    } else if (this.props.listaIdsAudios.length -1 === this.state.punteroAudioReproduciendo){
+      // caso extremo límite, hay que volver al principio
+      window._idAudioReproduciendo = this.props.listaIdsAudios[0];
+      this.setState({punteroAudioReproduciendo: 0});
+      this.reproducir(window._idAudioReproduciendo, 0);
+    }
+  }
+
+  ir_al_anterior = () => {
+    if (0 < this.state.punteroAudioReproduciendo -1 ){
+      // caso normal, podemos incrementar sin preocuparnos
+      window._idAudioReproduciendo = this.props.listaIdsAudios[this.state.punteroAudioReproduciendo - 1];
+      this.reproducir(window._idAudioReproduciendo, 0)
+    } else if (this.state.punteroAudioReproduciendo === 0){
+      // caso extremo límite, hay que volver al principio
+      window._idAudioReproduciendo = this.props.listaIdsAudios[this.props.listaIdsAudios.length - 1];
+      this.setState({punteroAudioReproduciendo: this.props.listaIdsAudios.length - 1});
+      this.reproducir(window._idAudioReproduciendo, 0);
+    }
+  }
+
   share_song = () => {
 
     DjangoAPI.getLinkAudio(window.idUsuario, window.passwd, window.idAudioReproduciendo).then(link => {
@@ -837,6 +881,8 @@ class Reproductor extends React.Component{
             volume={1}
             showFilledVolume={true}
             showSkipControls={true}
+            onClickNext={this.ir_al_siguiente}
+            onClickPrevious={this.ir_al_anterior}
             customAdditionalControls={[
               <BsSliders2Vertical class="rhap_repeat-button rhap_button-clear" onClick={this.toggleSlider.bind(this)}/>,
               <FiShare2 class="rhap_repeat-button rhap_button-clear" onClick={this.share_song}/>
@@ -962,13 +1008,25 @@ class MenuPrincipal extends React.Component{
       name: "",
       esArtista: false,
       esAdmin: false,
-      urlImage: "assets/girls_listening_music.jpg"
+      urlImage: "assets/girls_listening_music.jpg",
+      punteroAudioReproduciendo: 0,
+      listaIdsAudios: []
     };
-
     this.cambiarImagen = this.cambiarImagen.bind(this); // enlazar el método con "this"
   }
 
   componentDidMount() {
+
+    if (window.origenReproduccion === origenReproduccionShuffle) {
+      this.setState({listaIdsAudios: window.idsCanciones, punteroAudioReproduciendo: 0});
+      window._idAudioReproduciendo = window.idsCanciones[0];
+      window.origenReproduccion = "";
+    } else if (window.origenReproduccion === origenReproduccionOrden) {
+      this.setState({listaIdsAudios: [...window.idsCanciones].sort(() => Math.random() - 0.5), punteroAudioReproduciendo: 0});
+      window._idAudioReproduciendo = window.idsCanciones[0];
+      window.origenReproduccion = "";
+    }
+
     DjangoAPI.getImagenAudio(window.idUsuario, window.passwd, window._idAudioReproduciendo).then(
       imagen => {
         let imagenURL = URL.createObjectURL(imagen);
@@ -1035,7 +1093,7 @@ class MenuPrincipal extends React.Component{
               <ImagenInfo src={this.state.urlImage}/>
           </div>
           <div style={{"width" : "100%"}}>
-            <Reproductor/>
+            <Reproductor listaIdsAudios={this.state.listaIdsAudios} punteroAudioReproduciendo={this.state.punteroAudioReproduciendo}/>
           </div>
         </div>
       </div>
@@ -1829,8 +1887,11 @@ class ListaReproduccionContenido extends React.Component{
                 <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
                   <ButtonOnClick onClick={misListasDeReproduccion} id="" text="Volver atrás"/>
                   <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
-                  {(window.cancionesLista.length > 0 &&
-                    <ShuffleButtonNoTransition class="rhap_repeat-button rhap_button-clear" onClick={reproduccionAleatoria}/>
+                  {(window.cancionesLista.length > 0) && (
+                    <>
+                      <ShuffleButtonNoTransition class="rhap_repeat-button rhap_button-clear"/>
+                      <RectoNoTransition class="rhap_repeat-button rhap_button-clear"/>
+                    </>
                   )}
                   
                 </div>
@@ -2420,8 +2481,6 @@ class Carpetas extends React.Component{
 class Carpetas2 extends React.Component{
   constructor(props) {
     super(props);
-    // cris aqui
-    console.log("Cris info", window.infoListas);
   }
   
   render(){
@@ -4136,10 +4195,6 @@ function listaGlobal(){
 
 function nuevaListaGlobal(){
   root.render(<NewGlobalPlaylist/>)
-}
-
-function reproduccionAleatoria(){
-  root.render(<PlayListContenido/>)
 }
 
 function perfilOtroUsuario(){
