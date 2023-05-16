@@ -22,11 +22,11 @@ const domNode = document.getElementById('root');
 const root = createRoot(domNode);
 //const ipBackend = "http://ec2-18-206-199-169.compute-1.amazonaws.com:8081/" // aws deployment
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-//const ipBackend = "http://localhost:8081/"; // cris local
+//const ipBackend = "http://10.1.54.203:8081/"; // cris local
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // aws
-const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://192.168.56.1:8081/"; // ismael
 //const ipBackend = "http://ec2-44-204-175-208.compute-1.amazonaws.com:8081/"; // aws definitivo
-//const ipBackend = "http://ec2-18-206-199-169.compute-1.amazonaws.com:8081/"; // aws super definitivo
+const ipBackend = "http://ec2-18-206-199-169.compute-1.amazonaws.com:8081/"; // aws super definitivo
 
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
@@ -860,29 +860,31 @@ class Reproductor extends React.Component{
   }
 
   ir_al_siguiente = () => {
-    if (this.props.listaIdsAudios.length - 1 < this.state.punteroAudioReproduciendo){
+    console.log("Ismael", this.props.listaIdsAudios)
+
+    if (this.state.punteroAudioReproduciendo < this.props.listaIdsAudios.length){
       // caso normal, podemos incrementar sin preocuparnos
-      window._idAudioReproduciendo = this.props.listaIdsAudios[this.state.punteroAudioReproduciendo + 1];
+      window.idAudioReproduciendo = this.props.listaIdsAudios[this.state.punteroAudioReproduciendo + 1];
       this.setState({punteroAudioReproduciendo: this.state.punteroAudioReproduciendo + 1});
-      this.reproducir(window._idAudioReproduciendo, 0);
-    } else if (this.props.listaIdsAudios.length -1 === this.state.punteroAudioReproduciendo){
+    } else if (this.props.listaIdsAudios.length >= this.state.punteroAudioReproduciendo){
       // caso extremo límite, hay que volver al principio
-      window._idAudioReproduciendo = this.props.listaIdsAudios[0];
+      window.idAudioReproduciendo = this.props.listaIdsAudios[0];
       this.setState({punteroAudioReproduciendo: 0});
-      this.reproducir(window._idAudioReproduciendo, 0);
     }
   }
 
   ir_al_anterior = () => {
-    if (0 < this.state.punteroAudioReproduciendo -1 ){
+
+    console.log("Ismael", this.props.listaIdsAudios)
+
+    if (0 < this.state.punteroAudioReproduciendo){
       // caso normal, podemos incrementar sin preocuparnos
-      window._idAudioReproduciendo = this.props.listaIdsAudios[this.state.punteroAudioReproduciendo - 1];
-      this.reproducir(window._idAudioReproduciendo, 0)
+      window.idAudioReproduciendo = this.props.listaIdsAudios[this.state.punteroAudioReproduciendo - 1];
+      this.setState({punteroAudioReproduciendo: this.state.punteroAudioReproduciendo - 1});
     } else if (this.state.punteroAudioReproduciendo === 0){
-      // caso extremo límite, hay que volver al principio
-      window._idAudioReproduciendo = this.props.listaIdsAudios[this.props.listaIdsAudios.length - 1];
+      // caso extremo límite, hay que volver al final
+      window.idAudioReproduciendo = this.props.listaIdsAudios[this.props.listaIdsAudios.length - 1];
       this.setState({punteroAudioReproduciendo: this.props.listaIdsAudios.length - 1});
-      this.reproducir(window._idAudioReproduciendo, 0);
     }
   }
   
@@ -967,10 +969,8 @@ function GrabarValoracion(valoracion) {
       }).then(response => {
         if (response.ok) {
           response.json().then(data => {
-            console.log("Cris valoracion obtenida", data.valoracion);
             window.valoracionGeneral = Math.round(data.valoracion);
           })
-          //await new Promise(resolve => setTimeout(resolve, 100));
         }
       }).catch(error => toast.error(error.message))
     } else {
@@ -1053,11 +1053,11 @@ class MenuPrincipal extends React.Component{
 
     if (window.origenReproduccion === origenReproduccionShuffle) {
       this.setState({listaIdsAudios: window.idsCanciones, punteroAudioReproduciendo: 0});
-      window._idAudioReproduciendo = window.idsCanciones[0];
+      window.idAudioReproduciendo = window.idsCanciones[0];
       window.origenReproduccion = "";
     } else if (window.origenReproduccion === origenReproduccionOrden) {
       this.setState({listaIdsAudios: [...window.idsCanciones].sort(() => Math.random() - 0.5), punteroAudioReproduciendo: 0});
-      window._idAudioReproduciendo = window.idsCanciones[0];
+      window.idAudioReproduciendo = window.idsCanciones[0];
       window.origenReproduccion = "";
     }
 
@@ -1225,7 +1225,6 @@ class ListaTopDiario extends React.Component {
         response.json().then(data => {
           for (let i = 0; i < data.topAudios.length; i++) {
             const audio = data.topAudios[i];
-            console.log("PAULA " + audio);
             fetch(ipBackend + "GetSong/", {
               method: "POST",
               body: JSON.stringify({ "idUsr":window.idUsuario, "contrasenya":window.passwd, "idAudio":audio })
@@ -2231,6 +2230,326 @@ async function meterCancionEnListaRep(idAudio){
  * Listas globales del admin
  */
 
+class ListasGlobales extends React.Component{
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      listasReproduccion: []
+    };
+    window.idsLista = [];
+  }
+
+  componentDidMount() {
+    fetch(ipBackend + "GetListasUsr/", {
+      method : "POST",
+      body : JSON.stringify({"idUsr" : window.idUsuario, "idUsrGet" : window.idUsuario, "contrasenya" : window.passwd})
+    }).then(response => {
+      if(response.ok){
+        response.json().then((data) =>{
+          if (data.listas.length > 0){
+            data.listas.forEach((lista) => {
+              fetch(ipBackend + "GetLista/", {
+                method : "POST",
+                body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista" : lista})
+              }).then((response) => {
+                  if(response.ok){
+                    response.json().then((datos) => {
+                      if (datos.lista.privacidad === "publica"){
+                        const listaCustom = {
+                          id: lista,
+                          nombre: datos.lista.nombreLista
+                        };
+                        this.setState({ listasReproduccion: [...this.state.listasReproduccion, listaCustom] });
+                      }
+                    })
+                  } else{
+                    toast.warning("No se ha podido recuperar la información de tus listas de reproduccion")
+                  }
+                }).catch(error => toast.error(error.message))
+            })
+          }
+        }).catch((error) => {
+          console.error('Error al analizar la respuesta JSON:', error);
+        })
+      }else{
+        toast.error("El usuario o la contraseña son incorrectos")
+      }
+    }).catch(error => toast.error(error.message))
+  }
+  
+  render(){
+    return (
+      <>
+        <div className="bg-blue_7th" >
+          <div className="text-center my-5 justify-content-center row gx-5">
+            <h1 className="display-5 fw-bolder text-white mb-2">Mis listas de reproducción</h1>
+          </div>
+          <div className="text-center my-5 justify-content-center row gx-5">
+            <div className="d-flex justify-content-center">
+              <ButtonOnClick onClick={menuPrincipal} id="" text="Volver al menú"/>
+              <ButtonOnClick onClick={nuevaListaDeReproduccion} id="" text="Crear nueva lista"/>
+            </div>
+          </div>
+          <div className="text-center my-5 justify-content-center row gx-5" style={{display: 'flex', alignItems: 'center' }}>
+            {(this.state.listasReproduccion.length === 0) ? (
+              <p className="display-6 fw-bolder text-white mb-2">No tienes listas de reproducción</p>
+            ) : (
+                this.state.listasReproduccion.map((lista) => <CardNamePlaylist idLista={lista.id} text={lista.nombre}/>)
+            )}
+          </div>
+        </div>
+      </>
+    )
+  }
+}
+
+/*
+
+class CardNamePlaylistGlobal extends React.Component{
+
+  constructor(props) {
+    super(props);
+  }
+
+  render(){
+    return (
+      <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
+        <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
+        <span className="separator"> </span>
+        <RightArrowNoTransition idLista={this.props.idLista} text={this.props.text}/>
+      </div>
+    )
+  }
+}
+
+class NuevaListaReproduccionContenidoGlobal extends React.Component{
+
+  constructor(props) {
+    super(props);
+    window.cancionesLista = [];
+    window.idsCanciones = [];
+  }
+
+  componentDidMount() {
+    if (window.origenPasoListaRepACanciones === constListaNueva) {
+      // hay que crear la nueva lista
+      fetch(ipBackend + "SetLista/", {
+        method : "POST",
+        body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "tipoLista": tipoListaReproduccion, "nombreLista": window.nombreNuevaListaReproduccion, "privada": "privada"})
+      }).then(response => {
+        if(response.ok){
+          response.json().then(data => {
+            // Lista creada
+            window.idLista = data.idLista;
+          }).catch(error => {
+            console.error('Error al analizar la respuesta JSON:', error);
+          })
+        }else{
+          toast.error("Ha habido un error")
+        }
+      }).catch(error => toast.error(error.message))
+    } else if (window.origenPasoListaRepACanciones === constListaExistente) {
+      // la lista ya existe, solo hay que coger sus canciones
+      this.pedirDatosLista();
+    }
+  }
+
+  async pedirDatosLista(){
+    await fetch(ipBackend + "GetAudiosLista/", {
+      method : "POST",
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista": window.idLista})
+    }).then(async (response) =>{
+      if(response.ok){
+        await response.json().then(async (datos) => {
+          // obtener los datos de la lista
+          window.idsCanciones.push(...datos.audio);
+          await Promise.all(
+            window.idsCanciones.map(async (id) => {
+              await DjangoAPI.getSong(window.idUsuario, window.passwd, id)
+              .then(async (datoss) =>{
+                if(response.ok){
+                  let tematica = "";
+                  if (datoss.esPodcast === "0"){
+                    tematica = "canción";
+                  } else {
+                    tematica = "podcast";
+                  }
+                  let artista = "";
+                  await DjangoAPI.getUser(window.idUsuario, window.passwd, datoss.artista)
+                  .then((datitos) => {
+                    if (response.ok){
+                      artista = datitos.alias;
+                    }
+                  }
+                  )
+                  let audioCustom = {
+                    id: id,
+                    nombre: datoss.nombre,
+                    tematica: tematica,
+                    artista: artista,
+                    idioma: "desconocido"
+                  };
+                  window.cancionesLista.push(audioCustom);
+                }
+              });
+            })
+          )
+        }).catch(error => {
+          console.error('Error al analizar la respuesta JSON:', error);
+        })
+      }else{
+        toast.error("Ha habido un error")
+      }
+    }).catch(error => toast.error(error.message))
+    window.origenPasoListaRepACanciones = "";
+    cancionesListaDeReproduccion();
+  }
+
+  render(){
+    return (
+      <>
+        <header class="bg-blue_7th py-5" >
+          <div class="container px-5" style={{"margin-top" : "3rem"}}>
+            <div class="row gx-5 justify-content-center">
+              <div class="col-lg-6">
+                <div class="text-center my-5">
+                  <FormularioRenombre
+                    nombre={window.nombreNuevaListaReproduccion}
+                  />
+                </div>
+                <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                  <ButtonOnClick onClick={misListasDeReproduccion} id="" text="Volver atrás"/>
+                  <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+      </>
+    )
+  }
+}
+
+class ListaReproduccionContenidoGlobal extends React.Component{
+
+  constructor(props) {
+    super(props);
+  }
+
+  async handleSortChange(e) {
+    window.sortKeyListas = e.target.value;
+    if (window.sortKeyListas === "tematica"){
+      await window.cancionesLista.sort((a, b) => a.tematica > b.tematica ? 1 : -1);
+    } else if (window.sortKeyListas === "titulo") {
+      await window.cancionesLista.sort((a, b) => a.nombre > b.nombre ? 1 : -1);
+    } else if (window.sortKeyListas === "artista") {
+      await window.cancionesLista.sort((a, b) => a.artista > b.artista ? 1 : -1);
+    } else if (window.sortKeyListas === "idioma") {
+      await window.cancionesLista.sort((a, b) => a.idioma > b.idioma ? 1 : -1);
+    }
+    cancionesListaDeReproduccion();
+  };
+
+  PlaylistSortSelector = ({ onChange }) => {
+    return (
+      <select onChange={onChange} defaultValue="tematica" value={window.sortKeyListas}>
+        <option value="tematica">Temática</option>
+        <option value="titulo">Título</option>
+        <option value="artista">Artista</option>
+        <option value="idioma">Idioma</option>
+      </select>
+    );
+  };
+
+  render(){
+    return (
+      <>
+        <header class="bg-blue_7th py-5" >
+          <div class="container px-5" style={{"margin-top" : "3rem"}}>
+            <div class="row gx-5 justify-content-center">
+              <div class="col-lg-6">
+                <div class="text-center my-5">
+                  <FormularioRenombre
+                    nombre={window.nombreNuevaListaReproduccion}
+                  />
+                </div>
+                <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                  <ButtonOnClick onClick={misListasDeReproduccion} id="" text="Volver atrás"/>
+                  <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
+                  {(window.cancionesLista.length > 0) && (
+                    <>
+                      <ShuffleButtonNoTransition class="rhap_repeat-button rhap_button-clear"/>
+                      <RectoNoTransition class="rhap_repeat-button rhap_button-clear"/>
+                    </>
+                  )}
+                  
+                </div>
+                <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                {window.cancionesLista.length === 0 ? (
+                  <span className="separator"> </span>
+                ) : (
+                  <>
+                    <div class="my-5" style={{"margin-bottom": "20px"}}>
+                      <div className="right-align">
+                        <this.PlaylistSortSelector onChange={this.handleSortChange}/>
+                      </div>
+                    </div>
+                    <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                      {window.cancionesLista.map((lista) =>
+                        (<CardNameListaSong
+                          idAudio={lista.id}
+                          text={lista.nombre}
+                          tematica={lista.tematica}
+                          artista={lista.artista}
+                          idioma={lista.idioma}/>))}
+                    </div>
+                  </>
+                )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+      </>
+    )
+  }
+}
+
+class CardNameListaSongGlobal extends React.Component{
+
+  constructor(props) {
+    super(props);
+  }
+
+  mandarAudioAReproductor = () => {
+    console.log("Ayuda: ",this.props.key)
+    window._idAudioReproduciendo = this.props.key;
+    menuPrincipal();
+  }
+
+  // isma este es el botón para reproducir una canción
+  render(){
+    return (
+      <>
+        <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+          <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
+            <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
+            <span className="separator"> </span>
+            <p className="display-6 fw-bolder text-white mb-2">{this.props.artista}</p>
+            <span className="separator"> </span>
+            <p className="display-6 fw-bolder text-white mb-2">{this.props.tematica}</p>
+            <span className="separator"> </span>
+            <p className="display-6 fw-bolder text-white mb-2">{this.props.idioma}</p>
+            <span className="separator"> </span>
+            <Button onClick={this.mandarAudioAReproductor} text={String.fromCharCode(9658)} />
+          </div>
+        </div>
+      </>
+    )
+  }
+}
+
 function FormularioRenombreGlobal({ nombre }) {
   const [nombreEditando, setNombreEditando] = useState(false);
   const [nuevoNombre, setNuevoNombre] = useState(nombre);
@@ -2292,7 +2611,7 @@ class ListasGlobales extends React.Component{
   componentDidMount() {
     fetch(ipBackend + "GetListasUsr/", {
       method : "POST",
-      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd})
+      body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idUsrGet" : window.idUsuario})
     }).then(response => {
       if(response.ok){
         response.json().then((data) =>{
@@ -2304,7 +2623,7 @@ class ListasGlobales extends React.Component{
               }).then((response) => {
                   if(response.ok){
                     response.json().then((datos) => {
-                      if (datos.lista.tipoLista === tipoListaReproduccion){
+                      if (datos.lista.privacidad === "publica"){
                         this.setState({ listasReproduccion: [...this.state.listasReproduccion, datos.lista.nombreLista] });
                         this.setState({ idLista: [...this.state.idLista, lista] });
                       }
@@ -2349,7 +2668,6 @@ class ListasGlobales extends React.Component{
     )
   }
 }
-
 // TODO:comprobar que al mandar la nueva lista global es pública
 class CrearListaGlobal extends React.Component{
 
@@ -2428,7 +2746,6 @@ class CrearListaGlobal extends React.Component{
                   <ButtonOnClick onClick={anyadirCancionListaRep} id="" text="Añadir canciones"/>
                 </div>
                 <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
-                  { /*<PlaylistSortSelector onChange={this.handleSortChange} />*/ }
                 </div>
               </div>
             </div>
@@ -2438,6 +2755,7 @@ class CrearListaGlobal extends React.Component{
     )
   }
 }
+*/
 
 /*
  * Carpetas
@@ -2894,11 +3212,10 @@ class ListasFavoritos extends React.Component{
   constructor(props) {
     super(props);
     this.state = {
-      listasFavoritos: [],
-      numCanciones: 0,
-      sortKey: ""
+      listasReproduccion: []
     };
-    window.idsLista = [];
+    window.idsCanciones = [];
+    window.cancionesLista = [];
   }
 
   componentDidMount() {
@@ -2917,29 +3234,7 @@ class ListasFavoritos extends React.Component{
                   if(response.ok){
                     response.json().then((datos) => {
                       if (datos.lista.tipoLista === tipoListaFavoritos){
-                        const listaCustom = {
-                          id: lista,
-                          nombre: datos.lista.nombreLista
-                        };
-                        this.setState({ listasFavoritos: [...this.state.listasFavoritos, listaCustom] });
-                        fetch(ipBackend + "GetAudiosLista/", {
-                          method : "POST",
-                          body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista": lista})
-                        }).then(response =>{
-                          if(response.ok){
-                            response.json().then(datos => {
-                              // obtener los datos de la lista
-                              window.idLista = lista;
-                              this.setState({numCanciones: datos.audio.length});
-                              window.cancionesLista.push(datos.audio);
-                              // hay que sacar el numero de canciones de la lista
-                            }).catch(error => {
-                              console.error('Error al analizar la respuesta JSON:', error);
-                            })
-                          }else{
-                            toast.error("Ha habido un error")
-                          }
-                        }).catch(error => toast.error(error.message))
+                        window.idLista = lista;
                       }
                     })
                   } else{
@@ -2954,23 +3249,61 @@ class ListasFavoritos extends React.Component{
       }else{
         toast.error("El usuario o la contraseña son incorrectos")
       }
-    }).catch(error => toast.error(error.message))
+    }).catch(error => toast.error(error.message));
+    this.pedirDatos();
+  }
+  
+  async pedirDatos(){
+      await fetch(ipBackend + "GetAudiosLista/", {
+        method : "POST",
+        body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista": window.idLista})
+      }).then(async (response) =>{
+        if(response.ok){
+          await response.json().then(async (datos) => {
+            // obtener los datos de la lista
+            window.idsCanciones.push(...datos.audio);
+            await Promise.all(
+              window.idsCanciones.map(async (id) => {
+                await DjangoAPI.getSong(window.idUsuario, window.passwd, id)
+                .then(async (datoss) =>{
+                  if(response.ok){
+                    let tematica = "";
+                    if (datoss.esPodcast === "0"){
+                      tematica = "canción";
+                    } else {
+                      tematica = "podcast";
+                    }
+                    let artista = "";
+                    await DjangoAPI.getUser(window.idUsuario, window.passwd, datoss.artista)
+                    .then((datitos) => {
+                      if (response.ok){
+                        artista = datitos.alias;
+                      }
+                    }
+                    )
+                    let audioCustom = {
+                      id: id,
+                      nombre: datoss.nombre,
+                      tematica: tematica,
+                      artista: artista,
+                      idioma: "desconocido"
+                    };
+                    window.cancionesLista.push(audioCustom);
+                  }
+                });
+              })
+            )
+          }).catch(error => {
+            console.error('Error al analizar la respuesta JSON:', error);
+          })
+        }else{
+          toast.error("Ha habido un error")
+        }
+      }).catch(error => toast.error(error.message));
+      window.origenPasoListaRepACanciones = "";
+      cancionesFavs();
   }
 
-  handleSortChange  = (event) => {
-    this.setState({ sortKey: event.target.value });
-    this.sortSongs();
-  };
-
-  sortSongs = () => {
-
-    if (this.state.sortKey === "tema"){
-      window.listasFavoritos = [...window.listasFavoritos.sort((a, b) => a.tematica.localeCompare(b.tematica))];
-    } else if (this.state.sortKey === "genero") {
-      window.listasFavoritos = [...window.listasFavoritos.sort((a, b) => a.genero.localeCompare(b.genero))];
-    }
-  };
-  
   render(){
     return (
       <>
@@ -2980,18 +3313,8 @@ class ListasFavoritos extends React.Component{
           </div>
           <div className="text-center my-5 justify-content-center row gx-5">
             <div className="d-flex justify-content-center">
-              <ButtonOnClick onClick={menuPrincipal} id="" text="Volver al menú"/>
+              <ButtonOnClick onClick={anyadirCancionFav} id="" text="Añadir audios"/>
             </div>
-          </div>
-          <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
-            {this.state.numCanciones === 0 ? (
-              <p className="display-6 fw-bolder text-white mb-2">No tienes nada en favoritos</p>
-            ) : (
-              <>
-                <FavsSortSelector onChange={this.handleSortChange}/>
-                {window.cancionesLista.map((lista) => (<CardNameListaSongFav idAudio={lista.id} text={lista.nombre}/>))}
-              </>
-            )}
           </div>
         </div>
       </>
@@ -2999,17 +3322,185 @@ class ListasFavoritos extends React.Component{
   }
 }
 
-const FavsSortSelector = ({ onChange }) => {
-  return (
-    <select onChange={onChange}>
-      <option value="">Selecciona el criterio de ordenación</option>
-      <option value="tema">Tema</option>
-      <option value="genero">Género</option>
-    </select>
-  );
-};
-
 class CardNameListaSongFav extends React.Component{
+
+  constructor(props) {
+    super(props);
+  }
+
+  mandarAudioAReproductor = () => {
+    console.log("Ayuda: ",this.props.key)
+    window._idAudioReproduciendo = this.props.key;
+    menuPrincipal();
+  }
+
+  render(){
+    return (
+      <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
+        <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
+        <span className="separator"> </span>
+        <p className="display-6 fw-bolder text-white mb-2">{this.props.artista}</p>
+        <span className="separator"> </span>
+        <p className="display-6 fw-bolder text-white mb-2">{this.props.tematica}</p>
+        <span className="separator"> </span>
+      </div>
+    )
+  }
+}
+
+class ListaFavContenido extends React.Component{
+
+  constructor(props) {
+    super(props);
+  }
+
+  async handleSortChange(e) {
+    window.sortKeyListas = e.target.value;
+    if (window.sortKeyListas === "tema"){
+      await window.cancionesLista.sort((a, b) => a.tematica > b.tematica ? 1 : -1);
+    } else if (window.sortKeyListas === "genero") {
+      await window.cancionesLista.sort((a, b) => a.genero > b.genero ? 1 : -1);
+    }
+    cancionesFavs();
+  };
+
+  PlaylistSortSelector = ({ onChange }) => {
+    return (
+      <select onChange={onChange} defaultValue="tema" value={window.sortKeyListas}>
+        <option value="tema">Temática</option>
+        <option value="genero">Género</option>
+      </select>
+    );
+  };
+
+  render(){
+    return (
+      <>
+        <header class="bg-blue_7th py-5" >
+          <div class="container px-5" style={{"margin-top" : "3rem"}}>
+            <div class="row gx-5 justify-content-center">
+              <div class="col-lg-6">
+                <div class="text-center my-5">
+                  <h1 className="display-5 fw-bolder text-white mb-2">Mis audios favoritos</h1>
+                </div>
+                <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                  <ButtonOnClick onClick={anyadirCancionFav} id="" text="Añadir audios"/>
+                </div>
+                <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                {window.cancionesLista.length === 0 ? (
+                  <span className="separator"> </span>
+                ) : (
+                  <>
+                    <div class="my-5" style={{"margin-bottom": "20px"}}>
+                      <div className="right-align">
+                        <this.PlaylistSortSelector onChange={this.handleSortChange}/>
+                      </div>
+                    </div>
+                    <div class="text-center my-5" style={{"margin-bottom": "20px"}}>
+                      {window.cancionesLista.map((lista) =>
+                        (<CardNameListaSongFav
+                          idAudio={lista.id}
+                          text={lista.nombre}
+                          tematica={lista.tematica}/>))}
+                    </div>
+                  </>
+                )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+      </>
+    )
+  }
+}
+
+class AnyadirCancionFavs extends React.Component{
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      buscado: false
+    };
+    window.busquedaAnyadirCancionLista = "";
+    window.idsAudios = [];
+    window.infoAudios = [];
+  }
+
+  async handleSubmit(event){
+    event.preventDefault();
+    await fetch(ipBackend + "GlobalSearch/", {
+      method : "POST",
+      body : JSON.stringify({"query" : window.busquedaAnyadirCancionLista, "n" : 10})
+    }).then(async (response) => {
+      if(response.ok){
+        await response.json().then(async (data) => {
+          window.idsAudios.push(...data.audios);
+          this.setState({ buscado: true });
+          await Promise.all(
+          window.idsAudios.map(async (audio) => {
+            await DjangoAPI.getSong(window.idUsuario, window.passwd, audio)
+            .then((datos) =>{
+              if(response.ok){
+                let audioCustom = {
+                  id: audio,
+                  nombre: datos.nombre
+                };
+                window.infoAudios.push(audioCustom);
+              }
+            });
+          }))          
+        }).catch(function(error){
+          console.error('Error al analizar la respuesta JSON:', error);
+        })
+      }else{
+        toast.error("El usuario o la contraseña son incorrectos")
+      }
+    }).catch(error => {
+      toast.error(error.message)
+    });
+    anyadirCancionListarFavs();
+  }
+
+  handleInputChange(event) {
+    window.busquedaAnyadirCancionLista = event.target.value;
+  }
+
+  render(){
+    return (
+      <>
+        <header class="bg-blue_7th py-5">
+          <div class="container px-5" style={{ marginTop: "3rem" }}>
+            <div class="row gx-5 justify-content-center">
+              <div class="col-lg-6">
+                <div class="text-center my-5">
+                  <h1 class="display-5 fw-bolder text-white mb-2" style={{ paddingBottom: "1rem" }}>
+                    Añadir canciones
+                  </h1>
+                </div>
+                <form className="justify-content-center" style={{display: 'flex', alignItems: 'center' }} onSubmit={event => this.handleSubmit(event)}>
+                  <input
+                    class="form-control"
+                    id="busqueda-anyadir"
+                    type="text"
+                    placeholder="Nombre de la canción"
+                    value={window.busquedaAnyadirCancionLista}
+                    onChange={event => this.handleInputChange(event)} // Nuevo evento onChange para actualizar el estado
+                  />
+                  <button type="submit" class="btn btn-primary">
+                    Buscar
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </header>
+      </>
+    );
+  }
+}
+
+class CardNameAddSongFav extends React.Component{
 
   constructor(props) {
     super(props);
@@ -3017,16 +3508,99 @@ class CardNameListaSongFav extends React.Component{
 
   render(){
     return (
-    <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
-      <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
-      <UpArrowNoTransition/>
-      <DownArrowNoTransition/>
-      <HeartNoTransition idAudio={this.props.idAudio}/>
-      <PlayNoTransition/>
-    </div>
+      <div className="justify-content-center" style={{display: 'flex', alignItems: 'center' }}>
+        <p className="display-6 fw-bolder text-white mb-2">{this.props.text}</p>
+        <span className="separator"> </span>
+        <ButtonCommit onClick={() => meterCancionEnFav(this.props.idAudio)} text={String.fromCharCode(10084)} />
+      </div>
     )
   }
 }
+
+class ListarCancionesAnyadirFavs extends React.Component{
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      busqueda: "",
+    };
+  }
+
+  handleSubmit = (event) => {
+    //anyadirCancionListaRep();
+  }
+
+  handleInputChange(event) {
+    //anyadirCancionListar();
+    anyadirCancionListarFavs();
+    //window.busquedaAnyadirCancionLista = event.target.value;
+  }
+
+  render(){
+    return (
+      <>
+        <header class="bg-blue_7th py-5">
+          <div class="container px-5" style={{ marginTop: "3rem" }}>
+            <div class="row gx-5 justify-content-center">
+              <div class="col-lg-6">
+                <div class="text-center my-5">
+                  <h1 class="display-5 fw-bolder text-white mb-2" style={{ paddingBottom: "1rem" }}>
+                    Añadir canciones
+                  </h1>
+                </div>
+                <form className="justify-content-center" style={{display: 'flex', alignItems: 'center' }} onSubmit={event => this.handleSubmit(event)}>
+                  <input
+                    class="form-control"
+                    id="busqueda-anyadir"
+                    type="text"
+                    placeholder="Nombre de la canción"
+                    value={window.busquedaAnyadirCancionLista}
+                    onChange={event => this.handleInputChange(event)} // Nuevo evento onChange para actualizar el estado
+                  />
+                  <button type="submit" class="btn btn-primary">
+                    Buscar
+                  </button>
+                </form>
+                {(window.infoAudios.length > 0) ? (
+                  window.infoAudios.map((audio) => <CardNameAddSongFav idAudio={audio.id} text={audio.nombre}/>)
+                ) : (
+                  <p className="display-6 fw-bolder text-white mb-2 text-center" style={{alignItems: 'center'}}>No hay resultados</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </header>
+      </>
+    );
+  }
+}
+
+async function meterCancionEnFav(idAudio){
+
+  let funciona = false;
+  await fetch(ipBackend + "SetSongLista/", {
+    method : "POST",
+    body : JSON.stringify({"idUsr" : window.idUsuario, "contrasenya" : window.passwd, "idLista": window.idLista, "idAudio": idAudio})
+  }).then(async response =>{
+    if(response.ok){
+      await response.json().then(async datos => {
+        funciona = true;
+        window.cancionesLista.push(datos.canciones);
+      }).catch(error => {
+        console.error('Error al analizar la respuesta JSON:', error);
+      })
+    }else{
+      toast.error("Ha habido un error, no se ha podido añadir la canción a la lista")
+    }
+  }).catch(error => toast.error(error.message));
+  if(funciona === true){
+    toast.success("Canción añadida a la lista");
+  }
+}
+
+/*
+ * Amigos
+ */
 
 class ListaAmigos extends React.Component{
   constructor(props) {
@@ -3044,7 +3618,6 @@ class ListaAmigos extends React.Component{
       .then(response => {
         if (response.ok) {
           return response.json().then(data => {
-            console.log("PAULA", data);
             this.setState({ amigos: data.idAmigo });
           })
         }
@@ -3093,65 +3666,59 @@ class CancionesArtista extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      songs: []
+      listaIdCanciones : [],
+      loading : true 
     };
   }
 
   componentDidMount() {
-    let diaDeLaSemana = moment().locale('es').format('dddd');
-    let dia = 0;
-    if (diaDeLaSemana === "lunes"){
-      dia = 0;
-    }
-    else if (diaDeLaSemana === "martes"){
-      dia = 1;
-    }
-    else if (diaDeLaSemana === "miercoles"){
-      dia = 2;
-    }
-    else if (diaDeLaSemana === "jueves"){
-      dia = 3;
-    }
-    else if (diaDeLaSemana === "viernes"){
-      dia = 4;
-    }
-    else if (diaDeLaSemana === "sabado"){
-      dia = 5;
-    }
-    else if (diaDeLaSemana === "domingo"){
-      dia = 6
-    }
-    
-    DjangoAPI.getSongsArtist(window.idUsuario, window.passwd, window.idUsuario).then(
-      async (listaIdAudios) => {
-        const listaSongs = await Promise.all(listaIdAudios.map(idAudio =>
-          DjangoAPI.getSong(window.idUsuario, window.passwd, idAudio).then(async (audio) => {
-            const duracion = await DjangoAPI.getSecondsSong(audio.id, dia);
-            return { nombre: audio.nombre, duracion: duracion };
-          })
-        ));
+    // llamamos a la función para obtener las notificaciones una vez que el componente se ha montado
+    this.getCanciones();
 
-        console.log(listaSongs)
-        this.setState({ songs : listaSongs });
+  }
+
+    async getCanciones() {
+      try {
+        const listaIdCanciones = await DjangoAPI.getSongsArtist(
+          window.idUsuario,
+          window.passwd,
+          window.idUsuario,
+        );
+  
+        // usamos Promise.all para esperar que se resuelvan todas las promesas de las notificaciones
+        const listaIdCaciones= await Promise.all(
+          listaIdCanciones.map((idAudio) =>
+            DjangoAPI.getSong(window.idUsuario, window.passwd, idAudio)
+          )
+        );
+  
+        this.setState({
+          listaIdCanciones,
+          loading: false // una vez que se han cargado las notificaciones, ponemos el estado de carga en false
+        });
+      } catch (error) {
+        console.log(error);
       }
-    )
   }
 
   render() {
-    return (
-      <div className="text-center">
-        <h1 className="CancionesArtista text-tuPerfil-50 mb-3">
-          Canciones publicadas
-        </h1>
-          {this.state.songs.map(song => (
-            <div class="text-white mb-2 my-3" key={song.nombre}>
-              <h4>{song.nombre}</h4>
-              <p class="text-white mb-2 my-3">Hoy se ha escuchado {song.duracion} segundos</p>
-            </div>
-          ))}
+      const { listaIdCanciones, loading } = this.state;
+      return (
+        <div className="bg-blue_7th py-5 main" style={{ display: 'flex', flexDirection: 'column' }}>
+        {loading ? ( // si el estado de carga es true, mostramos un mensaje de carga
+          <h4 className="text-center text-white my-2">Cargando notificaciones...</h4>
+        ) : listaIdCanciones.length > 0 ? ( // si hay notificaciones, las mostramos
+          listaIdCanciones.map((cancion) => (
+            <h4 className="text-center text-white my-2" key={cancion}>
+              {cancion}
+            </h4>
+          ))
+        ) : ( // si no hay notificaciones, mostramos un mensaje indicando que no hay notificaciones
+          <h4 className="text-center text-white my-2">No tienes notificaciones</h4>
+        )}
       </div>
     );
-  }
+  } 
 }
 
 class MinutajeSemanal extends React.Component{
@@ -3172,7 +3739,7 @@ class MinutajeSemanal extends React.Component{
     else if (diaDeLaSemana === "martes"){
       dia = 1;
     }
-    else if (diaDeLaSemana === "miercoles"){
+    else if (diaDeLaSemana === "miercoles" || diaDeLaSemana === "miércoles"){
       dia = 2;
     }
     else if (diaDeLaSemana === "jueves"){
@@ -3473,6 +4040,8 @@ class ResultadosBusquedaGlobal extends React.Component{
 
   lanzarReproductor(idAudio){
   
+    console.log("Ismael", idAudio)
+    window.origenReproduccion = ""
     window._idAudioReproduciendo = idAudio;
     return menuPrincipal();
 
@@ -3496,40 +4065,61 @@ class ResultadosBusquedaGlobal extends React.Component{
   }
 }
 
-class ListaNotificaciones extends React.Component{
-
-  constructor(props){
+class ListaNotificaciones extends React.Component {
+  constructor(props) {
     super(props);
     this.state = {
-      "listaNotificaciones" : []
-    }
-
-    DjangoAPI.getNotificationsUsr(window.idUsuario, window.passwd).then(listaIdNotificaciones => {
-      console.log("Lista notificaciones", listaIdNotificaciones)
-
-      let listaNotificaciones = [];
-
-      Promise.all(listaIdNotificaciones.map(idNotificacion => {
-        console.log("Notificacion", idNotificacion)
-        DjangoAPI.getNotification(window.idUsuario, window.passwd, idNotificacion).then(notificacion => {
-          console.log(notificacion)
-          listaNotificaciones.push(notificacion)
-        })
-      })).then(() => {
-        console.log(listaNotificaciones)
-        this.setState({"listaNotificaciones" : listaNotificaciones})
-      })
-    })
+      listaNotificaciones: [],
+      loading: true // agregamos un estado de carga para mostrar mientras se cargan las notificaciones
+    };
   }
-  
+
+  componentDidMount() {
+    // llamamos a la función para obtener las notificaciones una vez que el componente se ha montado
+    this.getNotificaciones();
+  }
+
+  async getNotificaciones() {
+    try {
+      const listaIdNotificaciones = await DjangoAPI.getNotificationsUsr(
+        window.idUsuario,
+        window.passwd
+      );
+
+      // usamos Promise.all para esperar que se resuelvan todas las promesas de las notificaciones
+      const listaNotificaciones = await Promise.all(
+        listaIdNotificaciones.map((idNotificacion) =>
+          DjangoAPI.getNotification(window.idUsuario, window.passwd, idNotificacion)
+        )
+      );
+
+      this.setState({
+        listaNotificaciones,
+        loading: false // una vez que se han cargado las notificaciones, ponemos el estado de carga en false
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   render() {
-    return(
-      <div class="bg-blue_7th py-5 main" style={{display : "flex", flexDirection : "column"}}>
-        {this.state.listaNotificaciones.map(notificacion => {
-          return (<h4 class="text-center text-white my-2" key="">{notificacion.mensaje}</h4>)
-        })}
+    const { listaNotificaciones, loading } = this.state;
+
+    return (
+      <div className="bg-blue_7th py-5 main" style={{ display: 'flex', flexDirection: 'column' }}>
+        {loading ? ( // si el estado de carga es true, mostramos un mensaje de carga
+          <h4 className="text-center text-white my-2">Cargando notificaciones...</h4>
+        ) : listaNotificaciones.length > 0 ? ( // si hay notificaciones, las mostramos
+          listaNotificaciones.map((notificacion) => (
+            <h4 className="text-center text-white my-2" key={notificacion.id}>
+              {notificacion.mensaje}
+            </h4>
+          ))
+        ) : ( // si no hay notificaciones, mostramos un mensaje indicando que no hay notificaciones
+          <h4 className="text-center text-white my-2">No tienes notificaciones</h4>
+        )}
       </div>
-    )
+    );
   }
 }
 
@@ -4060,6 +4650,7 @@ function GlobalPlayList(){
   )
 }
 
+/*
 function NewGlobalPlaylist(){
   return(
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
@@ -4070,6 +4661,7 @@ function NewGlobalPlaylist(){
     </div>
   )
 }
+*/
 
 function Folders(){
   return(
@@ -4098,6 +4690,17 @@ function Favs(){
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
       <ListasFavoritos/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
+function ListaFavContenidoFunc(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <ListaFavContenido/>
       <Footer/>
       <ToastContainer/>
     </div>
@@ -4301,8 +4904,38 @@ function anyadirCancionListaRep(){
   root.render(<AnyadirCancionLista/>)
 }
 
+function anyadirCancionFav(){
+  root.render(<AnyadirCancionFavFunc/>)
+}
+
+function AnyadirCancionFavFunc(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <AnyadirCancionFavs/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
 function anyadirCancionListar(){
   root.render(<AnyadirCancionListar/>)
+}
+
+function anyadirCancionListarFavs(){
+  root.render(<AnyadirCancionListarFavs/>)
+}
+
+function AnyadirCancionListarFavs(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp/>
+      <ListarCancionesAnyadirFavs/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
 }
 
 function anyadirListaCarpeta(){
@@ -4329,6 +4962,14 @@ function misFavoritos(){
   root.render(<Favs/>)
 }
 
+function cancionesFavs(){
+  root.render(<ListaFavContenidoFunc/>)
+}
+
+function AnyadirCancionFav() {
+  root.render(<anyadirCancionFav/>)
+}
+
 function estadisticas(){
   root.render(<Statistics/>) 
 }
@@ -4342,7 +4983,7 @@ function listaGlobal(){
 }
 
 function nuevaListaGlobal(){
-  root.render(<NewGlobalPlaylist/>)
+  //root.render(<NewGlobalPlaylist/>)
 }
 
 function perfilOtroUsuario(){

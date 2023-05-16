@@ -2,11 +2,11 @@
 import { ToastContainer, toast } from 'react-toastify';
 
 //const ipBackend = "http://django.cncfargye8h5eqhw.francecentral.azurecontainer.io:8081/"; // azure
-//const ipBackend = "http://localhost:8081/"; // cris local
-const ipBackend = "http://192.168.56.1:8081/"; // ismael
+//const ipBackend = "http://10.1.54.203:8081/"; // cris local
+//const ipBackend = "http://192.168.56.1:8081/"; // ismael
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/" // aws deployment
 //const ipBackend = "http://ec2-44-204-175-208.compute-1.amazonaws.com:8081/"; // aws  definitivo
-//const ipBackend = "http://ec2-18-206-199-169.compute-1.amazonaws.com:8081/"; // aws super definitivo
+const ipBackend = "http://ec2-18-206-199-169.compute-1.amazonaws.com:8081/"; // aws super definitivo
 
 const GENERO_POP = 0
 const GENERO_ROCK = 1
@@ -208,6 +208,7 @@ export const getSong = (usuario, contrasenya, idAudio) => {
             method : "POST",
             body : JSON.stringify({[CLAVE_ID_USUARIO] : usuario, [CLAVE_CONTRASENYA]: contrasenya, [CLAVE_ID_AUDIO] : idAudio})
         }).then(response => response.json().then(data => {
+            console.log("Ismael", data)
             resolve(data.idAudio)
         }))
         .catch(error => reject(error))
@@ -493,7 +494,6 @@ export const getValoracionMedia = (idAudio) => {
           }).then(response => {
             if (response.ok) {
               response.json().then(data => {
-                console.log("Cris valoracion obtenida", data.valoracion);
                 resolve(Math.round(data.valoracion));
               })
             }
@@ -524,7 +524,14 @@ export const getNotification = (usuario, contrasenya, idNotificacion) => {
           }).then(response => {
             if (response.ok) {
               response.json().then(data => {
-                resolve(data.notificaciones)
+                if(data.notificaciones.tipoNotificacion === "quieroArtista"){
+                    const notiCustom = {
+                        id: data.notificaciones.id,
+                        mensaje: "Solicitud de artista"
+                    };
+                    resolve(notiCustom);
+                }
+                resolve(data.notificaciones);
               })
             }
           }).catch(error => reject(error))
