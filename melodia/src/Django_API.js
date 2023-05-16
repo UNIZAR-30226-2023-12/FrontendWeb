@@ -6,6 +6,7 @@ import { ToastContainer, toast } from 'react-toastify';
 const ipBackend = "http://192.168.56.1:8081/"; // ismael
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/" // aws deployment
 //const ipBackend = "http://ec2-44-204-175-208.compute-1.amazonaws.com:8081/"; // aws  definitivo
+//const ipBackend = "http://ec2-18-206-199-169.compute-1.amazonaws.com:8081/"; // aws super definitivo
 
 const GENERO_POP = 0
 const GENERO_ROCK = 1
@@ -96,6 +97,7 @@ const CLAVE_ES_CANCION = "esCancion"
 const CLAVE_SECOND = "second"
 const CLAVE_ID_AMIGO = "idAmigo"
 const CLAVE_IMAGEN_AUDIO = "imagenAudio"
+const CLAVE_DIA_ACTUAL = "dia"
 
 // Constantes simbólicas para las Carpeta
 const CLAVE_CONTADOR_CARPETAS = "contadorCarpetas"
@@ -437,6 +439,18 @@ export const getSongsArtist = (usuario, contrasenya, artista) => {
     })
 }
 
+export const getSecondsSong = (idAudio, dia) => {
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetSongSeconds/", {
+            method: "POST",
+            body: JSON.stringify({ [CLAVE_ID_AUDIO] :  idAudio, [CLAVE_DIA_ACTUAL] : dia})
+        }).then((response) => response.json().then()(seconds => {
+            resolve(seconds)
+        }))
+        .catch(error => reject(error))
+    })
+}
+
 export const getLinkAudio = (usuario, contrasenya, audio) => {
     return new Promise((resolve, reject) => {
         fetch(ipBackend + "GetLinkAudio/", {
@@ -482,8 +496,58 @@ export const getValoracionMedia = (idAudio) => {
                 console.log("Cris valoracion obtenida", data.valoracion);
                 resolve(Math.round(data.valoracion));
               })
-              //await new Promise(resolve => setTimeout(resolve, 100));
             }
           }).catch(error => reject(error))
     })
+}
+
+export const getNotificationsUsr = (usuario, contrasenya) => {
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetNotificationsUsr/", {
+            method: "POST",
+            body: JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA] : contrasenya})
+          }).then(response => {
+            if (response.ok) {
+              response.json().then(data => {
+                resolve(data.idNotificacion)
+              })
+            }
+          }).catch(error => reject(error))
+    })
+}
+
+export const getNotification = (usuario, contrasenya, idNotificacion) => {
+    return new Promise((resolve, reject) => {
+        fetch(ipBackend + "GetNotification/", {
+            method: "POST",
+            body: JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA] : contrasenya, [CLAVE_ID_NOTIFICACION] : idNotificacion})
+          }).then(response => {
+            if (response.ok) {
+              response.json().then(data => {
+                resolve(data.notificaciones)
+              })
+            }
+          }).catch(error => reject(error))
+    })
+}
+
+export const removeNotification = (usuario, contrasenya, idNotificacion) => {
+    fetch(ipBackend + "GetNotification/", {
+        method: "POST",
+        body: JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA] : contrasenya, [CLAVE_ID_NOTIFICACION] : idNotificacion})
+      }).then(response => {
+        if (response.ok) {
+          response.json().then(data => {
+            console.log("Ismae borra noti:", data);
+          })
+        }
+      }).catch(error => (error))
+}
+
+export const addSecondsToSong = (usuario, contrasenya, idAudio, segundos) => {
+    fetch(ipBackend + "AddSecondsToSong/", {
+        method: "POST",
+        body: JSON.stringify({[CLAVE_ID_USUARIO]: usuario, [CLAVE_CONTRASENYA] : contrasenya, [CLAVE_ID_AUDIO] : idAudio, [CLAVE_SECOND] : segundos})
+      })
+      .catch(error => (error))
 }

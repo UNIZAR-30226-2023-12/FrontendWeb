@@ -26,6 +26,7 @@ const root = createRoot(domNode);
 //const ipBackend = "http://ec2-3-83-121-162.compute-1.amazonaws.com:8081/"; // aws
 const ipBackend = "http://192.168.56.1:8081/"; // ismael
 //const ipBackend = "http://ec2-44-204-175-208.compute-1.amazonaws.com:8081/"; // aws definitivo
+//const ipBackend = "http://ec2-18-206-199-169.compute-1.amazonaws.com:8081/"; // aws super definitivo
 
 const tipoListaReproduccion = "listaReproduccion";
 const tipoListaFavoritos = "listaFavoritos";
@@ -128,7 +129,7 @@ class BarraNavegacionApp extends React.Component{
                   <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
                   <div class="collapse navbar-collapse" id="navbarSupportedContent">
                       <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                          <li class="nav-item"><a id='nav' class={active('1', this.props.active)} aria-current="page">Notificaciones  &#128276;</a></li>
+                          <li class="nav-item"><a id='nav' class={active('1', this.props.active)} onClick={notificaciones} aria-current="page">Notificaciones  &#128276;</a></li>
                           <li class="nav-item"><a id='nav' class={active('2', this.props.active)}  onClick={perfil}>Perfil &#128578;	</a></li>
                           {/*TODO: cuando se pueda acceder al envio de correo eliminar de aqui, se verá desde el botón de mandar correo*/}
                           <li class="nav-item"><a id='nav' class={active('3', this.props.active)} onClick={topDiario}>Top Diario &#129351; </a></li>
@@ -745,12 +746,15 @@ class Reproductor extends React.Component{
   actualizarInfo(idAudio){
     DjangoAPI.getSong(window.idUsuario, window.passwd, idAudio).then(audio => {
       DjangoAPI.getUser(window.idUsuario, window.passwd, audio.artista).then(artista => {
+        console.log(audio)
         this.setState({"nombreAudio" : audio.nombre, "artista" : artista.alias, "valoracion" : 1})
         toast.info("Estas escuchando " + audio.nombre + " de " + artista.alias)
 
         DjangoAPI.getValoracionMedia(idAudio).then(valoracion => {
           this.barraValoracion.current.setState({rating : valoracion})
         })
+
+        DjangoAPI.addSecondsToSong(window.idUsuario, window.passwd, idAudio, parseFloat(audio.longitud))
 
       })
     })
@@ -809,6 +813,33 @@ class Reproductor extends React.Component{
     })
     
   }
+
+  ir_al_siguiente = () => {
+    if (this.props.listaIdsAudios.length - 1 < this.state.punteroAudioReproduciendo){
+      // caso normal, podemos incrementar sin preocuparnos
+      window._idAudioReproduciendo = this.props.listaIdsAudios[this.state.punteroAudioReproduciendo + 1];
+      this.setState({punteroAudioReproduciendo: this.state.punteroAudioReproduciendo + 1});
+      this.reproducir(window._idAudioReproduciendo, 0);
+    } else if (this.props.listaIdsAudios.length -1 === this.state.punteroAudioReproduciendo){
+      // caso extremo límite, hay que volver al principio
+      window._idAudioReproduciendo = this.props.listaIdsAudios[0];
+      this.setState({punteroAudioReproduciendo: 0});
+      this.reproducir(window._idAudioReproduciendo, 0);
+    }
+  }
+
+  ir_al_anterior = () => {
+    if (0 < this.state.punteroAudioReproduciendo -1 ){
+      // caso normal, podemos incrementar sin preocuparnos
+      window._idAudioReproduciendo = this.props.listaIdsAudios[this.state.punteroAudioReproduciendo - 1];
+      this.reproducir(window._idAudioReproduciendo, 0)
+    } else if (this.state.punteroAudioReproduciendo === 0){
+      // caso extremo límite, hay que volver al principio
+      window._idAudioReproduciendo = this.props.listaIdsAudios[this.props.listaIdsAudios.length - 1];
+      this.setState({punteroAudioReproduciendo: this.props.listaIdsAudios.length - 1});
+      this.reproducir(window._idAudioReproduciendo, 0);
+    }
+  }
   
   render(){
 
@@ -839,6 +870,8 @@ class Reproductor extends React.Component{
             volume={1}
             showFilledVolume={true}
             showSkipControls={true}
+            onClickNext={this.ir_al_siguiente}
+            onClickPrevious={this.ir_al_anterior}
             customAdditionalControls={[
               <BsSliders2Vertical class="rhap_repeat-button rhap_button-clear" onClick={this.toggleSlider.bind(this)}/>,
               <FiShare2 class="rhap_repeat-button rhap_button-clear" onClick={this.share_song}/>
@@ -1294,7 +1327,6 @@ class PerfilUsuario extends React.Component {
               <div class="card-body p-5">
                 <div class="list-unstyled mb-4">
                   <li class="mb-2">
-                    {/*TODO cambiar la imagen de perfil por la del usuario real, hacer llamada al backend*/}
                     <img
                       src={this.state.urlFotoPerfil}
                       width="100%"
@@ -1308,6 +1340,9 @@ class PerfilUsuario extends React.Component {
                     id=""
                     text="Editar foto de perfil"
                   />
+                  <p className="subtitulo-formArtista titulo-formArtista-lg mb-3 text-white">
+                  {"Código de amistad: " + window.idUsuario}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1874,11 +1909,13 @@ class CardNameListaSong extends React.Component{
     super(props);
   }
 
-  mandarAudioAReproductor = (idAudio) => {
+  mandarAudioAReproductor = () => {
+    console.log("Ayuda: ",this.props.key)
     window._idAudioReproduciendo = this.props.key;
     menuPrincipal();
   }
 
+  // isma este es el botón para reproducir una canción
   render(){
     return (
       <>
@@ -1892,7 +1929,7 @@ class CardNameListaSong extends React.Component{
             <span className="separator"> </span>
             <p className="display-6 fw-bolder text-white mb-2">{this.props.idioma}</p>
             <span className="separator"> </span>
-            <ButtonCommit onClick={this.mandarAudioAReproductor} text={String.fromCharCode(9658)} />
+            <Button onClick={this.mandarAudioAReproductor} text={String.fromCharCode(9658)} />
           </div>
         </div>
       </>
@@ -2933,30 +2970,42 @@ class ListaAmigos extends React.Component{
         if (response.ok) {
           return response.json().then(data => {
             console.log("PAULA", data);
-            this.setState({ amigos: data });
+            this.setState({ amigos: data.idAmigo });
           })
         }
         throw new Error("Error al obtener los amigos");
       }).catch(error => toast.error(error.message));
   }
-  
+
   render(){
-    {amigos.map(amigo => (
-      <div key={amigo}>
-        <p>{amigo}</p>
-      </div>
-    ))}
-    
     return (
       <div className="container-fluid --bs-body-bg h-100 d-flex align-items-center main">
         <div className="col-md-3 --bs-blue-bg"></div>
         <div className="col-md-6 --bs-blue-bg d-flex justify-content-center">
           <div className="text-center">
             <p className="titulo-formArtista titulo-formArtista-lg mb-3 text-white">Tus Amigos</p>
+            {
+            (this.state.amigos.length !== 0) ?
+            this.state.amigos.map(amigo => (
+              <div key={amigo}>
+                <p>{amigo}</p>
+              </div>
+            )) : <></>
+            }
+            {
+              (this.state.amigos.length === 0) ?
+              <p className="subtitulo-formArtista titulo-formArtista-lg mb-3 text-white">Comparte tu id de amistad con otros usuarios</p>
+              : null
+            }
+
             <div className="d-flex flex-column align-items-center">
-              <label for="idAmigo">Usuario</label>
-              <input class="form-control" id="idAmigo" type="text" placeholder="Introduce el código de amistad"/>
+              <input className="form-control" id="idAmigo" type="text" placeholder="Introduce el código de amistad"/>
               <ButtonOnClick onClick={enviar_solicitud_amistad} id="" text="Enviar petición de amistad"/>
+            </div>
+            <br/>
+            <div className="d-flex flex-column align-items-center">
+              <input className="form-control" id="idLink" type="text" placeholder="¿Te han compartido una canción? Descubre cual es"/>
+              <ButtonOnClick onClick={recuperar_link_cancion} id="" text="Link a la canción"/>
             </div>
           </div>
         </div>
@@ -2969,17 +3018,42 @@ class CancionesArtista extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      songs: new Array()
+      songs: []
     };
   }
 
   componentDidMount() {
+    let diaDeLaSemana = moment().locale('es').format('dddd');
+    let dia = 0;
+    if (diaDeLaSemana === "lunes"){
+      dia = 0;
+    }
+    else if (diaDeLaSemana === "martes"){
+      dia = 1;
+    }
+    else if (diaDeLaSemana === "miercoles"){
+      dia = 2;
+    }
+    else if (diaDeLaSemana === "jueves"){
+      dia = 3;
+    }
+    else if (diaDeLaSemana === "viernes"){
+      dia = 4;
+    }
+    else if (diaDeLaSemana === "sabado"){
+      dia = 5;
+    }
+    else if (diaDeLaSemana === "domingo"){
+      dia = 6
+    }
+    
     DjangoAPI.getSongsArtist(window.idUsuario, window.passwd, window.idUsuario).then(
       async (listaIdAudios) => {
         const listaSongs = await Promise.all(listaIdAudios.map(idAudio =>
-          DjangoAPI.getSong(window.idUsuario, window.passwd, idAudio).then(
-            audio => audio.nombre
-          )
+          DjangoAPI.getSong(window.idUsuario, window.passwd, idAudio).then(async (audio) => {
+            const duracion = await DjangoAPI.getSecondsSong(audio.id, dia);
+            return { nombre: audio.nombre, duracion: duracion };
+          })
         ));
 
         console.log(listaSongs)
@@ -2995,7 +3069,10 @@ class CancionesArtista extends React.Component {
           Canciones publicadas
         </h1>
           {this.state.songs.map(song => (
-            <h4 class="text-center text-white mb-2 my-3" key={song}>{song}</h4>
+            <div class="text-white mb-2 my-3" key={song.nombre}>
+              <h4>{song.nombre}</h4>
+              <p class="text-white mb-2 my-3">Hoy se ha escuchado {song.duracion} segundos</p>
+            </div>
           ))}
       </div>
     );
@@ -3309,11 +3386,13 @@ class ResultadosBusquedaGlobal extends React.Component{
   constructor(props) {
     super(props);
     this.state = {
-      "listaResultados" : []
+      "listaResultadosAudios" : [],
+      "listaResultadosUsuarios" : [],
+      "listaResultadosListas" : []
     }
 
     if(this.props.listaResultados !== undefined){
-      this.state.listaResultados = this.props.listaResultados
+      this.state.listaResultadosAudios = this.props.listaResultados
     }
   }
 
@@ -3328,15 +3407,52 @@ class ResultadosBusquedaGlobal extends React.Component{
     return(
       <div class="bg-blue_7th py-5 main" style={{display : "flex", flexDirection : "column"}}>
         {
-          this.state.listaResultados.map(resultado => {
+          (this.state.listaResultadosAudios.length !== 0) ? this.state.listaResultadosAudios.map(resultado => {
             return (
               <div style={{display : "flex", justifyContent : "center", alignItems : "center"}}>
                 <h4 class="text-center text-white my-2" key={resultado.nombre}>{resultado.nombre}</h4>
                 <PlayNoTransition onClick={() => this.lanzarReproductor(resultado.idAudio)}/>
               </div>
             )
-          })
+          }) : <></>
         }
+      </div>
+    )
+  }
+}
+
+class ListaNotificaciones extends React.Component{
+
+  constructor(props){
+    super(props);
+    this.state = {
+      "listaNotificaciones" : []
+    }
+
+    DjangoAPI.getNotificationsUsr(window.idUsuario, window.passwd).then(listaIdNotificaciones => {
+      console.log("Lista notificaciones", listaIdNotificaciones)
+
+      let listaNotificaciones = [];
+
+      Promise.all(listaIdNotificaciones.map(idNotificacion => {
+        console.log("Notificacion", idNotificacion)
+        DjangoAPI.getNotification(window.idUsuario, window.passwd, idNotificacion).then(notificacion => {
+          console.log(notificacion)
+          listaNotificaciones.push(notificacion)
+        })
+      })).then(() => {
+        console.log(listaNotificaciones)
+        this.setState({"listaNotificaciones" : listaNotificaciones})
+      })
+    })
+  }
+  
+  render() {
+    return(
+      <div class="bg-blue_7th py-5 main" style={{display : "flex", flexDirection : "column"}}>
+        {this.state.listaNotificaciones.map(notificacion => {
+          return (<h4 class="text-center text-white my-2" key="">{notificacion.mensaje}</h4>)
+        })}
       </div>
     )
   }
@@ -3504,12 +3620,7 @@ function enviar_cambio_contra(e){
 }
 
 function editar_foto_perfil (){
-  // TODO
-  toast.error("Funcionalidad no implementada");
-
-  DjangoAPI.getRecomendedAudio(window.idUsuario, window.passwd).then(data => {
-    console.log(data)
-  })
+  toast.error("Funcionalidad disponible proximamente");
 }
 
 function enviar_peticion_artista(text){
@@ -3594,7 +3705,7 @@ function enviar_solicitud_amistad(){
   }).then(response => {
     if (response.ok) {
       response.json().then(data => {
-        if (data === 200) {
+        if (data.status === 200) {
           toast.success("Solicitud de amistad enviada con éxito");
         } 
         else {
@@ -3604,9 +3715,32 @@ function enviar_solicitud_amistad(){
         console.error('Error al analizar la respuesta JSON:', error);
       })
     } else {
-      toast.error("Ha habido un error");
+      toast.error("Ha habido un error en la llamada al backend");
     }
   }).catch(error => toast.error(error.message))
+}
+
+function recuperar_link_cancion(){
+  let link = (document.getElementById("idLink")).value
+
+  fetch(ipBackend + "GetAudioFromLink/", {
+    method: "POST",
+    body: JSON.stringify({ "idUsr": window.idUsuario, "contrasenya": window.passwd, "linkAudio": link })
+  }).then(response => {
+    if (response.ok) {
+      response.json().then(data => {
+        console.log("Idowhofhwhufa", data);
+        if (response.status === 200){
+          toast.success("Reproduciendo canción");
+          window._idAudioReproduciendo = data.lista;
+          menuPrincipal();
+        }
+        else{
+          toast.error("La canción buscada no existe");
+        }
+      })
+    }
+  })
 }
 
 class BotonUltimaEscucha extends React.Component{
@@ -3969,6 +4103,8 @@ function BusquedaGlobal(){
   let lista = new Array()
   DjangoAPI.globalSearch(busqueda, 10).then(resultado => {
     
+    console.log(resultado)
+
     resultado.audios.map(async (idAudio) => {
       await DjangoAPI.getSong(window.idUsuario, window.passwd, idAudio)
       .then((datos) =>{
@@ -3978,7 +4114,7 @@ function BusquedaGlobal(){
           } 
           lista.push(pair);
       });
-      view.current.setState({"listaResultados" : lista})
+      view.current.setState({"listaResultadosAudios" : lista})
     })
   })
 
@@ -3986,6 +4122,17 @@ function BusquedaGlobal(){
     <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
       <BarraNavegacionApp/>
       <ResultadosBusquedaGlobal ref={view}/>
+      <Footer/>
+      <ToastContainer/>
+    </div>
+  )
+}
+
+function Notificaciones(){
+  return(
+    <div className="menu" style={{"display" : "flex", "flex-direction" : "column", "minHeight" : "100vh"}}>
+      <BarraNavegacionApp active="1"/>
+      <ListaNotificaciones/>
       <Footer/>
       <ToastContainer/>
     </div>
@@ -4135,6 +4282,10 @@ function perfilOtroUsuario(){
 
 function busquedaGlobal(){
   root.render(<BusquedaGlobal/>)
+}
+
+function notificaciones(){
+  root.render(<Notificaciones/>)
 }
 
 export default App;
