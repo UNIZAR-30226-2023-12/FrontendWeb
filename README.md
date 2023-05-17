@@ -1,7 +1,37 @@
 # FrontendWeb
+
 This repository has the code of the webpage.
 
 ## Notas de cambios e información importante sobre el desarrollo web
+
+### React
+
+Para instalar complementos adicionales al proyecto:
+
+```bash
+npm install --save react-toastify
+```
+
+```bash
+npm install styled-components
+```
+
+```bash
+npm i react-h5-audio-player
+```
+
+```bash
+npm i react-upload-box
+
+npm i react-icons
+
+npm i tone
+
+npm i moment
+```
+
+### Tomcat
+
 Agregar las bibliotecas necesarias para hacer usao de las plantillas creadas-->
   1:Clic derecho en el proyecto y clic "Properties" en el menú.
   2:Selecciona "Java Build Path" en el panel izquierdo y clic en la pestaña "Libraries" en la derecho.

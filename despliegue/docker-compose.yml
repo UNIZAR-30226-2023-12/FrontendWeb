@@ -1,0 +1,7 @@
+version: '3.9'
+services:
+  react:
+    image: melodia/react:latest
+    ports:
+      - "80:80"
+    container_name: react
